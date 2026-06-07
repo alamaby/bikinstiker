@@ -117,3 +117,44 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# Environment files — never commit populated secrets
+.env
+.env.*
+!.env.example
+
+# Track pubspec.lock for reproducible builds (overrides the *.lock rule above)
+!pubspec.lock
+
+# Tooling, IDE, and generated artifacts
+.claude/
+.idea/
+.metadata
+*.iml
+*.iws
+*.ipr
+.fvm/
+fvm_config.json
+
+# Supabase local dev artifacts (created by `supabase start`)
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+supabase/.env.local
+
+# Cross-platform filesystem metadata
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Built mobile artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+
+# Signing material
+*.keystore
+*.p12
+*.p8

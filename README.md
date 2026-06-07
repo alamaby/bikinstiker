@@ -67,32 +67,35 @@ Dependencies always point downward; UI never imports `supabase_flutter` directly
 
 ```
 .
-├── bikin_stiker/                 # Flutter app
-│   ├── lib/
-│   │   ├── main.dart
-│   │   ├── app.dart
-│   │   ├── core/
-│   │   │   ├── theme/app_theme.dart
-│   │   │   ├── constants/presets.dart
-│   │   │   ├── errors/failures.dart
-│   │   │   └── di.dart
-│   │   ├── data/
-│   │   │   ├── datasources/supabase_client.dart
-│   │   │   ├── models/{wallet,sticker_generation,credit_transaction}.dart
-│   │   │   └── repositories/{auth,wallet,sticker}_repository.dart
-│   │   └── presentation/
-│   │       ├── blocs/{auth,wallet,sticker_gen,history}/
-│   │       ├── screens/{auth,home,history}/
-│   │       └── widgets/status_indicator.dart
-│   ├── pubspec.yaml
-│   ├── .env.example
-│   └── test/widget_test.dart
+├── android/                          # Android project
+├── ios/                              # iOS project
+├── lib/                              # Flutter app
+│   ├── main.dart
+│   ├── app.dart
+│   ├── core/
+│   │   ├── theme/app_theme.dart
+│   │   ├── constants/presets.dart
+│   │   ├── errors/failures.dart
+│   │   └── di.dart
+│   ├── data/
+│   │   ├── datasources/supabase_client.dart
+│   │   ├── models/{wallet,sticker_generation,credit_transaction}.dart
+│   │   └── repositories/{auth,wallet,sticker}_repository.dart
+│   └── presentation/
+│       ├── blocs/{auth,wallet,sticker_gen,history}/
+│       ├── screens/{auth,home,history}/
+│       └── widgets/status_indicator.dart
+├── test/widget_test.dart
+├── pubspec.yaml
+├── analysis_options.yaml
+├── .env.example
 ├── supabase/
 │   ├── config.toml
 │   ├── migrations/
 │   │   ├── 20260505000001_init_schema.sql
 │   │   ├── 20260505000002_wallet_trigger.sql
-│   │   └── 20260505000003_storage_bucket.sql
+│   │   ├── 20260505000003_storage_bucket.sql
+│   │   └── 20260505000004_deduct_credit_user_scope.sql
 │   └── functions/
 │       └── generate-sticker/
 │           ├── index.ts
@@ -117,16 +120,14 @@ Dependencies always point downward; UI never imports `supabase_flutter` directly
 
 ```bash
 # 1. Clone & install Flutter deps
-cd bikin_stiker
 cp .env.example .env       # fill in SUPABASE_URL + SUPABASE_ANON_KEY
 flutter pub get
 
 # 2. Start Supabase locally (from repo root)
-cd ..
 supabase start             # spins up Postgres, Auth, Storage, Studio
 ```
 
-After `supabase start` completes, copy the printed `API URL` and `anon key` into `bikin_stiker/.env`.
+After `supabase start` completes, copy the printed `API URL` and `anon key` into `.env`.
 
 ---
 
@@ -305,3 +306,4 @@ The following checks are documented for manual validation — they are **not** w
 ## License
 
 See [LICENSE](LICENSE).
+| `20260505000004_deduct_credit_user_scope.sql` | Hardens `deduct_credit_for_sticker` by deriving the target user from `auth.uid()` (dropping the caller-supplied `p_user_id`) to prevent cross-user credit deduction. The edge function is updated in lockstep. |

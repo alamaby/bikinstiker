@@ -112,11 +112,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     emit(state.copyWith(
       status: e.user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
       user: e.user,
+      errorMessage: null,
+      infoMessage: null,
     ));
   }
 
   Future<void> _onSignIn(AuthSignInRequested e, Emitter<AuthBlocState> emit) async {
-    emit(state.copyWith(status: AuthStatus.submitting));
+    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null));
     try {
       await _repo.signIn(email: e.email, password: e.password);
       // _AuthUserChanged will update state
@@ -126,7 +128,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
   }
 
   Future<void> _onSignUp(AuthSignUpRequested e, Emitter<AuthBlocState> emit) async {
-    emit(state.copyWith(status: AuthStatus.submitting));
+    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null));
     try {
       await _repo.signUp(email: e.email, password: e.password);
       emit(state.copyWith(

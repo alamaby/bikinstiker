@@ -1,0 +1,2 @@
+include: ["app_en.arb", "app_id.arb"]
+arb-dir: lib/l10n

@@ -10,7 +10,7 @@ import '../../../data/repositories/sticker_repository.dart';
 import '../../blocs/history/history_bloc.dart';
 import '../../widgets/status_indicator.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
   @override

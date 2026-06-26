@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -28,30 +29,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onGenerate() {
     final input = _promptCtrl.text.trim();
+    final validPresetIds = kStickerPresets.map((p) => p.id).toSet();
     if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Type a short prompt first')),
       );
       return;
     }
-    context
-        .read<StickerGenBloc>()
-        .add(StickerGenSubmitted(presetId: _presetId, prompt: input));
+    if (input.length > kMaxPromptChars) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Prompt must be $kMaxPromptChars characters or less'),
+        ),
+      );
+      return;
+    }
+    if (!validPresetIds.contains(_presetId)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Choose a valid style')));
+      return;
+    }
+    context.read<StickerGenBloc>().add(
+      StickerGenSubmitted(presetId: _presetId, prompt: input),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BikinStiker',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'BikinStiker',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         actions: [
           IconButton(
             tooltip: 'History',
             icon: const Icon(Icons.history),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const HistoryScreen()),
-            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const HistoryScreen())),
           ),
           IconButton(
             tooltip: 'Sign out',
@@ -69,16 +87,20 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _CreditsCard(),
               const SizedBox(height: 16),
-              const Text('Choose a style',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const Text(
+                'Choose a style',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
               const SizedBox(height: 8),
               _PresetGrid(
                 selectedId: _presetId,
                 onSelected: (id) => setState(() => _presetId = id),
               ),
               const SizedBox(height: 16),
-              const Text('Describe your sticker',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const Text(
+                'Describe your sticker',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _promptCtrl,
@@ -106,23 +128,32 @@ class _CreditsCard extends StatelessWidget {
     return BlocBuilder<WalletBloc, WalletBlocState>(
       builder: (context, state) {
         final balance = state.balance;
-        final low = balance < kStickerCost;
+        final low = !state.loading && balance < kStickerCost;
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.bolt, color: low ? AppColors.error : AppColors.secondary, size: 32),
+                Icon(
+                  Icons.bolt,
+                  color: low ? AppColors.error : AppColors.secondary,
+                  size: 32,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Credits',
-                          style: TextStyle(color: Colors.black54, fontSize: 12)),
+                      const Text(
+                        'Credits',
+                        style: TextStyle(color: Colors.black54, fontSize: 12),
+                      ),
                       Text(
                         state.loading ? '…' : '$balance',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
@@ -130,11 +161,19 @@ class _CreditsCard extends StatelessWidget {
                 if (low)
                   const Tooltip(
                     message: 'Low balance',
-                    child: Row(children: [
-                      Icon(Icons.warning_amber, color: AppColors.error),
-                      SizedBox(width: 4),
-                      Text('Low', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
-                    ]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber, color: AppColors.error),
+                        SizedBox(width: 4),
+                        Text(
+                          'Low',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
               ],
             ),
@@ -167,7 +206,9 @@ class _PresetGrid extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: selected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.surface,
+              color: selected
+                  ? AppColors.primary.withValues(alpha: 0.08)
+                  : AppColors.surface,
               border: Border.all(
                 color: selected ? AppColors.primary : AppColors.outline,
                 width: selected ? 2 : 1,
@@ -176,21 +217,36 @@ class _PresetGrid extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(p.icon, color: selected ? AppColors.primary : Colors.black54),
+                Icon(
+                  p.icon,
+                  color: selected ? AppColors.primary : Colors.black54,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(p.label,
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                      Text(p.description,
-                          style: const TextStyle(fontSize: 11, color: Colors.black54)),
+                      Text(
+                        p.label,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        p.description,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black54,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                if (selected) const Icon(Icons.check_circle, color: AppColors.primary, size: 18),
+                if (selected)
+                  const Icon(
+                    Icons.check_circle,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
               ],
             ),
           ),
@@ -252,11 +308,13 @@ class _ResultPanel extends StatelessWidget {
             return const Card(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Column(children: [
-                  Icon(Icons.hourglass_top, color: AppColors.primary),
-                  SizedBox(height: 8),
-                  Text('Conjuring your sticker…'),
-                ]),
+                child: Column(
+                  children: [
+                    Icon(Icons.hourglass_top, color: AppColors.primary),
+                    SizedBox(height: 8),
+                    Text('Conjuring your sticker…'),
+                  ],
+                ),
               ),
             );
           case StickerGenStatus.success:
@@ -266,18 +324,37 @@ class _ResultPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: const [
-                      Icon(Icons.check_circle, color: AppColors.success),
-                      SizedBox(width: 6),
-                      Text('Done',
-                          style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700)),
-                    ]),
+                    Row(
+                      children: const [
+                        Icon(Icons.check_circle, color: AppColors.success),
+                        SizedBox(width: 6),
+                        Text(
+                          'Done',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     AspectRatio(
                       aspectRatio: 1,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(state.signedUrl!, fit: BoxFit.contain),
+                        child: CachedNetworkImage(
+                          imageUrl: state.signedUrl!,
+                          fit: BoxFit.contain,
+                          placeholder: (_, __) => const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          errorWidget: (_, __, ___) => const Center(
+                            child: Icon(
+                              Icons.broken_image_outlined,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -291,13 +368,18 @@ class _ResultPanel extends StatelessWidget {
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(children: [
-                  const Icon(Icons.error_outline, color: AppColors.error),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(msg, style: const TextStyle(color: AppColors.error)),
-                  ),
-                ]),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: AppColors.error),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        msg,
+                        style: const TextStyle(color: AppColors.error),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
         }

@@ -49,14 +49,19 @@ class _HistoryView extends StatelessWidget {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.error_outline, color: AppColors.error),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(state.errorMessage ?? 'Failed to load',
-                        style: const TextStyle(color: AppColors.error)),
-                  ),
-                ]),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, color: AppColors.error),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        state.errorMessage ?? 'Failed to load',
+                        style: const TextStyle(color: AppColors.error),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -69,7 +74,8 @@ class _HistoryView extends StatelessWidget {
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => context.read<HistoryBloc>().add(const HistoryRefreshed()),
+            onRefresh: () async =>
+                context.read<HistoryBloc>().add(const HistoryRefreshed()),
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: state.items.length,
@@ -89,10 +95,14 @@ class _HistoryTile extends StatelessWidget {
 
   Widget _statusFor() {
     switch (item.status) {
-      case StickerStatus.success: return StatusIndicator.success('Success');
-      case StickerStatus.pending: return StatusIndicator.pending('Pending');
-      case StickerStatus.failed:  return StatusIndicator.error('Failed');
-      case StickerStatus.unknown: return StatusIndicator.pending('Unknown');
+      case StickerStatus.success:
+        return StatusIndicator.success('Success');
+      case StickerStatus.pending:
+        return StatusIndicator.pending('Pending');
+      case StickerStatus.failed:
+        return StatusIndicator.error('Failed');
+      case StickerStatus.unknown:
+        return StatusIndicator.pending('Unknown');
     }
   }
 
@@ -118,13 +128,17 @@ class _HistoryTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.userPrompt,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(
+                    item.userPrompt,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 4),
-                  Text('${item.presetName} • ${df.format(item.createdAt.toLocal())}',
-                      style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                  Text(
+                    '${item.presetName} • ${df.format(item.createdAt.toLocal())}',
+                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                  ),
                   const SizedBox(height: 8),
                   _statusFor(),
                 ],
@@ -146,17 +160,33 @@ class _Thumb extends StatelessWidget {
     if (path == null || path!.isEmpty) {
       return Container(
         color: AppColors.surface,
-        child: const Icon(Icons.image_not_supported_outlined, color: Colors.black38),
+        child: const Icon(
+          Icons.image_not_supported_outlined,
+          color: Colors.black38,
+        ),
       );
     }
     return FutureBuilder<String?>(
       future: getIt<StickerRepository>().signedUrlForPath(path!),
       builder: (context, snap) {
+        if (snap.hasError) {
+          return Container(
+            color: AppColors.surface,
+            child: const Icon(
+              Icons.broken_image_outlined,
+              color: AppColors.error,
+            ),
+          );
+        }
         if (!snap.hasData || snap.data == null) {
           return Container(
             color: AppColors.surface,
             child: const Center(
-              child: SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+              child: SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
           );
         }

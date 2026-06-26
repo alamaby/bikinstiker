@@ -20,9 +20,15 @@ class BikinStikerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<AuthRepository>.value(value: getIt<AuthRepository>()),
-        RepositoryProvider<WalletRepository>.value(value: getIt<WalletRepository>()),
-        RepositoryProvider<StickerRepository>.value(value: getIt<StickerRepository>()),
+        RepositoryProvider<AuthRepository>.value(
+          value: getIt<AuthRepository>(),
+        ),
+        RepositoryProvider<WalletRepository>.value(
+          value: getIt<WalletRepository>(),
+        ),
+        RepositoryProvider<StickerRepository>.value(
+          value: getIt<StickerRepository>(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -30,9 +36,15 @@ class BikinStikerApp extends StatelessWidget {
             create: (ctx) =>
                 AuthBloc(ctx.read<AuthRepository>())..add(const AuthStarted()),
           ),
-          BlocProvider(create: (ctx) => WalletBloc(ctx.read<WalletRepository>())),
-          BlocProvider(create: (ctx) => StickerGenBloc(ctx.read<StickerRepository>())),
-          BlocProvider(create: (ctx) => HistoryBloc(ctx.read<StickerRepository>())),
+          BlocProvider(
+            create: (ctx) => WalletBloc(ctx.read<WalletRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => StickerGenBloc(ctx.read<StickerRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => HistoryBloc(ctx.read<StickerRepository>()),
+          ),
         ],
         child: MaterialApp(
           title: 'BikinStiker',
@@ -66,12 +78,25 @@ class _AuthGate extends StatelessWidget {
         builder: (context, state) {
           switch (state.status) {
             case AuthStatus.unknown:
-              return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
             case AuthStatus.authenticated:
               return const HomeScreen();
             case AuthStatus.unauthenticated:
-            case AuthStatus.submitting:
               return const AuthScreen();
+            case AuthStatus.submitting:
+              return const Stack(
+                children: [
+                  AuthScreen(),
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: Color(0x66000000),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+                ],
+              );
           }
         },
       ),

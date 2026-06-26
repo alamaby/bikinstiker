@@ -101,8 +101,8 @@ class SupabaseStickerRepository implements StickerRepository {
   Future<String?> _fetchSignedUrl(String path, int ttlSeconds) async {
     try {
       return await _client.storage.from(_bucket).createSignedUrl(path, ttlSeconds);
-    } catch (_) {
-      return null;
+    } catch (e) {
+      throw GenerationFailure('Failed to create signed URL: $e');
     }
   }
 }

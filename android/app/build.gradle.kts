@@ -43,31 +43,49 @@ flutter {
     source = "../.."
 }
 
-// Post-build hook: rename generated APKs in build/app/outputs/flutter-apk/
-// to {applicationId}-{versionName}-{descriptor}.apk so the output filename
-// encodes the package name and the current semver build.
-//   - applicationId/versionName are auto-populated by the Flutter Gradle
-//     plugin from pubspec.yaml (no manual sync needed).
+// Post-build hook: copy generated APKs in build/app/outputs/flutter-apk/
+// and create a renamed copy named {name}-{version}-{descriptor}.apk.
+// Both the original and renamed copy are kept.
+//   - name/version are read from pubspec.yaml at the project root.
 //   - descriptor preserves the build type (release/debug/profile) and, when
 //     `flutter build apk --split-per-abi` is used, the target ABI
 //     (e.g. arm64-v8a-release).
 //   - The hook is idempotent: already-renamed outputs (matching the
-//     applicationId prefix) are skipped on repeated builds.
+//     pubspec name prefix) are skipped on repeated builds.
 gradle.projectsEvaluated {
     listOf("assembleRelease", "assembleDebug", "assembleProfile").forEach { taskName ->
         tasks.findByName(taskName)?.doLast {
-            val buildType = taskName.removePrefix("assemble").replaceFirstChar { it.lowercase() }
             val apkDir = file("${layout.buildDirectory.get().asFile}/outputs/flutter-apk")
             if (!apkDir.exists()) return@doLast
+
+            // Read name and version from pubspec.yaml
+            val pubspecFile = file("../../pubspec.yaml")
+            if (!pubspecFile.exists()) {
+                logger.warn("pubspec.yaml not found at ${pubspecFile.absolutePath}, skipping APK rename")
+                return@doLast
+            }
+            val pubspecLines = pubspecFile.readLines()
+            val pubspecName = pubspecLines
+                .firstOrNull { it.trimStart().startsWith("name:") }
+                ?.substringAfter("name:")?.trim() ?: ""
+            val pubspecVersion = pubspecLines
+                .firstOrNull { it.trimStart().startsWith("version:") }
+                ?.substringAfter("version:")?.trim() ?: ""
+
+            if (pubspecName.isEmpty() || pubspecVersion.isEmpty()) {
+                logger.warn("Could not parse name/version from pubspec.yaml, skipping APK rename")
+                return@doLast
+            }
+
             apkDir.listFiles { f -> f.extension == "apk" }?.forEach { apk ->
-                if (apk.name.startsWith("${defaultConfig.applicationId}-")) return@forEach
+                // Skip files that are already renamed (start with pubspec name)
+                if (apk.name.startsWith("$pubspecName-")) return@forEach
                 val descriptor = apk.nameWithoutExtension.removePrefix("app-")
-                val newName = "${defaultConfig.applicationId}-${defaultConfig.versionName}-${descriptor}.apk"
+                val newName = "$pubspecName-$pubspecVersion-$descriptor.apk"
                 val target = file("${apkDir}/$newName")
                 if (target.exists()) target.delete()
                 apk.copyTo(target, overwrite = true)
-                apk.delete()
-                logger.lifecycle("Renamed APK: ${apk.name} -> $newName")
+                logger.lifecycle("Copied APK: ${apk.name} -> $newName")
             }
         }
     }

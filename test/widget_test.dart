@@ -37,6 +37,6 @@ void main() {
     final serverIds = Set<String>.from(matches.map((m) => m.group(1)));
 
     final clientIds = kStickerPresets.map((p) => p.id).toSet();
-    expect(clientIds, unorderedElementsEqualTo(serverIds));
+    expect(clientIds, equals(serverIds));
   });
 }

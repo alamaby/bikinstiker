@@ -168,8 +168,8 @@ Deno.serve(async (req) => {
   const finalPrompt = buildFinalPrompt(styleDescriptor, userInput);
 
   // ------------------- deduct credits (atomic) -------------------
+  // The RPC derives the target user from auth.uid() — do not pass p_user_id.
   const { data: stickerId, error: rpcErr } = await userClient.rpc("deduct_credit_for_sticker", {
-    p_user_id: userId,
     p_cost:    STICKER_COST,
     p_preset:  presetId,
     p_prompt:  userInput,

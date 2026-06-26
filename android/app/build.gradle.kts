@@ -42,3 +42,33 @@ android {
 flutter {
     source = "../.."
 }
+
+// Post-build hook: rename generated APKs in build/app/outputs/flutter-apk/
+// to {applicationId}-{versionName}-{descriptor}.apk so the output filename
+// encodes the package name and the current semver build.
+//   - applicationId/versionName are auto-populated by the Flutter Gradle
+//     plugin from pubspec.yaml (no manual sync needed).
+//   - descriptor preserves the build type (release/debug/profile) and, when
+//     `flutter build apk --split-per-abi` is used, the target ABI
+//     (e.g. arm64-v8a-release).
+//   - The hook is idempotent: already-renamed outputs (matching the
+//     applicationId prefix) are skipped on repeated builds.
+gradle.projectsEvaluated {
+    listOf("assembleRelease", "assembleDebug", "assembleProfile").forEach { taskName ->
+        tasks.findByName(taskName)?.doLast {
+            val buildType = taskName.removePrefix("assemble").replaceFirstChar { it.lowercase() }
+            val apkDir = file("${layout.buildDirectory.get().asFile}/outputs/flutter-apk")
+            if (!apkDir.exists()) return@doLast
+            apkDir.listFiles { f -> f.extension == "apk" }?.forEach { apk ->
+                if (apk.name.startsWith("${defaultConfig.applicationId}-")) return@forEach
+                val descriptor = apk.nameWithoutExtension.removePrefix("app-")
+                val newName = "${defaultConfig.applicationId}-${defaultConfig.versionName}-${descriptor}.apk"
+                val target = file("${apkDir}/$newName")
+                if (target.exists()) target.delete()
+                apk.copyTo(target, overwrite = true)
+                apk.delete()
+                logger.lifecycle("Renamed APK: ${apk.name} -> $newName")
+            }
+        }
+    }
+}

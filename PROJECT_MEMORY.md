@@ -12,7 +12,8 @@ technical decisions, verification commands, and proposed commit messages.
 - **AI provider**: OpenRouter `sourceful/riverflow-v2-fast` (modalities: ["image"])
 - **Domain**: WhatsApp sticker generator. User picks preset + short prompt -> atomic
   credit deduction -> OpenRouter -> upload PNG to private bucket -> return signed URL.
-- **Branch state**: `main`, 1 commit ahead of `origin/main` (init-session work uncommitted).
+- **Branch state**: `main`, 4 commits ahead of `origin/main`.
+- **Backend repo**: `supabase/` is a git submodule pointing to private repo `bikinstiker-supabase`.
 
 ---
 
@@ -52,6 +53,7 @@ UI never imports `supabase_flutter` directly.
 | 9 | `AuthBlocState.copyWith` uses `Object()` sentinel (post-init) | Omitted param keeps current value; explicit `null` overwrites. Fixes stale-snackbar bug. |
 | 10 | `HistoryCleared` event dispatched on signout | Prevents cross-user data leak via retained bloc state |
 | 11 | APK output auto-renamed to `{applicationId}-{versionName}-{descriptor}.apk` (B1) | `android/app/build.gradle.kts` registers a `doLast` hook on `assemble{Release,Debug,Profile}` that moves the generated APK(s) in `build/app/outputs/flutter-apk/` to a descriptive filename. Pubspec stays single source of truth (Flutter Gradle plugin already maps `version: X.Y.Z+N` -> `versionName/versionCode`); the hook only encodes that into the artifact name. |
+| 12 | supabase/ as git submodule (private repo) | Sensitive backend code (migrations, edge functions, config) lives in separate private repo `bikinstiker-supabase`. Prevents leaking API keys, RLS policies, and business logic in public repo. |
 
 ---
 
@@ -108,6 +110,14 @@ UI never imports `supabase_flutter` directly.
 ### H4 - README paths
 - **Modified**: `README.md` - layout section rewritten for root-based structure; `cd bikin_stiker`/`cd ..` removed from setup; migrations table extended with `20260505000004_*` row; running section simplified.
 
+### C3 - Submodule migration (2026-06-26)
+- **Migrated**: `supabase/` folder to git submodule pointing to private repo `bikinstiker-supabase`
+- **Modified**: `.gitmodules` (new), `README.md` (clone with `--recurse-submodules`), `PROJECT_MEMORY.md`
+- **Commits**: 
+  - `chore: remove supabase/ from tracking (migrating to submodule)`
+  - `chore: add supabase as git submodule from bikinstiker-supabase`
+- **Rationale**: Sensitive backend code (migrations, RLS policies, edge functions with API keys) now lives in a separate private repo. Public repo only contains Flutter app code.
+
 ### B1 - APK rename on build
 - **Modified**: `android/app/build.gradle.kts` - added a `gradle.projectsEvaluated` block hooking `assembleRelease/assembleDebug/assembleProfile` to rename generated APK(s) in `build/app/outputs/flutter-apk/` to `{applicationId}-{versionName}-{descriptor}.apk` (e.g. `com.bikinstiker.bikin_stiker-1.0.0-release.apk`, `com.bikinstiker.bikin_stiker-1.0.0-arm64-v8a-release.apk`).
 - **Semver handling**: No pubspec changes needed; bumping `version:` in `pubspec.yaml` propagates through `flutter.versionName`/`flutter.versionCode` and is picked up by the rename hook automatically.
@@ -126,6 +136,12 @@ UI never imports `supabase_flutter` directly.
 | M6 | Improve `_AuthGate` for `AuthStatus.submitting` (loading overlay vs full `AuthScreen`) | `lib/app.dart` |
 | M7 | Strengthen preset contract test (parse from `index.ts` or shared fixture) | `test/widget_test.dart` |
 
+## Completed
+
+| ID | Item | Date |
+|---|---|---|
+| C3 | Migrate supabase/ to git submodule (private repo: bikinstiker-supabase) | 2026-06-26 |
+
 ---
 
 ## Verification (run manually)
@@ -135,16 +151,24 @@ UI never imports `supabase_flutter` directly.
 flutter analyze
 flutter test
 
-# 2. Migrations from clean state
+# 2. Clone with submodules (fresh setup)
+git clone --recurse-submodules https://github.com/alamaby/bikinstiker.git
+cd bikinstiker
+
+# 3. Migrations from clean state
 supabase db reset
 
-# 3. Edge function (local)
+# 4. Edge function (local)
 supabase functions serve generate-sticker --env-file .env.local
 # smoke: POST with valid JWT + {presetId, userInput} -> 200 + signedUrl
 # failure: set OPENROUTER_API_KEY=invalid, generate -> 500, status='failed',
 #          balance restored, 'refund' row in credit_transactions
 
-# 4. CRITICAL C1 regression check
+# 5. Update submodule
+cd supabase && git pull origin main && cd ..
+git add supabase && git commit -m "chore: update supabase submodule"
+
+# 6. CRITICAL C1 regression check
 # After db reset, sign in as user A, then in psql run:
 #   SELECT deduct_credit_for_sticker(1, 'kawaii', 'pwn');
 # EXPECTED: ERROR: Not authenticated  (auth.uid() is A; no p_user_id to override)
@@ -163,6 +187,8 @@ chore(git): ignore .env, IDE, and generated Flutter artifacts
 refactor(app): hoist HistoryBloc to app.dart; cache signed URLs; fix AuthBlocState.copyWith
 docs: update README layout/paths after root-relative move
 build(android): rename built APKs to {applicationId}-{versionName}-{descriptor}.apk
+chore: remove supabase/ from tracking (migrating to submodule)
+chore: add supabase as git submodule from bikinstiker-supabase
 ```
 
 Or a single combined commit:

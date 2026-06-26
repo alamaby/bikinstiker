@@ -89,8 +89,8 @@ Dependencies always point downward; UI never imports `supabase_flutter` directly
 ├── pubspec.yaml
 ├── analysis_options.yaml
 ├── .env.example
-├── supabase/
-│   ├── config.toml
+├── supabase/                         # ← Git submodule (private repo: bikinstiker-supabase)
+│   ├── config.toml                   #    Contains: config, migrations, edge functions
 │   ├── migrations/
 │   │   ├── 20260505000001_init_schema.sql
 │   │   ├── 20260505000002_wallet_trigger.sql
@@ -100,9 +100,12 @@ Dependencies always point downward; UI never imports `supabase_flutter` directly
 │       └── generate-sticker/
 │           ├── index.ts
 │           └── deno.json
+├── .gitmodules                       # Submodule configuration
 ├── README.md
 └── LICENSE
 ```
+
+> **Note**: The `supabase/` directory is a git submodule pointing to the private repo [bikinstiker-supabase](https://github.com/alamaby/bikinstiker-supabase). Backend code (migrations, edge functions) lives there separately.
 
 ---
 
@@ -119,15 +122,36 @@ Dependencies always point downward; UI never imports `supabase_flutter` directly
 ## Local setup
 
 ```bash
-# 1. Clone & install Flutter deps
+# 1. Clone with submodules (includes private supabase repo)
+git clone --recurse-submodules https://github.com/alamaby/bikinstiker.git
+cd bikinstiker
+
+# Or if already cloned without --recurse-submodules:
+git submodule update --init --recursive
+
+# 2. Install Flutter deps
 cp .env.example .env       # fill in SUPABASE_URL + SUPABASE_ANON_KEY
 flutter pub get
 
-# 2. Start Supabase locally (from repo root)
+# 3. Start Supabase locally (from repo root)
 supabase start             # spins up Postgres, Auth, Storage, Studio
 ```
 
 After `supabase start` completes, copy the printed `API URL` and `anon key` into `.env`.
+
+### Working with the submodule
+
+```bash
+# Update submodule to latest
+cd supabase
+git pull origin main
+cd ..
+git add supabase
+git commit -m "chore: update supabase submodule"
+
+# Or using submodule update:
+git submodule update --remote supabase
+```
 
 ---
 

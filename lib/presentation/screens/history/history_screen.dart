@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/di.dart';
+import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
 import '../../../data/repositories/sticker_repository.dart';
@@ -106,10 +107,26 @@ class _HistoryTile extends StatelessWidget {
     }
   }
 
+  bool get _canOpen =>
+      item.status == StickerStatus.success &&
+      item.imageUrl != null &&
+      item.imageUrl!.isNotEmpty;
+
+  void _openPreview(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _StickerPreviewSheet(item: item),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final df = DateFormat.yMMMd().add_jm();
-    return Card(
+    final tile = Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -148,6 +165,9 @@ class _HistoryTile extends StatelessWidget {
         ),
       ),
     );
+
+    if (!_canOpen) return tile;
+    return GestureDetector(onTap: () => _openPreview(context), child: tile);
   }
 }
 
@@ -191,6 +211,93 @@ class _Thumb extends StatelessWidget {
           );
         }
         return CachedNetworkImage(imageUrl: snap.data!, fit: BoxFit.cover);
+      },
+    );
+  }
+}
+
+class _StickerPreviewSheet extends StatelessWidget {
+  final StickerGeneration item;
+  const _StickerPreviewSheet({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final df = DateFormat.yMMMd().add_jm();
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(16),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              AspectRatio(
+                aspectRatio: 1,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _Thumb(path: item.imageUrl),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                item.userPrompt,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${item.presetName} • ${df.format(item.createdAt.toLocal())}',
+                style: const TextStyle(color: Colors.black54, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () async {
+                  try {
+                    final repo = getIt<StickerRepository>();
+                    final signedUrl = await repo.signedUrlForPath(
+                      item.imageUrl!,
+                    );
+                    if (signedUrl == null || !context.mounted) return;
+                    await shareStickerImage(signedUrl);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppColors.error,
+                        content: Text(
+                          'Failed to share sticker: $e',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.share),
+                label: const Text('Share'),
+              ),
+            ],
+          ),
+        );
       },
     );
   }

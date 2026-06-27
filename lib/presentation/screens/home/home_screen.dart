@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/presets.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
@@ -386,6 +387,23 @@ class _GenerateButton extends StatelessWidget {
   }
 }
 
+Future<void> _shareSticker(BuildContext context, String signedUrl) async {
+  try {
+    await shareStickerImage(signedUrl);
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.error,
+        content: Text(
+          'Failed to share sticker: $e',
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
 class _ResultPanel extends StatelessWidget {
   const _ResultPanel();
 
@@ -453,6 +471,19 @@ class _ResultPanel extends StatelessWidget {
                               ),
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () =>
+                                    _shareSticker(context, genState.signedUrl!),
+                                icon: const Icon(Icons.share, size: 18),
+                                label: const Text('Share'),
+                              ),
+                            ),
+                          ],
                         ),
                         if (isGuest) ...[
                           const SizedBox(height: 16),

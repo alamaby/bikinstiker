@@ -56,7 +56,9 @@ class SupabaseStickerRepository implements StickerRepository {
         throw GenerationFailure(msg);
       }
 
-      if (data is! Map || data['stickerId'] == null || data['signedUrl'] == null) {
+      if (data is! Map ||
+          data['stickerId'] == null ||
+          data['signedUrl'] == null) {
         throw const GenerationFailure('Malformed response from server');
       }
 
@@ -67,14 +69,31 @@ class SupabaseStickerRepository implements StickerRepository {
       );
     } on FunctionException catch (e) {
       final detail = e.details;
-      if (detail is Map && detail['error'] is String) {
-        final msg = detail['error'] as String;
-        if (msg.toLowerCase().contains('insufficient')) {
-          throw const InsufficientCreditsFailure();
-        }
-        throw GenerationFailure(msg);
+      final statusCode = e.statusCode;
+      final detailMsg = detail is Map && detail['error'] is String
+          ? (detail['error'] as String)
+          : e.message ?? '';
+
+      // 429 Too Many Requests
+      if (statusCode == 429) {
+        final retry = detail is Map && detail['retryAfterSeconds'] is int
+            ? detail['retryAfterSeconds'] as int
+            : 20;
+        throw RateLimitedFailure(retry);
       }
-      throw GenerationFailure(e.toString());
+
+      // 409 Conflict (parallel generation in progress)
+      if (statusCode == 409) {
+        final retry = detail is Map && detail['retryAfterSeconds'] is int
+            ? detail['retryAfterSeconds'] as int
+            : null;
+        throw GenerationInProgressFailure(retryAfterSeconds: retry);
+      }
+
+      if (detailMsg.toLowerCase().contains('insufficient')) {
+        throw const InsufficientCreditsFailure();
+      }
+      throw GenerationFailure(detailMsg.isNotEmpty ? detailMsg : e.toString());
     } on Failure {
       rethrow;
     } catch (e) {
@@ -89,18 +108,25 @@ class SupabaseStickerRepository implements StickerRepository {
         .select()
         .order('created_at', ascending: false)
         .limit(limit);
-    return rows.map<StickerGeneration>((r) => StickerGeneration.fromJson(r)).toList();
+    return rows
+        .map<StickerGeneration>((r) => StickerGeneration.fromJson(r))
+        .toList();
   }
 
   @override
   Future<String?> signedUrlForPath(String path, {int ttlSeconds = 3600}) async {
     if (path.isEmpty) return null;
-    return _signedUrlCache.putIfAbsent(path, () => _fetchSignedUrl(path, ttlSeconds));
+    return _signedUrlCache.putIfAbsent(
+      path,
+      () => _fetchSignedUrl(path, ttlSeconds),
+    );
   }
 
   Future<String?> _fetchSignedUrl(String path, int ttlSeconds) async {
     try {
-      return await _client.storage.from(_bucket).createSignedUrl(path, ttlSeconds);
+      return await _client.storage
+          .from(_bucket)
+          .createSignedUrl(path, ttlSeconds);
     } catch (e) {
       throw GenerationFailure('Failed to create signed URL: $e');
     }

@@ -362,15 +362,34 @@ class _ResultPanel extends StatelessWidget {
               ),
             );
           case StickerGenStatus.failure:
-            final msg = state.failure is InsufficientCreditsFailure
-                ? 'Not enough credits to generate.'
-                : (state.failure?.message ?? 'Generation failed');
+            final failure = state.failure;
+            String msg;
+            IconData icon;
+
+            if (failure is InsufficientCreditsFailure) {
+              msg = 'Not enough credits to generate.';
+              icon = Icons.error_outline;
+            } else if (failure is RateLimitedFailure) {
+              msg = failure.retryAfterSeconds > 60
+                  ? 'Too many requests. Please try again in a few minutes.'
+                  : 'Too many requests. Please wait ${failure.retryAfterSeconds}s.';
+              icon = Icons.timer_off_outlined;
+            } else if (failure is GenerationInProgressFailure) {
+              msg = failure.retryAfterSeconds != null
+                  ? 'A generation is already running. Please wait ${failure.retryAfterSeconds}s.'
+                  : 'A sticker generation is already in progress.';
+              icon = Icons.hourglass_top;
+            } else {
+              msg = failure?.message ?? 'Generation failed';
+              icon = Icons.error_outline;
+            }
+
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: AppColors.error),
+                    Icon(icon, color: AppColors.error),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

@@ -24,6 +24,13 @@ class _AuthScreenState extends State<AuthScreen>
   final _formKey = GlobalKey<FormState>();
 
   bool get _isGuestWall => widget.mode == AuthScreenMode.guestAuthWall;
+  bool get _isSignUp => _isGuestWall ? _tab.index == 0 : _tab.index == 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _tab.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -145,7 +152,10 @@ class _AuthScreenState extends State<AuthScreen>
                   ),
                   const SizedBox(height: 32),
                   if (_isGuestWall) ...[
-                    _GuestAuthWallHeader(hasGuestResult: hasGuestResult),
+                    _GuestAuthWallHeader(
+                      hasGuestResult: hasGuestResult,
+                      isSignUp: _isSignUp,
+                    ),
                     const SizedBox(height: 24),
                   ] else ...[
                     TabBar(
@@ -207,6 +217,18 @@ class _AuthScreenState extends State<AuthScreen>
                   if (_isGuestWall && !submitting) ...[
                     const SizedBox(height: 16),
                     _GuestWallWarning(),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => _tab.index = _isSignUp ? 1 : 0,
+                        child: Text(
+                          _isSignUp
+                              ? 'Already have an account? Sign in'
+                              : 'New here? Create account',
+                          style: const TextStyle(color: AppColors.primary),
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -229,8 +251,12 @@ class _AuthScreenState extends State<AuthScreen>
 
 class _GuestAuthWallHeader extends StatelessWidget {
   final bool hasGuestResult;
+  final bool isSignUp;
 
-  const _GuestAuthWallHeader({required this.hasGuestResult});
+  const _GuestAuthWallHeader({
+    required this.hasGuestResult,
+    required this.isSignUp,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -238,14 +264,18 @@ class _GuestAuthWallHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          hasGuestResult ? 'Save your sticker' : 'Create an account',
+          isSignUp
+              ? (hasGuestResult ? 'Save your sticker' : 'Create an account')
+              : 'Sign in to existing account',
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
-          hasGuestResult
-              ? 'You\'ve generated a sticker as a guest. Create an account to save and share it.'
-              : 'Create an account to save and share your stickers.',
+          isSignUp
+              ? (hasGuestResult
+                    ? 'You\'ve generated a sticker as a guest. Create an account to save and share it.'
+                    : 'Create an account to save and share your stickers.')
+              : 'Sign in to your existing account to access your stickers.',
           style: const TextStyle(color: Colors.black54),
         ),
       ],

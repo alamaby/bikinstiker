@@ -125,6 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
         listener: (context, state) {
           if (state.status == StickerGenStatus.success ||
               state.status == StickerGenStatus.failure) {
+            final userId = context.read<AuthBloc>().state.user?.id;
+            if (userId != null) {
+              context.read<WalletBloc>().add(WalletRefreshRequested(userId));
+            }
             _scrollToResult();
           }
         },

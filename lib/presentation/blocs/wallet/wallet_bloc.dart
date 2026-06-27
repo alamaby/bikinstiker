@@ -23,6 +23,13 @@ class WalletWatchStopped extends WalletEvent {
   const WalletWatchStopped();
 }
 
+class WalletRefreshRequested extends WalletEvent {
+  final String userId;
+  const WalletRefreshRequested(this.userId);
+  @override
+  List<Object?> get props => [userId];
+}
+
 class _WalletUpdated extends WalletEvent {
   final Wallet wallet;
   const _WalletUpdated(this.wallet);
@@ -53,6 +60,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletBlocState> {
   WalletBloc(this._repo) : super(const WalletBlocState()) {
     on<WalletWatchStarted>(_onStart);
     on<WalletWatchStopped>(_onStop);
+    on<WalletRefreshRequested>(_onRefresh);
     on<_WalletUpdated>(
       (e, emit) => emit(state.copyWith(wallet: e.wallet, loading: false)),
     );
@@ -74,6 +82,16 @@ class WalletBloc extends Bloc<WalletEvent, WalletBlocState> {
     await _sub?.cancel();
     _sub = null;
     emit(const WalletBlocState(loading: false));
+  }
+
+  Future<void> _onRefresh(
+    WalletRefreshRequested e,
+    Emitter<WalletBlocState> emit,
+  ) async {
+    final wallet = await _repo.fetchBalance(e.userId);
+    if (wallet != null) {
+      emit(state.copyWith(wallet: wallet, loading: false));
+    }
   }
 
   @override

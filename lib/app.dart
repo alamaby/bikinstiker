@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import 'core/di.dart';
 import 'core/theme/app_theme.dart';
@@ -72,21 +73,24 @@ class _AuthGate extends StatefulWidget {
 class _AuthGateState extends State<_AuthGate> {
   bool _anonymousRequested = false;
   bool _startingGuestSession = false;
+  User? _previousUser;
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
         BlocListener<AuthBloc, AuthBlocState>(
-          listenWhen: (p, n) => p.user?.id != n.user?.id,
+          listenWhen: (p, n) =>
+              p.user?.id != n.user?.id ||
+              p.user?.isAnonymous != n.user?.isAnonymous,
           listener: (context, state) {
             final wallet = context.read<WalletBloc>();
             final history = context.read<HistoryBloc>();
             final stickerGen = context.read<StickerGenBloc>();
-            final prevUser = context.read<AuthBloc>().state.user;
             if (state.user != null) {
               wallet.add(WalletWatchStarted(state.user!.id));
-              if (prevUser?.isAnonymous == true &&
+              wallet.add(WalletRefreshRequested(state.user!.id));
+              if (_previousUser?.isAnonymous == true &&
                   state.user?.isAnonymous != true) {
                 stickerGen.add(const StickerGenReset());
               }
@@ -94,6 +98,7 @@ class _AuthGateState extends State<_AuthGate> {
               wallet.add(const WalletWatchStopped());
               history.add(const HistoryCleared());
             }
+            _previousUser = state.user;
           },
         ),
         BlocListener<AuthBloc, AuthBlocState>(

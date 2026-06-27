@@ -71,12 +71,7 @@ class _AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<_AuthGate> {
   bool _anonymousRequested = false;
-
-  void _resetAnonymousFlag() {
-    if (_anonymousRequested) {
-      _anonymousRequested = false;
-    }
-  }
+  bool _startingGuestSession = false;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +101,8 @@ class _AuthGateState extends State<_AuthGate> {
           listener: (context, state) {
             if (state.status == AuthStatus.guest ||
                 state.status == AuthStatus.authenticated) {
-              _resetAnonymousFlag();
+              _anonymousRequested = false;
+              _startingGuestSession = false;
             }
           },
         ),
@@ -118,6 +114,7 @@ class _AuthGateState extends State<_AuthGate> {
               .hasAcceptedCurrent;
           if (!hasAccepted) {
             _anonymousRequested = false;
+            _startingGuestSession = false;
             return LegalConsentScreen(onAccepted: () => setState(() {}));
           }
           switch (state.status) {
@@ -130,6 +127,7 @@ class _AuthGateState extends State<_AuthGate> {
             case AuthStatus.unauthenticated:
               if (!_anonymousRequested) {
                 _anonymousRequested = true;
+                _startingGuestSession = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
                     context.read<AuthBloc>().add(
@@ -139,11 +137,34 @@ class _AuthGateState extends State<_AuthGate> {
                 });
               }
               return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
+                body: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 12),
+                      Text('Preparing your guest session...'),
+                    ],
+                  ),
+                ),
               );
             case AuthStatus.guest:
               return const HomeScreen();
             case AuthStatus.submitting:
+              if (_startingGuestSession) {
+                return const Scaffold(
+                  body: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 12),
+                        Text('Preparing your guest session...'),
+                      ],
+                    ),
+                  ),
+                );
+              }
               return const Stack(
                 children: [
                   AuthScreen(),

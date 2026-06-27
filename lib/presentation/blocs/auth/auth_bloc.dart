@@ -21,21 +21,43 @@ class AuthStarted extends AuthEvent {
 class AuthSignInRequested extends AuthEvent {
   final String email;
   final String password;
-  const AuthSignInRequested(this.email, this.password);
+  final bool isGuestAuthWall;
+  const AuthSignInRequested(
+    this.email,
+    this.password, {
+    this.isGuestAuthWall = false,
+  });
   @override
-  List<Object?> get props => [email, password];
+  List<Object?> get props => [email, password, isGuestAuthWall];
 }
 
 class AuthSignUpRequested extends AuthEvent {
   final String email;
   final String password;
-  const AuthSignUpRequested(this.email, this.password);
+  final bool upgradeGuest;
+  const AuthSignUpRequested(
+    this.email,
+    this.password, {
+    this.upgradeGuest = false,
+  });
   @override
-  List<Object?> get props => [email, password];
+  List<Object?> get props => [email, password, upgradeGuest];
 }
 
 class AuthSignOutRequested extends AuthEvent {
   const AuthSignOutRequested();
+}
+
+class AuthAnonymousRequested extends AuthEvent {
+  const AuthAnonymousRequested();
+}
+
+class AuthUpgradeAnonymousRequested extends AuthEvent {
+  final String email;
+  final String password;
+  const AuthUpgradeAnonymousRequested(this.email, this.password);
+  @override
+  List<Object?> get props => [email, password];
 }
 
 class _AuthUserChanged extends AuthEvent {
@@ -46,7 +68,7 @@ class _AuthUserChanged extends AuthEvent {
 }
 
 // ----------------- State -----------------
-enum AuthStatus { unknown, authenticated, unauthenticated, submitting }
+enum AuthStatus { unknown, guest, authenticated, unauthenticated, submitting }
 
 class AuthBlocState extends Equatable {
   final AuthStatus status;
@@ -61,6 +83,8 @@ class AuthBlocState extends Equatable {
     this.infoMessage,
   });
 
+  bool get isGuest => user?.isAnonymous == true;
+
   // Sentinel for copyWith: omit a parameter to keep the current value,
   // pass an explicit value (including null) to overwrite it.
   static const Object _undefined = Object();
@@ -70,17 +94,16 @@ class AuthBlocState extends Equatable {
     Object? user = _undefined,
     Object? errorMessage = _undefined,
     Object? infoMessage = _undefined,
-  }) =>
-      AuthBlocState(
-        status: status ?? this.status,
-        user: identical(user, _undefined) ? this.user : user as User?,
-        errorMessage: identical(errorMessage, _undefined)
-            ? this.errorMessage
-            : errorMessage as String?,
-        infoMessage: identical(infoMessage, _undefined)
-            ? this.infoMessage
-            : infoMessage as String?,
-      );
+  }) => AuthBlocState(
+    status: status ?? this.status,
+    user: identical(user, _undefined) ? this.user : user as User?,
+    errorMessage: identical(errorMessage, _undefined)
+        ? this.errorMessage
+        : errorMessage as String?,
+    infoMessage: identical(infoMessage, _undefined)
+        ? this.infoMessage
+        : infoMessage as String?,
+  );
 
   @override
   List<Object?> get props => [status, user?.id, errorMessage, infoMessage];
@@ -96,52 +119,149 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     on<AuthSignInRequested>(_onSignIn);
     on<AuthSignUpRequested>(_onSignUp);
     on<AuthSignOutRequested>(_onSignOut);
+    on<AuthAnonymousRequested>(_onAnonymous);
+    on<AuthUpgradeAnonymousRequested>(_onUpgradeAnonymous);
     on<_AuthUserChanged>(_onUserChanged);
   }
 
   Future<void> _onStarted(AuthStarted e, Emitter<AuthBlocState> emit) async {
     final user = _repo.currentUser;
-    emit(state.copyWith(
-      status: user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
-      user: user,
-    ));
-    _sub ??= _repo.authChanges.listen((s) => add(_AuthUserChanged(s.session?.user)));
+    final status = _resolveStatus(user);
+    emit(state.copyWith(status: status, user: user));
+    _sub ??= _repo.authChanges.listen(
+      (s) => add(_AuthUserChanged(s.session?.user)),
+    );
+  }
+
+  AuthStatus _resolveStatus(User? user) {
+    if (user == null) return AuthStatus.unauthenticated;
+    if (user.isAnonymous) return AuthStatus.guest;
+    return AuthStatus.authenticated;
   }
 
   void _onUserChanged(_AuthUserChanged e, Emitter<AuthBlocState> emit) {
-    emit(state.copyWith(
-      status: e.user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
-      user: e.user,
-      errorMessage: null,
-      infoMessage: null,
-    ));
+    final status = _resolveStatus(e.user);
+    emit(
+      state.copyWith(
+        status: status,
+        user: e.user,
+        errorMessage: null,
+        infoMessage: null,
+      ),
+    );
   }
 
-  Future<void> _onSignIn(AuthSignInRequested e, Emitter<AuthBlocState> emit) async {
-    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null));
+  Future<void> _onAnonymous(
+    AuthAnonymousRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+      ),
+    );
+    try {
+      await _repo.signInAnonymously();
+      // _AuthUserChanged will update state
+    } on Failure catch (f) {
+      emit(
+        state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: f.message,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onUpgradeAnonymous(
+    AuthUpgradeAnonymousRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+      ),
+    );
+    try {
+      await _repo.upgradeAnonymousAccount(email: e.email, password: e.password);
+      await _repo.grantRegisteredBonus();
+      // _AuthUserChanged will update status to authenticated
+    } on Failure catch (f) {
+      emit(state.copyWith(status: AuthStatus.guest, errorMessage: f.message));
+    }
+  }
+
+  Future<void> _onSignIn(
+    AuthSignInRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+      ),
+    );
     try {
       await _repo.signIn(email: e.email, password: e.password);
       // _AuthUserChanged will update state
     } on Failure catch (f) {
-      emit(state.copyWith(status: AuthStatus.unauthenticated, errorMessage: f.message));
+      emit(
+        state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: f.message,
+        ),
+      );
     }
   }
 
-  Future<void> _onSignUp(AuthSignUpRequested e, Emitter<AuthBlocState> emit) async {
-    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null));
+  Future<void> _onSignUp(
+    AuthSignUpRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+      ),
+    );
     try {
-      await _repo.signUp(email: e.email, password: e.password);
-      emit(state.copyWith(
-        status: _repo.currentUser != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
-        user: _repo.currentUser,
-        infoMessage: 'Account created. You can now sign in.',
-      ));
+      if (e.upgradeGuest) {
+        await _repo.upgradeAnonymousAccount(
+          email: e.email,
+          password: e.password,
+        );
+        await _repo.grantRegisteredBonus();
+        // _AuthUserChanged will update state
+      } else {
+        await _repo.signUp(email: e.email, password: e.password);
+        emit(
+          state.copyWith(
+            status: _resolveStatus(_repo.currentUser),
+            user: _repo.currentUser,
+            infoMessage: 'Account created. You can now sign in.',
+          ),
+        );
+      }
     } on Failure catch (f) {
-      emit(state.copyWith(status: AuthStatus.unauthenticated, errorMessage: f.message));
+      emit(
+        state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: f.message,
+        ),
+      );
     }
   }
 
-  Future<void> _onSignOut(AuthSignOutRequested e, Emitter<AuthBlocState> emit) async {
+  Future<void> _onSignOut(
+    AuthSignOutRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
     await _repo.signOut();
   }
 

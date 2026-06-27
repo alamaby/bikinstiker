@@ -17,22 +17,22 @@ class StatusIndicator extends StatelessWidget {
   });
 
   factory StatusIndicator.success(String label) => StatusIndicator(
-        icon: Icons.check_circle,
-        label: label,
-        color: AppColors.success,
-      );
+    icon: Icons.check_circle,
+    label: label,
+    color: AppColors.success,
+  );
 
   factory StatusIndicator.error(String label) => StatusIndicator(
-        icon: Icons.error_outline,
-        label: label,
-        color: AppColors.error,
-      );
+    icon: Icons.error_outline,
+    label: label,
+    color: AppColors.error,
+  );
 
   factory StatusIndicator.pending(String label) => StatusIndicator(
-        icon: Icons.hourglass_top,
-        label: label,
-        color: AppColors.primary,
-      );
+    icon: Icons.hourglass_top,
+    label: label,
+    color: AppColors.primary,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +48,10 @@ class StatusIndicator extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

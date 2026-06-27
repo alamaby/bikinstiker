@@ -49,22 +49,32 @@ class StickerGenBloc extends Bloc<StickerGenEvent, StickerGenBlocState> {
     on<StickerGenReset>((_, emit) => emit(const StickerGenBlocState()));
   }
 
-  Future<void> _onSubmit(StickerGenSubmitted e, Emitter<StickerGenBlocState> emit) async {
+  Future<void> _onSubmit(
+    StickerGenSubmitted e,
+    Emitter<StickerGenBlocState> emit,
+  ) async {
     emit(const StickerGenBlocState(status: StickerGenStatus.submitting));
     try {
-      final result = await _repo.generate(presetId: e.presetId, userInput: e.prompt);
-      emit(StickerGenBlocState(
-        status: StickerGenStatus.success,
-        signedUrl: result.signedUrl,
-        stickerId: result.stickerId,
-      ));
+      final result = await _repo.generate(
+        presetId: e.presetId,
+        userInput: e.prompt,
+      );
+      emit(
+        StickerGenBlocState(
+          status: StickerGenStatus.success,
+          signedUrl: result.signedUrl,
+          stickerId: result.stickerId,
+        ),
+      );
     } on Failure catch (f) {
       emit(StickerGenBlocState(status: StickerGenStatus.failure, failure: f));
     } catch (e) {
-      emit(StickerGenBlocState(
-        status: StickerGenStatus.failure,
-        failure: UnknownFailure(e.toString()),
-      ));
+      emit(
+        StickerGenBlocState(
+          status: StickerGenStatus.failure,
+          failure: UnknownFailure(e.toString()),
+        ),
+      );
     }
   }
 }

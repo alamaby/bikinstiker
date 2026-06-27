@@ -42,17 +42,22 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryBlocState> {
     on<HistoryCleared>((_, emit) => emit(const HistoryBlocState()));
   }
 
-  Future<void> _onRefresh(HistoryRefreshed e, Emitter<HistoryBlocState> emit) async {
+  Future<void> _onRefresh(
+    HistoryRefreshed e,
+    Emitter<HistoryBlocState> emit,
+  ) async {
     emit(HistoryBlocState(status: HistoryStatus.loading, items: state.items));
     try {
       final list = await _repo.fetchHistory();
       emit(HistoryBlocState(status: HistoryStatus.success, items: list));
     } catch (err) {
-      emit(HistoryBlocState(
-        status: HistoryStatus.failure,
-        items: state.items,
-        errorMessage: err.toString(),
-      ));
+      emit(
+        HistoryBlocState(
+          status: HistoryStatus.failure,
+          items: state.items,
+          errorMessage: err.toString(),
+        ),
+      );
     }
   }
 }

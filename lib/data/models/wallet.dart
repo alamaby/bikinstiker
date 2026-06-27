@@ -12,10 +12,10 @@ class Wallet extends Equatable {
   });
 
   factory Wallet.fromJson(Map<String, dynamic> json) => Wallet(
-        userId: json['user_id'] as String,
-        balance: json['balance'] as int,
-        updatedAt: DateTime.parse(json['updated_at'] as String),
-      );
+    userId: json['user_id'] as String,
+    balance: json['balance'] as int,
+    updatedAt: DateTime.parse(json['updated_at'] as String),
+  );
 
   @override
   List<Object?> get props => [userId, balance, updatedAt];

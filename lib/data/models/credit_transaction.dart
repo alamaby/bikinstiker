@@ -4,11 +4,16 @@ enum CreditTxType { topup, dailyReward, generateSticker, refund, unknown }
 
 CreditTxType _typeFrom(String raw) {
   switch (raw) {
-    case 'topup':            return CreditTxType.topup;
-    case 'daily_reward':     return CreditTxType.dailyReward;
-    case 'generate_sticker': return CreditTxType.generateSticker;
-    case 'refund':           return CreditTxType.refund;
-    default:                 return CreditTxType.unknown;
+    case 'topup':
+      return CreditTxType.topup;
+    case 'daily_reward':
+      return CreditTxType.dailyReward;
+    case 'generate_sticker':
+      return CreditTxType.generateSticker;
+    case 'refund':
+      return CreditTxType.refund;
+    default:
+      return CreditTxType.unknown;
   }
 }
 
@@ -29,7 +34,8 @@ class CreditTransaction extends Equatable {
     required this.createdAt,
   });
 
-  factory CreditTransaction.fromJson(Map<String, dynamic> json) => CreditTransaction(
+  factory CreditTransaction.fromJson(Map<String, dynamic> json) =>
+      CreditTransaction(
         id: json['id'] as String,
         userId: json['user_id'] as String,
         amount: json['amount'] as int,

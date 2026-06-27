@@ -7,6 +7,6 @@ import 'data/datasources/supabase_client.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseBootstrap.init();
-  configureDependencies();
+  await configureDependencies();
   runApp(const BikinStikerApp());
 }

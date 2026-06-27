@@ -37,8 +37,10 @@ class WalletBlocState extends Equatable {
 
   int get balance => wallet?.balance ?? 0;
 
-  WalletBlocState copyWith({Wallet? wallet, bool? loading}) =>
-      WalletBlocState(wallet: wallet ?? this.wallet, loading: loading ?? this.loading);
+  WalletBlocState copyWith({Wallet? wallet, bool? loading}) => WalletBlocState(
+    wallet: wallet ?? this.wallet,
+    loading: loading ?? this.loading,
+  );
 
   @override
   List<Object?> get props => [wallet, loading];
@@ -51,16 +53,24 @@ class WalletBloc extends Bloc<WalletEvent, WalletBlocState> {
   WalletBloc(this._repo) : super(const WalletBlocState()) {
     on<WalletWatchStarted>(_onStart);
     on<WalletWatchStopped>(_onStop);
-    on<_WalletUpdated>((e, emit) => emit(state.copyWith(wallet: e.wallet, loading: false)));
+    on<_WalletUpdated>(
+      (e, emit) => emit(state.copyWith(wallet: e.wallet, loading: false)),
+    );
   }
 
-  Future<void> _onStart(WalletWatchStarted e, Emitter<WalletBlocState> emit) async {
+  Future<void> _onStart(
+    WalletWatchStarted e,
+    Emitter<WalletBlocState> emit,
+  ) async {
     await _sub?.cancel();
     emit(const WalletBlocState(loading: true));
     _sub = _repo.watchBalance(e.userId).listen((w) => add(_WalletUpdated(w)));
   }
 
-  Future<void> _onStop(WalletWatchStopped e, Emitter<WalletBlocState> emit) async {
+  Future<void> _onStop(
+    WalletWatchStopped e,
+    Emitter<WalletBlocState> emit,
+  ) async {
     await _sub?.cancel();
     _sub = null;
     emit(const WalletBlocState(loading: false));

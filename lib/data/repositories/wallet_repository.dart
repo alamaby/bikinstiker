@@ -29,11 +29,15 @@ class SupabaseWalletRepository implements WalletRepository {
         .stream(primaryKey: ['user_id'])
         .eq('user_id', userId)
         .map((rows) {
-      if (rows.isEmpty) {
-        // Wallet might not be visible yet immediately after signup; surface 0.
-        return Wallet(userId: userId, balance: 0, updatedAt: DateTime.now());
-      }
-      return Wallet.fromJson(rows.first);
-    });
+          if (rows.isEmpty) {
+            // Wallet might not be visible yet immediately after signup; surface 0.
+            return Wallet(
+              userId: userId,
+              balance: 0,
+              updatedAt: DateTime.now(),
+            );
+          }
+          return Wallet.fromJson(rows.first);
+        });
   }
 }

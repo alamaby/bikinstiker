@@ -38,7 +38,8 @@ class StickerGeneration extends Equatable {
     required this.createdAt,
   });
 
-  factory StickerGeneration.fromJson(Map<String, dynamic> json) => StickerGeneration(
+  factory StickerGeneration.fromJson(Map<String, dynamic> json) =>
+      StickerGeneration(
         id: json['id'] as String,
         userId: json['user_id'] as String,
         presetName: json['preset_name'] as String,
@@ -51,6 +52,15 @@ class StickerGeneration extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [id, userId, presetName, userPrompt, finalPrompt, imageUrl, cost, status, createdAt];
+  List<Object?> get props => [
+    id,
+    userId,
+    presetName,
+    userPrompt,
+    finalPrompt,
+    imageUrl,
+    cost,
+    status,
+    createdAt,
+  ];
 }

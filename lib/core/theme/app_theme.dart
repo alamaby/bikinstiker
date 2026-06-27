@@ -5,16 +5,16 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary   = Color(0xFF0072B2); // Blue
+  static const Color primary = Color(0xFF0072B2); // Blue
   static const Color secondary = Color(0xFFE69F00); // Orange (CTA)
-  static const Color error     = Color(0xFFD55E00); // Vermilion
-  static const Color success   = Color(0xFF009E73); // Bluish Green
-  static const Color warning   = Color(0xFFF0E442); // Yellow
+  static const Color error = Color(0xFFD55E00); // Vermilion
+  static const Color success = Color(0xFF009E73); // Bluish Green
+  static const Color warning = Color(0xFFF0E442); // Yellow
 
   static const Color background = Colors.white;
-  static const Color surface    = Color(0xFFFAFAFA);
-  static const Color onSurface  = Color(0xFF111111);
-  static const Color outline    = Color(0xFFBDBDBD);
+  static const Color surface = Color(0xFFFAFAFA);
+  static const Color onSurface = Color(0xFF111111);
+  static const Color outline = Color(0xFFBDBDBD);
 }
 
 class AppTheme {
@@ -23,18 +23,18 @@ class AppTheme {
   static ThemeData light() {
     final scheme = const ColorScheme(
       brightness: Brightness.light,
-      primary:        AppColors.primary,
-      onPrimary:      Colors.white,
-      secondary:      AppColors.secondary,
-      onSecondary:    Color(0xFF111111),
-      tertiary:       AppColors.success,
-      onTertiary:     Colors.white,
-      error:          AppColors.error,
-      onError:        Colors.white,
-      surface:        AppColors.background,
-      onSurface:      AppColors.onSurface,
+      primary: AppColors.primary,
+      onPrimary: Colors.white,
+      secondary: AppColors.secondary,
+      onSecondary: Color(0xFF111111),
+      tertiary: AppColors.success,
+      onTertiary: Colors.white,
+      error: AppColors.error,
+      onError: Colors.white,
+      surface: AppColors.background,
+      onSurface: AppColors.onSurface,
       surfaceContainerHighest: AppColors.surface,
-      outline:        AppColors.outline,
+      outline: AppColors.outline,
     );
 
     return ThemeData(
@@ -53,7 +53,9 @@ class AppTheme {
           foregroundColor: Colors.black,
           minimumSize: const Size.fromHeight(52),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -61,7 +63,9 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

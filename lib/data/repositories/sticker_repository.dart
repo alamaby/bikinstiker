@@ -69,10 +69,10 @@ class SupabaseStickerRepository implements StickerRepository {
       );
     } on FunctionException catch (e) {
       final detail = e.details;
-      final statusCode = e.statusCode;
+      final statusCode = e.status;
       final detailMsg = detail is Map && detail['error'] is String
           ? (detail['error'] as String)
-          : e.message ?? '';
+          : e.reasonPhrase ?? '';
 
       // 429 Too Many Requests
       if (statusCode == 429) {

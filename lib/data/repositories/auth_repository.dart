@@ -8,6 +8,12 @@ abstract class AuthRepository {
   Future<void> signIn({required String email, required String password});
   Future<void> signUp({required String email, required String password});
   Future<void> signOut();
+  Future<void> signInAnonymously();
+  Future<void> upgradeAnonymousAccount({
+    required String email,
+    required String password,
+  });
+  Future<void> grantRegisteredBonus();
 }
 
 class SupabaseAuthRepository implements AuthRepository {
@@ -44,4 +50,40 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() => _client.auth.signOut();
+
+  @override
+  Future<void> signInAnonymously() async {
+    try {
+      await _client.auth.signInAnonymously();
+    } on AuthException catch (e) {
+      throw AuthFailure(e.message);
+    } catch (e) {
+      throw UnknownFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<void> upgradeAnonymousAccount({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _client.auth.updateUser(
+        UserAttributes(email: email, password: password),
+      );
+    } on AuthException catch (e) {
+      throw AuthFailure(e.message);
+    } catch (e) {
+      throw UnknownFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<void> grantRegisteredBonus() async {
+    try {
+      await _client.rpc('grant_registered_bonus');
+    } on Exception catch (e) {
+      throw UnknownFailure('Failed to grant registered bonus: $e');
+    }
+  }
 }

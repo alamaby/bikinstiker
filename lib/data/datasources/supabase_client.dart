@@ -7,7 +7,7 @@ class SupabaseBootstrap {
 
   static Future<void> init() async {
     await dotenv.load(fileName: '.env');
-    final url     = dotenv.env['SUPABASE_URL'];
+    final url = dotenv.env['SUPABASE_URL'];
     final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
 
     if (url == null || anonKey == null || url.isEmpty || anonKey.isEmpty) {

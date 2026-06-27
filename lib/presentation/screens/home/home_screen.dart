@@ -154,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _PresetGrid(
+                    _PresetSelector(
                       selectedId: _presetId,
                       onSelected: submitting
                           ? null
@@ -277,74 +277,127 @@ class _CreditsCard extends StatelessWidget {
   }
 }
 
-class _PresetGrid extends StatelessWidget {
+class _PresetSelector extends StatelessWidget {
   final String selectedId;
   final ValueChanged<String>? onSelected;
-  const _PresetGrid({required this.selectedId, this.onSelected});
+  const _PresetSelector({required this.selectedId, this.onSelected});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 2.4,
-      children: kStickerPresets.map((p) {
-        final selected = p.id == selectedId;
-        return InkWell(
-          onTap: onSelected != null ? () => onSelected!(p.id) : null,
+    final selected = kStickerPresets.firstWhere((p) => p.id == selectedId);
+    final enabled = onSelected != null;
+
+    return GestureDetector(
+      onTap: enabled ? () => _openPicker(context) : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: Border.all(color: AppColors.outline),
           borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.08)
-                  : AppColors.surface,
-              border: Border.all(
-                color: selected ? AppColors.primary : AppColors.outline,
-                width: selected ? 2 : 1,
+        ),
+        child: Row(
+          children: [
+            Text(selected.emoji, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    selected.label,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    selected.description,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(14),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  p.icon,
-                  color: selected ? AppColors.primary : Colors.black54,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        p.label,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      Text(
-                        p.description,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (selected)
-                  const Icon(
-                    Icons.check_circle,
-                    color: AppColors.primary,
-                    size: 18,
-                  ),
-              ],
+            Icon(
+              Icons.keyboard_arrow_down,
+              color: enabled ? Colors.black54 : Colors.black26,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _PresetPickerSheet(
+        selectedId: selectedId,
+        onSelect: (id) {
+          Navigator.of(context).pop();
+          onSelected?.call(id);
+        },
+      ),
+    );
+  }
+}
+
+class _PresetPickerSheet extends StatelessWidget {
+  final String selectedId;
+  final ValueChanged<String> onSelect;
+  const _PresetPickerSheet({required this.selectedId, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
-        );
-      }).toList(),
+          const SizedBox(height: 16),
+          const Text(
+            'Choose style',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          ...kStickerPresets.map((p) {
+            final selected = p.id == selectedId;
+            return ListTile(
+              leading: Text(p.emoji, style: const TextStyle(fontSize: 24)),
+              title: Text(
+                p.label,
+                style: TextStyle(
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+              subtitle: Text(
+                p.description,
+                style: const TextStyle(fontSize: 13),
+              ),
+              trailing: selected
+                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  : null,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              onTap: () => onSelect(p.id),
+            );
+          }),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }

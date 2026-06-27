@@ -6,13 +6,13 @@ class StickerPreset {
   final String id;
   final String label;
   final String description;
-  final IconData icon;
+  final String emoji;
 
   const StickerPreset({
     required this.id,
     required this.label,
     required this.description,
-    required this.icon,
+    required this.emoji,
   });
 }
 
@@ -21,31 +21,31 @@ const List<StickerPreset> kStickerPresets = [
     id: 'kawaii',
     label: 'Kawaii',
     description: 'Cute pastel chibi',
-    icon: Icons.favorite,
+    emoji: '💖',
   ),
   StickerPreset(
     id: 'pixel_art',
     label: 'Pixel Art',
     description: '16-bit retro pixels',
-    icon: Icons.grid_4x4,
+    emoji: '🕹️',
   ),
   StickerPreset(
     id: 'vector_flat',
     label: 'Vector Flat',
     description: 'Bold flat illustration',
-    icon: Icons.shape_line,
+    emoji: '🎨',
   ),
   StickerPreset(
     id: 'chibi_3d',
     label: '3D Chibi',
     description: 'Glossy 3d render',
-    icon: Icons.threed_rotation,
+    emoji: '🧸',
   ),
   StickerPreset(
     id: 'retro_sticker',
     label: 'Retro',
     description: '90s halftone vibe',
-    icon: Icons.album,
+    emoji: '📼',
   ),
 ];
 

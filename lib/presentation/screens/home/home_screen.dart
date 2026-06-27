@@ -21,11 +21,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _presetId = kStickerPresets.first.id;
   final _promptCtrl = TextEditingController();
+  final _scrollController = ScrollController();
+  final _resultKey = GlobalKey();
 
   @override
   void dispose() {
     _promptCtrl.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToResult() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _resultKey.currentContext;
+      if (!mounted || ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   void _onGenerate() {
@@ -105,42 +120,52 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _CreditsCard(),
-              const SizedBox(height: 16),
-              const Text(
-                'Choose a style',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              _PresetGrid(
-                selectedId: _presetId,
-                onSelected: (id) => setState(() => _presetId = id),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Describe your sticker',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _promptCtrl,
-                maxLength: kMaxPromptChars,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. a smiling boba tea cup waving hello',
+      body: BlocListener<StickerGenBloc, StickerGenBlocState>(
+        listenWhen: (p, n) => p.status != n.status,
+        listener: (context, state) {
+          if (state.status == StickerGenStatus.success ||
+              state.status == StickerGenStatus.failure) {
+            _scrollToResult();
+          }
+        },
+        child: SafeArea(
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _CreditsCard(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Choose a style',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
-              ),
-              const SizedBox(height: 8),
-              _GenerateButton(onPressed: _onGenerate),
-              const SizedBox(height: 24),
-              const _ResultPanel(),
-            ],
+                const SizedBox(height: 8),
+                _PresetGrid(
+                  selectedId: _presetId,
+                  onSelected: (id) => setState(() => _presetId = id),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Describe your sticker',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _promptCtrl,
+                  maxLength: kMaxPromptChars,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. a smiling boba tea cup waving hello',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _GenerateButton(onPressed: _onGenerate),
+                const SizedBox(height: 24),
+                KeyedSubtree(key: _resultKey, child: const _ResultPanel()),
+              ],
+            ),
           ),
         ),
       ),

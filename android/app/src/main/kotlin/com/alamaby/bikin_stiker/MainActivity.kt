@@ -1,4 +1,4 @@
-package com.bikinstiker.bikin_stiker
+package com.alamaby.bikin_stiker
 
 import io.flutter.embedding.android.FlutterActivity
 

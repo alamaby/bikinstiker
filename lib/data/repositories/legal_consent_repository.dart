@@ -5,6 +5,9 @@ class LegalConsentRepository {
   static const String _privacyKey = 'legal_privacy_version';
   static const String _acceptedAtKey = 'legal_accepted_at';
 
+  static const String currentTermsVersion = '2026-06-27';
+  static const String currentPrivacyVersion = '2026-06-27';
+
   final SharedPreferences _prefs;
 
   LegalConsentRepository(this._prefs);
@@ -18,18 +21,14 @@ class LegalConsentRepository {
   }
 
   bool get hasAcceptedCurrent {
-    const currentTerms = '2026-06-27';
-    const currentPrivacy = '2026-06-27';
-    return termsVersion == currentTerms && privacyVersion == currentPrivacy;
+    return termsVersion == currentTermsVersion &&
+        privacyVersion == currentPrivacyVersion;
   }
 
-  Future<void> accept({
-    required String termsVersion,
-    required String privacyVersion,
-  }) async {
+  Future<void> acceptCurrent() async {
     final now = DateTime.now().toIso8601String();
-    await _prefs.setString(_termsKey, termsVersion);
-    await _prefs.setString(_privacyKey, privacyVersion);
+    await _prefs.setString(_termsKey, currentTermsVersion);
+    await _prefs.setString(_privacyKey, currentPrivacyVersion);
     await _prefs.setString(_acceptedAtKey, now);
   }
 

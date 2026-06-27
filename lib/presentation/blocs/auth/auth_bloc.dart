@@ -164,7 +164,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     );
     try {
       await _repo.signInAnonymously();
-      // _AuthUserChanged will update state
+      final user = _repo.currentUser;
+      final status = _resolveStatus(user);
+      emit(
+        state.copyWith(
+          status: status,
+          user: user,
+          errorMessage: null,
+          infoMessage: null,
+        ),
+      );
     } on Failure catch (f) {
       emit(
         state.copyWith(
@@ -189,7 +198,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     try {
       await _repo.upgradeAnonymousAccount(email: e.email, password: e.password);
       await _repo.grantRegisteredBonus();
-      // _AuthUserChanged will update status to authenticated
+      final user = _repo.currentUser;
+      final status = _resolveStatus(user);
+      emit(
+        state.copyWith(
+          status: status,
+          user: user,
+          errorMessage: null,
+          infoMessage: null,
+        ),
+      );
     } on Failure catch (f) {
       emit(state.copyWith(status: AuthStatus.guest, errorMessage: f.message));
     }
@@ -208,7 +226,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     );
     try {
       await _repo.signIn(email: e.email, password: e.password);
-      // _AuthUserChanged will update state
+      final user = _repo.currentUser;
+      final status = _resolveStatus(user);
+      emit(
+        state.copyWith(
+          status: status,
+          user: user,
+          errorMessage: null,
+          infoMessage: null,
+        ),
+      );
     } on Failure catch (f) {
       emit(
         state.copyWith(
@@ -237,7 +264,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
           password: e.password,
         );
         await _repo.grantRegisteredBonus();
-        // _AuthUserChanged will update state
+        final user = _repo.currentUser;
+        final status = _resolveStatus(user);
+        emit(
+          state.copyWith(
+            status: status,
+            user: user,
+            errorMessage: null,
+            infoMessage: null,
+          ),
+        );
       } else {
         await _repo.signUp(email: e.email, password: e.password);
         emit(

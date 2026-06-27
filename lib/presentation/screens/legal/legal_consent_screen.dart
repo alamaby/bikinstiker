@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../data/repositories/legal_consent_repository.dart';
 
 class LegalConsentScreen extends StatefulWidget {
   final VoidCallback onAccepted;
@@ -13,11 +15,20 @@ class LegalConsentScreen extends StatefulWidget {
 
 class _LegalConsentScreenState extends State<LegalConsentScreen> {
   bool _accepted = false;
+  bool _submitting = false;
   final _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
   }
 
@@ -25,6 +36,19 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 50) {
       setState(() {});
+    }
+  }
+
+  Future<void> _onContinue() async {
+    if (!_accepted || _submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await context.read<LegalConsentRepository>().acceptCurrent();
+      if (!mounted) return;
+      widget.onAccepted();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
     }
   }
 
@@ -37,7 +61,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                controller: _scrollController..addListener(_onScroll),
+                controller: _scrollController,
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +135,8 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
             ),
             _BottomBar(
               accepted: _accepted,
-              onPressed: _accepted ? widget.onAccepted : null,
+              submitting: _submitting,
+              onPressed: _onContinue,
             ),
           ],
         ),
@@ -184,9 +209,14 @@ class _AcceptCheckbox extends StatelessWidget {
 
 class _BottomBar extends StatelessWidget {
   final bool accepted;
-  final VoidCallback? onPressed;
+  final bool submitting;
+  final VoidCallback onPressed;
 
-  const _BottomBar({required this.accepted, this.onPressed});
+  const _BottomBar({
+    required this.accepted,
+    required this.submitting,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +232,16 @@ class _BottomBar extends StatelessWidget {
           ),
         ],
       ),
-      child: FilledButton(onPressed: onPressed, child: const Text('Continue')),
+      child: FilledButton(
+        onPressed: accepted && !submitting ? onPressed : null,
+        child: submitting
+            ? const SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Continue'),
+      ),
     );
   }
 }

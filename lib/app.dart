@@ -62,8 +62,21 @@ class BikinStikerApp extends StatelessWidget {
   }
 }
 
-class _AuthGate extends StatelessWidget {
+class _AuthGate extends StatefulWidget {
   const _AuthGate();
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  bool _anonymousRequested = false;
+
+  void _resetAnonymousFlag() {
+    if (_anonymousRequested) {
+      _anonymousRequested = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +91,6 @@ class _AuthGate extends StatelessWidget {
             final prevUser = context.read<AuthBloc>().state.user;
             if (state.user != null) {
               wallet.add(WalletWatchStarted(state.user!.id));
-              // If user changed from guest to registered, reset guest sticker
               if (prevUser?.isAnonymous == true &&
                   state.user?.isAnonymous != true) {
                 stickerGen.add(const StickerGenReset());
@@ -92,9 +104,9 @@ class _AuthGate extends StatelessWidget {
         BlocListener<AuthBloc, AuthBlocState>(
           listenWhen: (p, n) => p.status != n.status,
           listener: (context, state) {
-            if (state.status == AuthStatus.authenticated &&
-                state.user?.isAnonymous == false) {
-              // Could trigger bonus grant here if needed
+            if (state.status == AuthStatus.guest ||
+                state.status == AuthStatus.authenticated) {
+              _resetAnonymousFlag();
             }
           },
         ),
@@ -105,10 +117,8 @@ class _AuthGate extends StatelessWidget {
               .read<LegalConsentRepository>()
               .hasAcceptedCurrent;
           if (!hasAccepted) {
-            return LegalConsentScreen(
-              onAccepted: () =>
-                  context.read<AuthBloc>().add(const AuthStarted()),
-            );
+            _anonymousRequested = false;
+            return LegalConsentScreen(onAccepted: () => setState(() {}));
           }
           switch (state.status) {
             case AuthStatus.unknown:
@@ -118,10 +128,16 @@ class _AuthGate extends StatelessWidget {
             case AuthStatus.authenticated:
               return const HomeScreen();
             case AuthStatus.unauthenticated:
-              // After accepting terms, create anonymous session
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                context.read<AuthBloc>().add(const AuthAnonymousRequested());
-              });
+              if (!_anonymousRequested) {
+                _anonymousRequested = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    context.read<AuthBloc>().add(
+                      const AuthAnonymousRequested(),
+                    );
+                  }
+                });
+              }
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );

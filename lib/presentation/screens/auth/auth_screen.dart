@@ -58,18 +58,23 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   Widget build(BuildContext context) {
     final stickerGen = context.watch<StickerGenBloc>();
-    final hasGuestResult =
-        _isGuestWall &&
-        stickerGen.state.status == stickerGen.state.status &&
-        stickerGen.state.signedUrl != null;
+    final hasGuestResult = _isGuestWall && stickerGen.state.signedUrl != null;
 
     return Scaffold(
       body: SafeArea(
         child: BlocConsumer<AuthBloc, AuthBlocState>(
           listenWhen: (p, n) =>
+              p.status != n.status ||
               p.errorMessage != n.errorMessage ||
               p.infoMessage != n.infoMessage,
           listener: (context, state) {
+            if (state.status == AuthStatus.authenticated ||
+                state.status == AuthStatus.guest) {
+              if (_isGuestWall && mounted) {
+                Navigator.of(context).pop();
+                return;
+              }
+            }
             if (state.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

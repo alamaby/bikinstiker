@@ -88,15 +88,22 @@ class _AuthGateState extends State<_AuthGate> {
             final history = context.read<HistoryBloc>();
             final stickerGen = context.read<StickerGenBloc>();
             if (state.user != null) {
+              final isUserIdChanged =
+                  _previousUser != null && _previousUser!.id != state.user!.id;
               wallet.add(WalletWatchStarted(state.user!.id));
               wallet.add(WalletRefreshRequested(state.user!.id));
-              if (_previousUser?.isAnonymous == true &&
+              if (isUserIdChanged) {
+                history.add(const HistoryCleared());
+                stickerGen.add(const StickerGenReset());
+              } else if (_previousUser?.isAnonymous == true &&
                   state.user?.isAnonymous != true) {
                 stickerGen.add(const StickerGenReset());
               }
             } else {
               wallet.add(const WalletWatchStopped());
               history.add(const HistoryCleared());
+              stickerGen.add(const StickerGenReset());
+              _previousUser = null;
             }
             _previousUser = state.user;
           },

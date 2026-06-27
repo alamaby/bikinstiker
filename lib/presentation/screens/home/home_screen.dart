@@ -473,18 +473,22 @@ class _ResultPanel extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: () =>
-                                    _shareSticker(context, genState.signedUrl!),
-                                icon: const Icon(Icons.share, size: 18),
-                                label: const Text('Share'),
+                        if (!isGuest) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () => _shareSticker(
+                                    context,
+                                    genState.signedUrl!,
+                                  ),
+                                  icon: const Icon(Icons.share, size: 18),
+                                  label: const Text('Share'),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                         if (isGuest) ...[
                           const SizedBox(height: 16),
                           _GuestResultCta(),

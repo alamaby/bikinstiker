@@ -132,39 +132,59 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SingleChildScrollView(
             controller: _scrollController,
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _CreditsCard(),
-                const SizedBox(height: 16),
-                const Text(
-                  'Choose a style',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                _PresetGrid(
-                  selectedId: _presetId,
-                  onSelected: (id) => setState(() => _presetId = id),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Describe your sticker',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _promptCtrl,
-                  maxLength: kMaxPromptChars,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g. a smiling boba tea cup waving hello',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _GenerateButton(onPressed: _onGenerate),
-                const SizedBox(height: 24),
-                KeyedSubtree(key: _resultKey, child: const _ResultPanel()),
-              ],
+            child: BlocBuilder<StickerGenBloc, StickerGenBlocState>(
+              builder: (context, genState) {
+                final submitting =
+                    genState.status == StickerGenStatus.submitting;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _CreditsCard(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Choose a style',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _PresetGrid(
+                      selectedId: _presetId,
+                      onSelected: submitting
+                          ? null
+                          : (id) => setState(() => _presetId = id),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Describe your sticker',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _promptCtrl,
+                      enabled: !submitting,
+                      maxLength: kMaxPromptChars,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. a smiling boba tea cup waving hello',
+                        filled: submitting,
+                        fillColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.3),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _GenerateButton(onPressed: _onGenerate),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(key: _resultKey, child: const _ResultPanel()),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -254,8 +274,8 @@ class _CreditsCard extends StatelessWidget {
 
 class _PresetGrid extends StatelessWidget {
   final String selectedId;
-  final ValueChanged<String> onSelected;
-  const _PresetGrid({required this.selectedId, required this.onSelected});
+  final ValueChanged<String>? onSelected;
+  const _PresetGrid({required this.selectedId, this.onSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +289,7 @@ class _PresetGrid extends StatelessWidget {
       children: kStickerPresets.map((p) {
         final selected = p.id == selectedId;
         return InkWell(
-          onTap: () => onSelected(p.id),
+          onTap: onSelected != null ? () => onSelected!(p.id) : null,
           borderRadius: BorderRadius.circular(14),
           child: Container(
             padding: const EdgeInsets.all(12),

@@ -71,26 +71,17 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
   Future<({StickerPack pack, List<StickerPackItem> items})> getPackDetail(
     String packId,
   ) async {
-    final rows = await _client.rpc(
+    final res = await _client.rpc(
       'get_pack_detail',
       params: {'p_pack_id': packId},
     );
-    final list = rows as List;
-    if (list.isEmpty) {
-      throw Exception('Pack not found or inaccessible');
-    }
+    final json = res as Map<String, dynamic>;
+    final pack = StickerPack.fromJson(json['pack'] as Map<String, dynamic>);
+    final itemRows = json['items'] as List? ?? const [];
 
-    // First row contains pack metadata, subsequent rows contain items (or null items if pack is empty)
-    final first = list.first as Map<String, dynamic>;
-    final pack = StickerPack.fromJson(first);
-
-    final items = <StickerPackItem>[];
-    for (final row in list) {
-      final r = row as Map<String, dynamic>;
-      if (r['item_id'] != null) {
-        items.add(StickerPackItem.fromJson(r));
-      }
-    }
+    final items = itemRows
+        .map((r) => StickerPackItem.fromJson(r as Map<String, dynamic>))
+        .toList();
 
     return (pack: pack, items: items);
   }

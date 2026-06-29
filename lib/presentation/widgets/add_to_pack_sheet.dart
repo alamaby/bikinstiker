@@ -30,6 +30,8 @@ class AddToPackSheet extends StatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: false,
       builder: (_) => BlocProvider.value(
         value: context.read<StickerPackBloc>(),
         child: AddToPackSheet(stickerId: stickerId),
@@ -66,141 +68,148 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Add to Pack',
-                style: Theme.of(context).textTheme.headlineSmall,
+    return FractionallySizedBox(
+      heightFactor: 0.85,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add to Pack',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Choose a pack and select 1-3 emojis for WhatsApp.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            // Emoji picker - fixed height, scrollable grid
+            Text(
+              'Emojis (${_selectedEmojis.length}/3)',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 160,
+              child: GridView.builder(
+                itemCount: _kEmojiOptions.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 8,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                itemBuilder: (context, index) {
+                  final emoji = _kEmojiOptions[index];
+                  final selected = _selectedEmojis.contains(emoji);
+                  return InkWell(
+                    onTap: () => _toggleEmoji(emoji),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.secondary.withValues(alpha: 0.2)
+                            : AppColors.surface,
+                        border: Border.all(
+                          color: selected ? AppColors.secondary : AppColors.outline,
+                          width: selected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Choose a pack and select 1-3 emojis for WhatsApp.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              // Emoji picker
-              Text(
-                'Emojis (${_selectedEmojis.length}/3)',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+            ),
+            if (_selectedEmojis.isNotEmpty) ...[
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                runSpacing: 8,
-                children: _kEmojiOptions.map((emoji) {
-                  final selected = _selectedEmojis.contains(emoji);
-                  return FilterChip(
-                    label: Text(emoji, style: const TextStyle(fontSize: 24)),
-                    selected: selected,
-                    onSelected: (_) => _toggleEmoji(emoji),
-                    showCheckmark: false,
-                    selectedColor: AppColors.secondary.withValues(alpha: 0.2),
-                    checkmarkColor: AppColors.secondary,
-                    side: BorderSide(
-                      color: selected ? AppColors.secondary : AppColors.outline,
-                      width: selected ? 2 : 1,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                children: _selectedEmojis.map((emoji) {
+                  return Chip(
+                    label: Text(emoji, style: const TextStyle(fontSize: 20)),
+                    onDeleted: () => _toggleEmoji(emoji),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    backgroundColor: AppColors.surface,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
                 }).toList(),
               ),
-              if (_selectedEmojis.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: _selectedEmojis.map((emoji) {
-                    return Chip(
-                      label: Text(emoji, style: const TextStyle(fontSize: 20)),
-                      onDeleted: () => _toggleEmoji(emoji),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      backgroundColor: AppColors.surface,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    );
-                  }).toList(),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Expanded(
-                child: BlocBuilder<StickerPackBloc, StickerPackState>(
-                  builder: (context, state) {
-                    if (state.status == StickerPackStatus.loading &&
-                        state.packs.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final availablePacks = state.packs
-                        .where((p) => p.canAddStickers)
-                        .toList();
-
-                    if (availablePacks.isEmpty) {
-                      return _EmptyOrFullState(
-                        isAtCapacity: state.isAtCapacity(),
-                        onCreateNew: state.isAtCapacity()
-                            ? null
-                            : () => _createNewPack(context),
-                      );
-                    }
-
-                    return ListView.builder(
-                      controller: scrollController,
-                      itemCount: availablePacks.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == availablePacks.length) {
-                          return ListTile(
-                            leading: const Icon(Icons.add_circle_outline),
-                            title: const Text('Create new pack'),
-                            onTap: state.isAtCapacity()
-                                ? null
-                                : () => _createNewPack(context),
-                          );
-                        }
-
-                        final pack = availablePacks[index];
-                        final isPending = state.isPackPending(
-                          '${pack.id}:${widget.stickerId}',
-                        );
-
-                        return ListTile(
-                          leading: const Icon(Icons.collections_bookmark),
-                          title: Text(pack.name),
-                          subtitle: Text('${pack.stickerCount}/30 stickers'),
-                          trailing: isPending
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.add),
-                          onTap: isPending
-                              ? null
-                              : () => _addToPack(context, pack),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
             ],
-          ),
-        );
-      },
+            const SizedBox(height: 16),
+            Expanded(
+              child: BlocBuilder<StickerPackBloc, StickerPackState>(
+                builder: (context, state) {
+                  if (state.status == StickerPackStatus.loading &&
+                      state.packs.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final availablePacks = state.packs
+                      .where((p) => p.canAddStickers)
+                      .toList();
+
+                  if (availablePacks.isEmpty) {
+                    return _EmptyOrFullState(
+                      isAtCapacity: state.isAtCapacity(),
+                      onCreateNew: state.isAtCapacity()
+                          ? null
+                          : () => _createNewPack(context),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: availablePacks.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == availablePacks.length) {
+                        return ListTile(
+                          leading: const Icon(Icons.add_circle_outline),
+                          title: const Text('Create new pack'),
+                          onTap: state.isAtCapacity()
+                              ? null
+                              : () => _createNewPack(context),
+                        );
+                      }
+
+                      final pack = availablePacks[index];
+                      final isPending = state.isPackPending(
+                        '${pack.id}:${widget.stickerId}',
+                      );
+
+                      return ListTile(
+                        leading: const Icon(Icons.collections_bookmark),
+                        title: Text(pack.name),
+                        subtitle: Text('${pack.stickerCount}/30 stickers'),
+                        trailing: isPending
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.add),
+                        onTap: isPending
+                            ? null
+                            : () => _addToPack(context, pack),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -6,6 +6,7 @@ import '../data/repositories/auth_repository.dart';
 import '../data/repositories/legal_consent_repository.dart';
 import '../data/repositories/mission_repository.dart';
 import '../data/repositories/preset_repository.dart';
+import '../data/repositories/sticker_pack_repository.dart';
 import '../data/repositories/sticker_repository.dart';
 import '../data/repositories/subscription_repository.dart';
 import '../data/repositories/wallet_repository.dart';
@@ -36,5 +37,8 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<MissionRepository>(
     () => SupabaseMissionRepository(client),
+  );
+  getIt.registerLazySingleton<StickerPackRepository>(
+    () => SupabaseStickerPackRepository(client),
   );
 }

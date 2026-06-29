@@ -9,6 +9,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/legal_consent_repository.dart';
 import 'data/repositories/mission_repository.dart';
 import 'data/repositories/preset_repository.dart';
+import 'data/repositories/sticker_pack_repository.dart';
 import 'data/repositories/sticker_repository.dart';
 import 'data/repositories/subscription_repository.dart';
 import 'data/repositories/wallet_repository.dart';
@@ -16,6 +17,7 @@ import 'presentation/blocs/auth/auth_bloc.dart';
 import 'presentation/blocs/history/history_bloc.dart';
 import 'presentation/blocs/mission/mission_bloc.dart';
 import 'presentation/blocs/preset/preset_bloc.dart';
+import 'presentation/blocs/sticker_pack/sticker_pack_bloc.dart';
 import 'presentation/blocs/sticker_gen/sticker_gen_bloc.dart';
 import 'presentation/blocs/subscription/subscription_bloc.dart';
 import 'presentation/blocs/wallet/wallet_bloc.dart';
@@ -51,6 +53,9 @@ class BikinStikerApp extends StatelessWidget {
         RepositoryProvider<MissionRepository>.value(
           value: getIt<MissionRepository>(),
         ),
+        RepositoryProvider<StickerPackRepository>.value(
+          value: getIt<StickerPackRepository>(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -76,6 +81,9 @@ class BikinStikerApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (ctx) => MissionBloc(ctx.read<MissionRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => StickerPackBloc(ctx.read<StickerPackRepository>()),
           ),
         ],
         child: MaterialApp(
@@ -122,6 +130,7 @@ class _AuthGateState extends State<_AuthGate> {
             final preset = context.read<PresetBloc>();
             final subscription = context.read<SubscriptionBloc>();
             final mission = context.read<MissionBloc>();
+            final stickerPacks = context.read<StickerPackBloc>();
             if (state.user != null) {
               final isUserIdChanged =
                   _previousUser != null && _previousUser!.id != state.user!.id;
@@ -129,6 +138,7 @@ class _AuthGateState extends State<_AuthGate> {
               wallet.add(WalletRefreshRequested(state.user!.id));
               subscription.add(SubscriptionWatchStarted(state.user!.id));
               mission.add(MissionLoadRequested(state.user!.id));
+              stickerPacks.add(const StickerPackLoadRequested());
               preset.add(
                 PresetRefreshRequested(
                   role: _roleFor(state, context.read<SubscriptionBloc>().state),
@@ -137,6 +147,7 @@ class _AuthGateState extends State<_AuthGate> {
               if (isUserIdChanged) {
                 history.add(const HistoryCleared());
                 stickerGen.add(const StickerGenReset());
+                stickerPacks.add(const StickerPackDetailCleared());
               } else if (_previousUser?.isAnonymous == true &&
                   state.user?.isAnonymous != true) {
                 stickerGen.add(const StickerGenReset());
@@ -147,6 +158,7 @@ class _AuthGateState extends State<_AuthGate> {
               history.add(const HistoryCleared());
               stickerGen.add(const StickerGenReset());
               preset.add(const PresetCleared());
+              stickerPacks.add(const StickerPackDetailCleared());
               _previousUser = null;
             }
             _previousUser = state.user;
@@ -159,6 +171,20 @@ class _AuthGateState extends State<_AuthGate> {
                 state.status == AuthStatus.authenticated) {
               _anonymousRequested = false;
               _startingGuestSession = false;
+            }
+          },
+        ),
+        BlocListener<SubscriptionBloc, SubscriptionState>(
+          listenWhen: (p, n) =>
+              p.subscription?.tier != n.subscription?.tier ||
+              p.subscription?.isExpired != n.subscription?.isExpired,
+          listener: (context, state) {
+            // Subscription tier changed -> wallet's pack_slot_cap changed server-side.
+            // Refresh pack list (locked status may have flipped, slot cap may differ).
+            if (context.read<AuthBloc>().state.user != null) {
+              context.read<StickerPackBloc>().add(
+                const StickerPackLoadRequested(),
+              );
             }
           },
         ),

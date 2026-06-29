@@ -11,13 +11,16 @@ import '../../../data/models/sticker_preset.dart';
 import '../../../data/models/user_subscription.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/preset/preset_bloc.dart';
+import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../widgets/ads_banner_placeholder.dart';
+import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/loading_lottie.dart';
 import '../../widgets/tier_badge.dart';
 import '../auth/auth_screen.dart';
+import '../packs/packs_list_screen.dart';
 import '../history/history_screen.dart';
 import '../missions/missions_screen.dart';
 
@@ -148,6 +151,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.emoji_events_outlined),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const MissionsScreen()),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'My Packs',
+                    icon: const Icon(Icons.collections_bookmark_outlined),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<StickerPackBloc>(),
+                          child: const PacksListScreen(),
+                        ),
+                      ),
                     ),
                   ),
                   IconButton(
@@ -682,6 +697,24 @@ class _ResultPanel extends StatelessWidget {
                                   ),
                                   icon: const Icon(Icons.share, size: 18),
                                   label: const Text('Share'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: FilledButton.tonalIcon(
+                                  onPressed: genState.stickerId != null
+                                      ? () {
+                                          AddToPackSheet.show(
+                                            context,
+                                            genState.stickerId!,
+                                          );
+                                        }
+                                      : null,
+                                  icon: const Icon(
+                                    Icons.collections_bookmark,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Add to Pack'),
                                 ),
                               ),
                             ],

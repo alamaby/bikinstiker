@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
 import '../../../data/repositories/sticker_repository.dart';
 import '../../blocs/history/history_bloc.dart';
+import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/status_indicator.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -294,6 +295,15 @@ class _StickerPreviewSheet extends StatelessWidget {
                 },
                 icon: const Icon(Icons.share),
                 label: const Text('Share'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  AddToPackSheet.show(context, item.id);
+                },
+                icon: const Icon(Icons.collections_bookmark),
+                label: const Text('Add to Pack'),
               ),
             ],
           ),

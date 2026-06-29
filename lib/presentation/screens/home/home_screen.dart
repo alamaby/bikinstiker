@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -645,26 +646,23 @@ class _ResultPanel extends StatelessWidget {
                 );
               case StickerGenStatus.failure:
                 final failure = genState.failure;
-                String msg;
-                IconData icon;
 
-                if (failure is InsufficientCreditsFailure) {
-                  msg = 'Not enough credits to generate.';
-                  icon = Icons.error_outline;
-                } else if (failure is RateLimitedFailure) {
-                  msg = failure.retryAfterSeconds > 60
-                      ? 'Too many requests. Please try again in a few minutes.'
-                      : 'Too many requests. Please wait ${failure.retryAfterSeconds}s.';
-                  icon = Icons.timer_off_outlined;
+                if (failure is RateLimitedFailure) {
+                  return _RateLimitedCard(
+                    retryAfterSeconds: failure.retryAfterSeconds,
+                  );
                 } else if (failure is GenerationInProgressFailure) {
-                  msg = failure.retryAfterSeconds != null
-                      ? 'A generation is already running. Please wait ${failure.retryAfterSeconds}s.'
-                      : 'A sticker generation is already in progress.';
-                  icon = Icons.hourglass_top;
-                } else {
-                  msg = failure?.message ?? 'Generation failed';
-                  icon = Icons.error_outline;
+                  return _ParallelRequestCard(
+                    retryAfterSeconds: failure.retryAfterSeconds,
+                  );
                 }
+
+                final msg = failure is InsufficientCreditsFailure
+                    ? 'Not enough credits to generate.'
+                    : failure?.message ?? 'Generation failed';
+                final icon = failure is InsufficientCreditsFailure
+                    ? Icons.error_outline
+                    : Icons.error_outline;
 
                 return Card(
                   child: Padding(
@@ -755,6 +753,150 @@ class _GuestResultCta extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Rate limit / parallel request countdown cards
+// ---------------------------------------------------------------------------
+
+class _RateLimitedCard extends StatefulWidget {
+  final int retryAfterSeconds;
+  const _RateLimitedCard({required this.retryAfterSeconds});
+
+  @override
+  State<_RateLimitedCard> createState() => _RateLimitedCardState();
+}
+
+class _RateLimitedCardState extends State<_RateLimitedCard> {
+  late int _remaining;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = widget.retryAfterSeconds;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        if (_remaining > 0) _remaining--;
+        if (_remaining == 0) {
+          _timer?.cancel();
+          Future.microtask(() {
+            if (mounted) {
+              context.read<StickerGenBloc>().add(const StickerGenReset());
+            }
+          });
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final msg = widget.retryAfterSeconds > 60
+        ? 'Too many requests. Please try again in a few minutes.'
+        : 'Too many requests. Please wait ${_remaining}s.';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(
+          children: [
+            const Icon(Icons.timer_off_outlined, color: AppColors.error),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(msg, style: const TextStyle(color: AppColors.error)),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: AppColors.error),
+              tooltip: 'Dismiss',
+              onPressed: () {
+                _timer?.cancel();
+                context.read<StickerGenBloc>().add(const StickerGenReset());
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ParallelRequestCard extends StatefulWidget {
+  final int? retryAfterSeconds;
+  const _ParallelRequestCard({this.retryAfterSeconds});
+
+  @override
+  State<_ParallelRequestCard> createState() => _ParallelRequestCardState();
+}
+
+class _ParallelRequestCardState extends State<_ParallelRequestCard> {
+  late int? _remaining;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = widget.retryAfterSeconds;
+    if (_remaining != null && _remaining! > 0) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() {
+          if (_remaining != null && _remaining! > 0) {
+            _remaining = _remaining! - 1;
+          }
+          if (_remaining == 0) {
+            _timer?.cancel();
+            Future.microtask(() {
+              if (mounted) {
+                context.read<StickerGenBloc>().add(const StickerGenReset());
+              }
+            });
+          }
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final msg = _remaining != null
+        ? 'A generation is already running. Please wait ${_remaining}s.'
+        : 'A sticker generation is already in progress.';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(
+          children: [
+            const Icon(Icons.hourglass_top, color: AppColors.error),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(msg, style: const TextStyle(color: AppColors.error)),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: AppColors.error),
+              tooltip: 'Dismiss',
+              onPressed: () {
+                _timer?.cancel();
+                context.read<StickerGenBloc>().add(const StickerGenReset());
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

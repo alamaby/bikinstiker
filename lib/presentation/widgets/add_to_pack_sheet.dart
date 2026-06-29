@@ -6,6 +6,19 @@ import '../../data/models/sticker_pack.dart';
 import '../blocs/sticker_pack/sticker_pack_bloc.dart';
 import '../screens/packs/pack_create_screen.dart';
 
+/// Common emojis for WhatsApp sticker packs
+const _kEmojiOptions = <String>[
+  '😀', '😂', '😍', '🥰', '😎', '😭', '😡', '👍',
+  '❤️', '🔥', '🎉', '✨', '🌟', '💯', '👌', '🙌',
+  '🐱', '🐶', '🐰', '🐻', '🦁', '🐯', '🐨', '🐸',
+  '🍕', '🍔', '🍟', '🌮', '🍣', '🍦', '🍰', '☕',
+  '⚽', '🏀', '🏈', '⚾', '🎾', '🏓', '🏸', '🥊',
+  '🚗', '✈️', '🚀', '🛸', '🚁', '🛶', '⛵', '🏍️',
+  '🎮', '🎲', '🎨', '🎭', '🎪', '🎤', '🎸', '🎹',
+  '🌈', '☀️', '🌙', '⭐', '☁️', '❄️', '🌸', '🌻',
+  '💡', '💭', '💬', '💌', '📷', '📱', '💻', '🎧',
+];
+
 /// Modal bottom sheet that lets the user add a sticker to one of their
 /// packs, or create a new pack on the fly.
 class AddToPackSheet extends StatefulWidget {
@@ -29,7 +42,7 @@ class AddToPackSheet extends StatefulWidget {
 }
 
 class _AddToPackSheetState extends State<AddToPackSheet> {
-  final _emojisController = TextEditingController();
+  final List<String> _selectedEmojis = [];
 
   @override
   void initState() {
@@ -41,22 +54,31 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
     });
   }
 
-  @override
-  void dispose() {
-    _emojisController.dispose();
-    super.dispose();
+  void _toggleEmoji(String emoji) {
+    setState(() {
+      if (_selectedEmojis.contains(emoji)) {
+        _selectedEmojis.remove(emoji);
+      } else if (_selectedEmojis.length < 3) {
+        _selectedEmojis.add(emoji);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.9,
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -66,19 +88,52 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Choose a pack and add 1-3 emojis for WhatsApp.',
+                'Choose a pack and select 1-3 emojis for WhatsApp.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _emojisController,
-                maxLength: 10,
-                decoration: const InputDecoration(
-                  labelText: 'Emojis (1-3)',
-                  hintText: 'e.g., cat heart',
-                  border: OutlineInputBorder(),
-                ),
+              // Emoji picker
+              Text(
+                'Emojis (${_selectedEmojis.length}/3)',
+                style: Theme.of(context).textTheme.titleSmall,
               ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _kEmojiOptions.map((emoji) {
+                  final selected = _selectedEmojis.contains(emoji);
+                  return FilterChip(
+                    label: Text(emoji, style: const TextStyle(fontSize: 24)),
+                    selected: selected,
+                    onSelected: (_) => _toggleEmoji(emoji),
+                    showCheckmark: false,
+                    selectedColor: AppColors.secondary.withValues(alpha: 0.2),
+                    checkmarkColor: AppColors.secondary,
+                    side: BorderSide(
+                      color: selected ? AppColors.secondary : AppColors.outline,
+                      width: selected ? 2 : 1,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                }).toList(),
+              ),
+              if (_selectedEmojis.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: _selectedEmojis.map((emoji) {
+                    return Chip(
+                      label: Text(emoji, style: const TextStyle(fontSize: 20)),
+                      onDeleted: () => _toggleEmoji(emoji),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      backgroundColor: AppColors.surface,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    );
+                  }).toList(),
+                ),
+              ],
               const SizedBox(height: 16),
               Expanded(
                 child: BlocBuilder<StickerPackBloc, StickerPackState>(
@@ -150,28 +205,10 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
   }
 
   void _addToPack(BuildContext context, StickerPack pack) {
-    final emojiText = _emojisController.text.trim();
-    if (emojiText.isEmpty) {
+    if (_selectedEmojis.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please add at least one emoji'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    // Simple parse: take first non-whitespace character
-    final emojis = <String>[];
-    for (final r in emojiText.runes) {
-      emojis.add(String.fromCharCode(r));
-      if (emojis.length >= 3) break;
-    }
-
-    if (emojis.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter valid emojis'),
+          content: Text('Please select at least one emoji'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -182,7 +219,7 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
       StickerPackAddStickerRequested(
         packId: pack.id,
         stickerId: widget.stickerId,
-        emojis: emojis,
+        emojis: _selectedEmojis,
       ),
     );
 

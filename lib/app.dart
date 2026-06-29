@@ -4,12 +4,15 @@ import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import 'core/di.dart';
 import 'core/theme/app_theme.dart';
+import 'data/models/sticker_preset.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/legal_consent_repository.dart';
+import 'data/repositories/preset_repository.dart';
 import 'data/repositories/sticker_repository.dart';
 import 'data/repositories/wallet_repository.dart';
 import 'presentation/blocs/auth/auth_bloc.dart';
 import 'presentation/blocs/history/history_bloc.dart';
+import 'presentation/blocs/preset/preset_bloc.dart';
 import 'presentation/blocs/sticker_gen/sticker_gen_bloc.dart';
 import 'presentation/blocs/wallet/wallet_bloc.dart';
 import 'presentation/screens/auth/auth_screen.dart';
@@ -35,6 +38,9 @@ class BikinStikerApp extends StatelessWidget {
         RepositoryProvider<StickerRepository>.value(
           value: getIt<StickerRepository>(),
         ),
+        RepositoryProvider<PresetRepository>.value(
+          value: getIt<PresetRepository>(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -50,6 +56,9 @@ class BikinStikerApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (ctx) => HistoryBloc(ctx.read<StickerRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => PresetBloc(ctx.read<PresetRepository>()),
           ),
         ],
         child: MaterialApp(
@@ -75,6 +84,12 @@ class _AuthGateState extends State<_AuthGate> {
   bool _startingGuestSession = false;
   User? _previousUser;
 
+  StickerPresetRole _roleFor(AuthBlocState auth) {
+    if (auth.user == null) return StickerPresetRole.guest;
+    // TODO(subscription): read is_plus from user_wallets once it exists.
+    return auth.isGuest ? StickerPresetRole.guest : StickerPresetRole.free;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
@@ -87,11 +102,13 @@ class _AuthGateState extends State<_AuthGate> {
             final wallet = context.read<WalletBloc>();
             final history = context.read<HistoryBloc>();
             final stickerGen = context.read<StickerGenBloc>();
+            final preset = context.read<PresetBloc>();
             if (state.user != null) {
               final isUserIdChanged =
                   _previousUser != null && _previousUser!.id != state.user!.id;
               wallet.add(WalletWatchStarted(state.user!.id));
               wallet.add(WalletRefreshRequested(state.user!.id));
+              preset.add(PresetRefreshRequested(role: _roleFor(state)));
               if (isUserIdChanged) {
                 history.add(const HistoryCleared());
                 stickerGen.add(const StickerGenReset());
@@ -103,6 +120,7 @@ class _AuthGateState extends State<_AuthGate> {
               wallet.add(const WalletWatchStopped());
               history.add(const HistoryCleared());
               stickerGen.add(const StickerGenReset());
+              preset.add(const PresetCleared());
               _previousUser = null;
             }
             _previousUser = state.user;

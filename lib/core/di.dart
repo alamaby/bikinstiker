@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/datasources/supabase_client.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/legal_consent_repository.dart';
+import '../data/repositories/preset_repository.dart';
 import '../data/repositories/sticker_repository.dart';
 import '../data/repositories/wallet_repository.dart';
 
@@ -24,5 +25,8 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<StickerRepository>(
     () => SupabaseStickerRepository(client),
+  );
+  getIt.registerLazySingleton<PresetRepository>(
+    () => SupabasePresetRepository(client),
   );
 }

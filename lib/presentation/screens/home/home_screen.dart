@@ -6,7 +6,9 @@ import '../../../core/constants/presets.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/models/sticker_preset.dart';
 import '../../blocs/auth/auth_bloc.dart';
+import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../auth/auth_screen.dart';
@@ -20,16 +22,31 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _presetId = kStickerPresets.first.id;
+  String? _presetId;
   final _promptCtrl = TextEditingController();
   final _scrollController = ScrollController();
   final _resultKey = GlobalKey();
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
   void dispose() {
     _promptCtrl.dispose();
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    final pos = _scrollController.position;
+    if (pos.pixels > 0 && pos.pixels >= pos.maxScrollExtent) {
+      // Near bottom — no-op for now, but a good hook for future pagination.
+    }
   }
 
   void _scrollToResult() {
@@ -44,9 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _onGenerate() {
+  void _onPresetSelected(String id) {
+    setState(() => _presetId = id);
+  }
+
+  void _onGenerate(List<StickerPreset> presets) {
     final input = _promptCtrl.text.trim();
-    final validPresetIds = kStickerPresets.map((p) => p.id).toSet();
+    final validPresetIds = presets.map((p) => p.id).toSet();
     if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Type a short prompt first')),
@@ -61,14 +82,24 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return;
     }
-    if (!validPresetIds.contains(_presetId)) {
+    if (_presetId == null || !validPresetIds.contains(_presetId)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Choose a valid style')));
       return;
     }
     context.read<StickerGenBloc>().add(
-      StickerGenSubmitted(presetId: _presetId, prompt: input),
+      StickerGenSubmitted(presetId: _presetId!, prompt: input),
+    );
+  }
+
+  void _onRefresh() {
+    final auth = context.read<AuthBloc>().state;
+    final role = auth.isGuest
+        ? StickerPresetRole.guest
+        : StickerPresetRole.free;
+    context.read<PresetBloc>().add(
+      PresetRefreshRequested(role: role, force: true),
     );
   }
 
@@ -134,63 +165,104 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
         child: SafeArea(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            child: BlocBuilder<StickerGenBloc, StickerGenBlocState>(
-              builder: (context, genState) {
-                final submitting =
-                    genState.status == StickerGenStatus.submitting;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _CreditsCard(),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Choose a style',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _PresetSelector(
-                      selectedId: _presetId,
-                      onSelected: submitting
-                          ? null
-                          : (id) => setState(() => _presetId = id),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Describe your sticker',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _promptCtrl,
-                      enabled: !submitting,
-                      maxLength: kMaxPromptChars,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. a smiling boba tea cup waving hello',
-                        filled: submitting,
-                        fillColor: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.3),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _GenerateButton(onPressed: _onGenerate),
-                    const SizedBox(height: 24),
-                    KeyedSubtree(key: _resultKey, child: const _ResultPanel()),
-                  ],
+          child: BlocBuilder<PresetBloc, PresetState>(
+            builder: (context, presetState) {
+              final presets = presetState.presets;
+              final isLoading = presetState.status == PresetStatus.loading;
+              final isError = presetState.status == PresetStatus.failure;
+              final isEmpty = presets.isEmpty && !isLoading && !isError;
+
+              if (isError && presets.isEmpty) {
+                return _PresetErrorView(
+                  message: presetState.errorMessage ?? 'Failed to load styles',
+                  onRetry: _onRefresh,
                 );
-              },
-            ),
+              }
+
+              // Ensure _presetId is set to first available preset
+              if (presets.isNotEmpty &&
+                  (_presetId == null ||
+                      !presets.any((p) => p.id == _presetId))) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && presets.isNotEmpty) {
+                    setState(() => _presetId = presets.first.id);
+                  }
+                });
+              }
+
+              return RefreshIndicator(
+                onRefresh: () async => _onRefresh(),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: BlocBuilder<StickerGenBloc, StickerGenBlocState>(
+                    builder: (context, genState) {
+                      final submitting =
+                          genState.status == StickerGenStatus.submitting;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _CreditsCard(),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Choose a style',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (isLoading && presets.isEmpty)
+                            const _PresetSkeleton()
+                          else if (isEmpty)
+                            _EmptyPresetsView(onRefresh: _onRefresh)
+                          else
+                            _PresetSelector(
+                              presets: presets,
+                              selectedId: _presetId,
+                              onSelected: submitting ? null : _onPresetSelected,
+                            ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Describe your sticker',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _promptCtrl,
+                            enabled: !submitting && !isEmpty,
+                            maxLength: kMaxPromptChars,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              hintText:
+                                  'e.g. a smiling boba tea cup waving hello',
+                              filled: submitting,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _GenerateButton(
+                            onPressed: () => _onGenerate(presets),
+                          ),
+                          const SizedBox(height: 24),
+                          KeyedSubtree(
+                            key: _resultKey,
+                            child: const _ResultPanel(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -278,13 +350,21 @@ class _CreditsCard extends StatelessWidget {
 }
 
 class _PresetSelector extends StatelessWidget {
-  final String selectedId;
+  final List<StickerPreset> presets;
+  final String? selectedId;
   final ValueChanged<String>? onSelected;
-  const _PresetSelector({required this.selectedId, this.onSelected});
+  const _PresetSelector({
+    required this.presets,
+    required this.selectedId,
+    this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final selected = kStickerPresets.firstWhere((p) => p.id == selectedId);
+    final selected = presets.firstWhere(
+      (p) => p.id == selectedId,
+      orElse: () => presets.first,
+    );
     final enabled = onSelected != null;
 
     return GestureDetector(
@@ -298,7 +378,7 @@ class _PresetSelector extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(selected.emoji, style: const TextStyle(fontSize: 20)),
+            Text(selected.emoji ?? '', style: const TextStyle(fontSize: 20)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -333,6 +413,7 @@ class _PresetSelector extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (_) => _PresetPickerSheet(
+        presets: presets,
         selectedId: selectedId,
         onSelect: (id) {
           Navigator.of(context).pop();
@@ -344,9 +425,14 @@ class _PresetSelector extends StatelessWidget {
 }
 
 class _PresetPickerSheet extends StatelessWidget {
-  final String selectedId;
+  final List<StickerPreset> presets;
+  final String? selectedId;
   final ValueChanged<String> onSelect;
-  const _PresetPickerSheet({required this.selectedId, required this.onSelect});
+  const _PresetPickerSheet({
+    required this.presets,
+    required this.selectedId,
+    required this.onSelect,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -372,10 +458,13 @@ class _PresetPickerSheet extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
-          ...kStickerPresets.map((p) {
+          ...presets.map((p) {
             final selected = p.id == selectedId;
             return ListTile(
-              leading: Text(p.emoji, style: const TextStyle(fontSize: 24)),
+              leading: Text(
+                p.emoji ?? '',
+                style: const TextStyle(fontSize: 24),
+              ),
               title: Text(
                 p.label,
                 style: TextStyle(
@@ -662,6 +751,130 @@ class _GuestResultCta extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Preset loading / error / empty helpers
+// ---------------------------------------------------------------------------
+
+class _PresetSkeleton extends StatelessWidget {
+  const _PresetSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.outline),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.outline.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 120,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.outline.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: 160,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: AppColors.outline.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyPresetsView extends StatelessWidget {
+  final VoidCallback onRefresh;
+  const _EmptyPresetsView({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.outline),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.style_outlined, size: 36, color: AppColors.outline),
+          const SizedBox(height: 8),
+          const Text(
+            'No styles available right now',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Pull down to refresh',
+            style: TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PresetErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _PresetErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 40, color: AppColors.error),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.error),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

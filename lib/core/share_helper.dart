@@ -14,10 +14,10 @@ Future<void> shareStickerImage(String signedUrl) async {
   }
 
   final dir = await getTemporaryDirectory();
-  final file = File('${dir.path}/sticker_share.png');
+  final file = File('${dir.path}/sticker_share.webp');
   await file.writeAsBytes(response.bodyBytes, flush: true);
 
   await Share.shareXFiles([
-    XFile(file.path, mimeType: 'image/png'),
+    XFile(file.path, mimeType: 'image/webp'),
   ], subject: 'Check out my sticker!');
 }

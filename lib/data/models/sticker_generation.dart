@@ -21,7 +21,7 @@ class StickerGeneration extends Equatable {
   final String presetName;
   final String userPrompt;
   final String finalPrompt;
-  final String? imageUrl; // storage path, e.g. {userId}/{id}.png
+  final String? imageUrl; // storage path, e.g. {userId}/{id}.webp
   final int cost;
   final StickerStatus status;
   final DateTime createdAt;

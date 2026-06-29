@@ -21,52 +21,76 @@ class MissionsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Missions')),
-      body: BlocBuilder<SubscriptionBloc, SubscriptionState>(
-        builder: (context, subState) {
-          return BlocBuilder<MissionBloc, MissionState>(
-            builder: (context, state) {
-              if (state.status == MissionStatus.initial) {
-                context.read<MissionBloc>().add(MissionLoadRequested(userId));
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state.status == MissionStatus.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state.status == MissionStatus.error &&
-                  state.missions.isEmpty) {
-                return Center(child: Text(state.errorMessage ?? 'Error'));
-              }
-
-              final userTier =
-                  subState.subscription?.tier ?? SubscriptionTier.free;
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context.read<MissionBloc>().add(MissionLoadRequested(userId));
-                },
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.missions.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final mission = state.missions[index];
-                    return _MissionTile(
-                      mission: mission,
-                      completions: state.completionsFor(mission.id),
-                      canAccess: mission.canAccess(userTier),
-                      isCompleting: state.status == MissionStatus.completing,
-                      onComplete: () {
-                        context.read<MissionBloc>().add(
-                          MissionCompleteRequested(userId, mission.id),
-                        );
-                      },
-                    );
-                  },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<MissionBloc, MissionState>(
+            listenWhen: (p, n) =>
+                p.errorMessage != n.errorMessage && n.errorMessage != null,
+            listener: (context, state) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.errorMessage ?? 'Claim failed'),
+                  backgroundColor: AppColors.error,
                 ),
               );
+              Future.delayed(const Duration(seconds: 3), () {
+                if (context.mounted) {
+                  context.read<MissionBloc>().add(const MissionErrorCleared());
+                }
+              });
             },
-          );
-        },
+          ),
+        ],
+        child: BlocBuilder<SubscriptionBloc, SubscriptionState>(
+          builder: (context, subState) {
+            return BlocBuilder<MissionBloc, MissionState>(
+              builder: (context, state) {
+                if (state.status == MissionStatus.initial) {
+                  context.read<MissionBloc>().add(MissionLoadRequested(userId));
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (state.status == MissionStatus.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (state.status == MissionStatus.error &&
+                    state.missions.isEmpty) {
+                  return Center(child: Text(state.errorMessage ?? 'Error'));
+                }
+
+                final userTier =
+                    subState.subscription?.tier ?? SubscriptionTier.free;
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<MissionBloc>().add(
+                      MissionLoadRequested(userId),
+                    );
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: state.missions.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final mission = state.missions[index];
+                      return _MissionTile(
+                        mission: mission,
+                        completions: state.completionsFor(mission.id),
+                        canAccess: mission.canAccess(userTier),
+                        isPending: state.isMissionPending(mission.id),
+                        isDebounced: state.isMissionDebounced(mission.id),
+                        onComplete: () {
+                          context.read<MissionBloc>().add(
+                            MissionCompleteRequested(userId, mission.id),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -76,14 +100,16 @@ class _MissionTile extends StatelessWidget {
   final Mission mission;
   final int completions;
   final bool canAccess;
-  final bool isCompleting;
+  final bool isPending;
+  final bool isDebounced;
   final VoidCallback onComplete;
 
   const _MissionTile({
     required this.mission,
     required this.completions,
     required this.canAccess,
-    required this.isCompleting,
+    required this.isPending,
+    required this.isDebounced,
     required this.onComplete,
   });
 
@@ -92,7 +118,7 @@ class _MissionTile extends StatelessWidget {
     final maxedOut =
         mission.maxCompletionsPerUser != null &&
         completions >= mission.maxCompletionsPerUser!;
-    final canComplete = canAccess && !maxedOut && !isCompleting;
+    final canComplete = canAccess && !maxedOut && !isPending && !isDebounced;
 
     return Card(
       child: Padding(
@@ -165,10 +191,10 @@ class _MissionTile extends StatelessWidget {
                       minimumSize: const Size(0, 32),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                     ),
-                    child: isCompleting
+                    child: isPending
                         ? const SizedBox(
-                            width: 14,
-                            height: 14,
+                            width: 16,
+                            height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Text('Claim', style: TextStyle(fontSize: 13)),

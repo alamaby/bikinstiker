@@ -40,7 +40,7 @@ AI-powered WhatsApp sticker generator. Users pick a preset style + type a short 
 
 The client never speaks to OpenRouter directly. Every generation flows through the `generate-sticker` edge function, which owns the OpenRouter API key, drives the atomic credit deduction RPC, performs the upload, and returns a short-lived signed URL.
 
-Clean-architecture layering inside `bikin_stiker/lib`:
+Clean-architecture layering inside `lib/`:
 
 | Layer | Folder | Purpose |
 |---|---|---|
@@ -175,6 +175,7 @@ Migrations included:
 | `20260505000001_init_schema.sql` | Tables (`user_wallets`, `credit_transactions`, `sticker_generations`), `transaction_type` enum, indexes, RLS (SELECT-only for owners), and the SECURITY DEFINER RPCs `deduct_credit_for_sticker` and `refund_failed_sticker`. |
 | `20260505000002_wallet_trigger.sql` | `on_auth_user_created` trigger → auto-creates a `user_wallets` row with **5 starter credits** + a matching `topup` ledger entry on every signup. |
 | `20260505000003_storage_bucket.sql` | Creates a **private** `stickers` bucket. RLS lets users `SELECT` only objects under `stickers/{auth.uid()}/...`. Uploads happen exclusively from the edge function via the service role. |
+| `20260505000004_deduct_credit_user_scope.sql` | Hardens `deduct_credit_for_sticker` by deriving the target user from `auth.uid()` (dropping the caller-supplied `p_user_id`) to prevent cross-user credit deduction. The edge function is updated in lockstep. |
 
 Mutations against `user_wallets`, `credit_transactions`, and `sticker_generations` are intentionally not exposed via RLS policies — every state change must go through the SECURITY DEFINER RPCs (called from the edge function) so the ledger remains the immutable source of truth.
 
@@ -188,7 +189,7 @@ The function `supabase/functions/generate-sticker/index.ts` does the following o
 2. Validates `{ userInput, presetId }`, caps prompt length at 200 chars, rejects unknown presets.
 3. Maps the preset to a concrete style descriptor and builds the strict final prompt:
    `die-cut sticker, pure white background, thick white border, centered subject, no shadow, high contrast, <style> style. Subject: <userInput>`.
-4. Calls `deduct_credit_for_sticker(p_user_id, p_cost=1, p_preset, p_prompt)`. If insufficient → HTTP 402.
+4. Calls `deduct_credit_for_sticker(p_cost=1, p_preset, p_prompt)`. User is derived from `auth.uid()` inside the RPC. If insufficient → HTTP 402.
 5. Calls OpenRouter `sourceful/riverflow-v2-fast` with `modalities: ["image"]`.
 6. Uploads the resulting bytes to `stickers/{user_id}/{sticker_id}.png` using the **service role** key.
 7. Updates the row with `image_url`, `final_prompt`, and `status='success'`.
@@ -224,7 +225,6 @@ Then `curl -X POST http://localhost:54321/functions/v1/generate-sticker \
 ## Running the Flutter app
 
 ```bash
-cd bikin_stiker
 flutter pub get
 flutter run        # picks up the connected device / emulator
 ```
@@ -330,4 +330,3 @@ The following checks are documented for manual validation — they are **not** w
 ## License
 
 See [LICENSE](LICENSE).
-| `20260505000004_deduct_credit_user_scope.sql` | Hardens `deduct_credit_for_sticker` by deriving the target user from `auth.uid()` (dropping the caller-supplied `p_user_id`) to prevent cross-user credit deduction. The edge function is updated in lockstep. |

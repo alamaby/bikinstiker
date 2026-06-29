@@ -65,7 +65,6 @@ class MissionState extends Equatable {
 
 class MissionBloc extends Bloc<MissionEvent, MissionState> {
   final MissionRepository _repo;
-  String? _userId;
 
   MissionBloc(this._repo) : super(const MissionState()) {
     on<MissionLoadRequested>(_onLoad);
@@ -76,7 +75,6 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
     MissionLoadRequested e,
     Emitter<MissionState> emit,
   ) async {
-    _userId = e.userId;
     emit(state.copyWith(status: MissionStatus.loading));
     try {
       final results = await Future.wait([

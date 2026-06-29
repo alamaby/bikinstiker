@@ -11,6 +11,7 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
+import '../../widgets/loading_lottie.dart';
 import '../auth/auth_screen.dart';
 import '../history/history_screen.dart';
 
@@ -565,9 +566,12 @@ class _ResultPanel extends StatelessWidget {
                     padding: EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        Icon(Icons.hourglass_top, color: AppColors.primary),
-                        SizedBox(height: 8),
-                        Text('Conjuring your sticker…'),
+                        LoadingLottie(size: 120),
+                        SizedBox(height: 12),
+                        Text(
+                          'Conjuring your sticker…',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
                       ],
                     ),
                   ),

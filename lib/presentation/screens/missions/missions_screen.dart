@@ -115,10 +115,9 @@ class _MissionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxedOut =
-        mission.maxCompletionsPerUser != null &&
-        completions >= mission.maxCompletionsPerUser!;
-    final canComplete = canAccess && !maxedOut && !isPending && !isDebounced;
+final maxCompletions = mission.maxCompletionsPerUser ?? 1;
+            final maxedOut = completions >= maxCompletions;
+            final canComplete = canAccess && !maxedOut && !isPending && !isDebounced;
 
     return Card(
       child: Padding(

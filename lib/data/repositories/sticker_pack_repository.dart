@@ -9,7 +9,7 @@ abstract class StickerPackRepository {
   /// Fetch all accessible (active, unlocked) packs for the current user.
   Future<List<StickerPack>> fetchUserPacks();
 
-  /// Get full pack details including all sticker items.
+  /// Get full pack details including all sticker items with signed URLs.
   Future<({StickerPack pack, List<StickerPackItem> items})> getPackDetail(
     String packId,
   );
@@ -79,8 +79,40 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     final pack = StickerPack.fromJson(json['pack'] as Map<String, dynamic>);
     final itemRows = json['items'] as List? ?? const [];
 
+    // Collect all sticker paths to fetch signed URLs in batch
+    final paths = <String>[];
+    for (final row in itemRows) {
+      final path = (row as Map<String, dynamic>)['sticker_path'] as String?;
+      if (path != null && path.isNotEmpty) {
+        paths.add(path);
+      }
+    }
+
+    // Fetch signed URLs for all sticker paths
+    final signedUrls = <String, String>{};
+    if (paths.isNotEmpty) {
+      try {
+        final urls = await _client.storage.from('stickers').createSignedUrls(paths, 3600);
+        for (int i = 0; i < paths.length; i++) {
+          final signedUrl = urls[i];
+          if (signedUrl.signedUrl.isNotEmpty) {
+            signedUrls[paths[i]] = signedUrl.signedUrl;
+          }
+        }
+      } catch (_) {
+        // If batch fails, we'll skip signed URLs
+      }
+    }
+
     final items = itemRows
-        .map((r) => StickerPackItem.fromJson(r as Map<String, dynamic>))
+        .map((r) {
+          final row = r as Map<String, dynamic>;
+          final path = row['sticker_path'] as String?;
+          return StickerPackItem.fromJson(
+            row,
+            signedUrl: path != null ? signedUrls[path] : null,
+          );
+        })
         .toList();
 
     return (pack: pack, items: items);

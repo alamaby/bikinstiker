@@ -375,21 +375,17 @@ class _StickerItemTile extends StatelessWidget {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    item.emojis.isNotEmpty ? item.emojis.join(' ') : '🎨',
-                    style: const TextStyle(fontSize: 28),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '#${item.position}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: item.stickerPath != null
+                  ? Image.network(
+                      item.stickerPath!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => _placeholder(context),
+                    )
+                  : _placeholder(context),
             ),
           ),
         ),
@@ -428,7 +424,59 @@ class _StickerItemTile extends StatelessWidget {
               ),
             ),
           ),
+        // Emoji badge bottom-left
+        if (item.emojis.isNotEmpty)
+          Positioned(
+            bottom: 2,
+            left: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                item.emojis.join(' '),
+                style: const TextStyle(fontSize: 10),
+              ),
+            ),
+          ),
+        // Position badge top-left
+        Positioned(
+          top: 2,
+          left: 2,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '#${item.position}',
+              style: const TextStyle(fontSize: 9, color: Colors.white),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _placeholder(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            item.emojis.isNotEmpty ? item.emojis.join(' ') : '🎨',
+            style: const TextStyle(fontSize: 28),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '#${item.position}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
     );
   }
 }

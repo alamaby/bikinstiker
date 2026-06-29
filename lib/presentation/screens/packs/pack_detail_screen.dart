@@ -377,9 +377,9 @@ class _StickerItemTile extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: item.stickerPath != null
+              child: item.stickerSignedUrl != null
                   ? Image.network(
-                      item.stickerPath!,
+                      item.stickerSignedUrl!,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,

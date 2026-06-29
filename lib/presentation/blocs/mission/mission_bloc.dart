@@ -151,12 +151,12 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
           pendingMissionIds: pending,
         ),
       );
-    } catch (e) {
+    } catch (err) {
       final pending = {...state.pendingMissionIds}..remove(e.missionId);
       emit(
         state.copyWith(
           status: MissionStatus.loaded,
-          errorMessage: e.toString(),
+          errorMessage: err.toString(),
           pendingMissionIds: pending,
         ),
       );

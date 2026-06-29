@@ -8,13 +8,18 @@ import '../../../core/errors/failures.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_preset.dart';
+import '../../../data/models/user_subscription.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
+import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
+import '../../widgets/ads_banner_placeholder.dart';
 import '../../widgets/loading_lottie.dart';
+import '../../widgets/tier_badge.dart';
 import '../auth/auth_screen.dart';
 import '../history/history_screen.dart';
+import '../missions/missions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -97,9 +102,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onRefresh() {
     final auth = context.read<AuthBloc>().state;
-    final role = auth.isGuest
-        ? StickerPresetRole.guest
-        : StickerPresetRole.free;
+    final subState = context.read<SubscriptionBloc>().state;
+    StickerPresetRole role;
+    if (auth.isGuest) {
+      role = StickerPresetRole.guest;
+    } else {
+      role = subState.isPlus ? StickerPresetRole.plus : StickerPresetRole.free;
+    }
     context.read<PresetBloc>().add(
       PresetRefreshRequested(role: role, force: true),
     );
@@ -134,6 +143,13 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               return Row(
                 children: [
+                  IconButton(
+                    tooltip: 'Missions',
+                    icon: const Icon(Icons.emoji_events_outlined),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const MissionsScreen()),
+                    ),
+                  ),
                   IconButton(
                     tooltip: 'History',
                     icon: const Icon(Icons.history),
@@ -206,6 +222,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _CreditsCard(),
+                          const SizedBox(height: 8),
+                          BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                            builder: (context, subState) {
+                              final isGuest = context
+                                  .read<AuthBloc>()
+                                  .state
+                                  .isGuest;
+                              final showAd = !isGuest && !subState.isPlus;
+                              if (!showAd) return const SizedBox.shrink();
+                              return const AdsBannerPlaceholder();
+                            },
+                          ),
                           const SizedBox(height: 16),
                           const Text(
                             'Choose a style',
@@ -279,70 +307,93 @@ class _CreditsCard extends StatelessWidget {
       builder: (context, walletState) {
         return BlocBuilder<AuthBloc, AuthBlocState>(
           builder: (context, authState) {
-            final isGuest = authState.isGuest;
-            final balance = walletState.balance;
-            final low = !walletState.loading && balance < kStickerCost;
-            final label = isGuest ? 'Guest Credits' : 'Credits';
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.bolt,
-                      color: low ? AppColors.error : AppColors.secondary,
-                      size: 32,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            label,
-                            style: const TextStyle(
-                              color: Colors.black54,
-                              fontSize: 12,
-                            ),
-                          ),
-                          Text(
-                            walletState.loading ? '…' : '$balance',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          if (isGuest)
-                            const Text(
-                              'Create an account for 5 credits',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.black54,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (low)
-                      const Tooltip(
-                        message: 'Low balance',
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning_amber, color: AppColors.error),
-                            SizedBox(width: 4),
-                            Text(
-                              'Low',
-                              style: TextStyle(
-                                color: AppColors.error,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
+            return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+              builder: (context, subState) {
+                final isGuest = authState.isGuest;
+                final balance = walletState.balance;
+                final low = !walletState.loading && balance < kStickerCost;
+                final label = isGuest
+                    ? 'Guest Credits'
+                    : subState.isPlus
+                    ? 'Credits (Plus)'
+                    : 'Credits';
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.bolt,
+                          color: low ? AppColors.error : AppColors.secondary,
+                          size: 32,
                         ),
-                      ),
-                  ],
-                ),
-              ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    label,
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  if (!isGuest) ...[
+                                    const SizedBox(width: 6),
+                                    TierBadge(
+                                      tier:
+                                          subState.subscription?.tier ??
+                                          SubscriptionTier.free,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              Text(
+                                walletState.loading ? '…' : '$balance',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              if (isGuest)
+                                const Text(
+                                  'Create an account for 5 credits',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (low)
+                          const Tooltip(
+                            message: 'Low balance',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.warning_amber,
+                                  color: AppColors.error,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Low',
+                                  style: TextStyle(
+                                    color: AppColors.error,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             );
           },
         );

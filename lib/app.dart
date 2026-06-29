@@ -7,13 +7,17 @@ import 'core/theme/app_theme.dart';
 import 'data/models/sticker_preset.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/legal_consent_repository.dart';
+import 'data/repositories/mission_repository.dart';
 import 'data/repositories/preset_repository.dart';
 import 'data/repositories/sticker_repository.dart';
+import 'data/repositories/subscription_repository.dart';
 import 'data/repositories/wallet_repository.dart';
 import 'presentation/blocs/auth/auth_bloc.dart';
 import 'presentation/blocs/history/history_bloc.dart';
+import 'presentation/blocs/mission/mission_bloc.dart';
 import 'presentation/blocs/preset/preset_bloc.dart';
 import 'presentation/blocs/sticker_gen/sticker_gen_bloc.dart';
+import 'presentation/blocs/subscription/subscription_bloc.dart';
 import 'presentation/blocs/wallet/wallet_bloc.dart';
 import 'presentation/screens/auth/auth_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
@@ -41,6 +45,12 @@ class BikinStikerApp extends StatelessWidget {
         RepositoryProvider<PresetRepository>.value(
           value: getIt<PresetRepository>(),
         ),
+        RepositoryProvider<SubscriptionRepository>.value(
+          value: getIt<SubscriptionRepository>(),
+        ),
+        RepositoryProvider<MissionRepository>.value(
+          value: getIt<MissionRepository>(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -59,6 +69,13 @@ class BikinStikerApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (ctx) => PresetBloc(ctx.read<PresetRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) =>
+                SubscriptionBloc(ctx.read<SubscriptionRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => MissionBloc(ctx.read<MissionRepository>()),
           ),
         ],
         child: MaterialApp(
@@ -84,10 +101,10 @@ class _AuthGateState extends State<_AuthGate> {
   bool _startingGuestSession = false;
   User? _previousUser;
 
-  StickerPresetRole _roleFor(AuthBlocState auth) {
+  StickerPresetRole _roleFor(AuthBlocState auth, SubscriptionState subState) {
     if (auth.user == null) return StickerPresetRole.guest;
-    // TODO(subscription): read is_plus from user_wallets once it exists.
-    return auth.isGuest ? StickerPresetRole.guest : StickerPresetRole.free;
+    if (auth.isGuest) return StickerPresetRole.guest;
+    return subState.isPlus ? StickerPresetRole.plus : StickerPresetRole.free;
   }
 
   @override
@@ -103,12 +120,20 @@ class _AuthGateState extends State<_AuthGate> {
             final history = context.read<HistoryBloc>();
             final stickerGen = context.read<StickerGenBloc>();
             final preset = context.read<PresetBloc>();
+            final subscription = context.read<SubscriptionBloc>();
+            final mission = context.read<MissionBloc>();
             if (state.user != null) {
               final isUserIdChanged =
                   _previousUser != null && _previousUser!.id != state.user!.id;
               wallet.add(WalletWatchStarted(state.user!.id));
               wallet.add(WalletRefreshRequested(state.user!.id));
-              preset.add(PresetRefreshRequested(role: _roleFor(state)));
+              subscription.add(SubscriptionWatchStarted(state.user!.id));
+              mission.add(MissionLoadRequested(state.user!.id));
+              preset.add(
+                PresetRefreshRequested(
+                  role: _roleFor(state, context.read<SubscriptionBloc>().state),
+                ),
+              );
               if (isUserIdChanged) {
                 history.add(const HistoryCleared());
                 stickerGen.add(const StickerGenReset());
@@ -118,6 +143,7 @@ class _AuthGateState extends State<_AuthGate> {
               }
             } else {
               wallet.add(const WalletWatchStopped());
+              subscription.add(const SubscriptionWatchStopped());
               history.add(const HistoryCleared());
               stickerGen.add(const StickerGenReset());
               preset.add(const PresetCleared());

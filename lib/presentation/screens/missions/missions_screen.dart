@@ -78,10 +78,28 @@ class MissionsScreen extends StatelessWidget {
                         canAccess: mission.canAccess(userTier),
                         isPending: state.isMissionPending(mission.id),
                         isDebounced: state.isMissionDebounced(mission.id),
+                        cooldownRemaining: state.cooldownRemainingFor(
+                          mission.id,
+                          mission,
+                        ),
+                        isDailyLimitReached: state.isDailyLimitReached(
+                          mission.id,
+                          mission,
+                        ),
+                        isCompleted: state.isMissionCompleted(
+                          mission.id,
+                          mission,
+                        ),
                         onComplete: () {
-                          context.read<MissionBloc>().add(
-                            MissionCompleteRequested(userId, mission.id),
-                          );
+                          if (mission.code == 'watch_video_ad') {
+                            context.read<MissionBloc>().add(
+                              MissionWatchAdRequested(userId, mission.id),
+                            );
+                          } else {
+                            context.read<MissionBloc>().add(
+                              MissionCompleteRequested(userId, mission.id),
+                            );
+                          }
                         },
                       );
                     },
@@ -102,6 +120,9 @@ class _MissionTile extends StatelessWidget {
   final bool canAccess;
   final bool isPending;
   final bool isDebounced;
+  final Duration? cooldownRemaining;
+  final bool isDailyLimitReached;
+  final bool isCompleted;
   final VoidCallback onComplete;
 
   const _MissionTile({
@@ -110,14 +131,30 @@ class _MissionTile extends StatelessWidget {
     required this.canAccess,
     required this.isPending,
     required this.isDebounced,
+    this.cooldownRemaining,
+    this.isDailyLimitReached = false,
+    this.isCompleted = false,
     required this.onComplete,
   });
 
   @override
   Widget build(BuildContext context) {
-final maxCompletions = mission.maxCompletionsPerUser ?? 1;
-            final maxedOut = completions >= maxCompletions;
-            final canComplete = canAccess && !maxedOut && !isPending && !isDebounced;
+    final canComplete =
+        canAccess &&
+        !isCompleted &&
+        !isPending &&
+        !isDebounced &&
+        !isDailyLimitReached;
+
+    // Determine button label based on mission type
+    String buttonLabel = 'Claim';
+    if (mission.code == 'watch_video_ad') {
+      buttonLabel = 'Watch Ad';
+    } else if (mission.code == 'share_app_daily') {
+      buttonLabel = 'Share';
+    } else if (mission.code == 'daily_login') {
+      buttonLabel = 'Check-in';
+    }
 
     return Card(
       child: Padding(
@@ -165,7 +202,7 @@ final maxCompletions = mission.maxCompletionsPerUser ?? 1;
                   ),
                 ),
                 const Spacer(),
-                if (maxedOut)
+                if (isCompleted)
                   const Text(
                     'Completed',
                     style: TextStyle(
@@ -178,6 +215,24 @@ final maxCompletions = mission.maxCompletionsPerUser ?? 1;
                   const Text(
                     'Requires Plus',
                     style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black38,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else if (isDailyLimitReached)
+                  const Text(
+                    'Daily limit reached',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black38,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else if (cooldownRemaining != null)
+                  Text(
+                    _formatDuration(cooldownRemaining!),
+                    style: const TextStyle(
                       fontSize: 13,
                       color: Colors.black38,
                       fontWeight: FontWeight.w500,
@@ -196,7 +251,10 @@ final maxCompletions = mission.maxCompletionsPerUser ?? 1;
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Claim', style: TextStyle(fontSize: 13)),
+                        : Text(
+                            buttonLabel,
+                            style: const TextStyle(fontSize: 13),
+                          ),
                   ),
               ],
             ),
@@ -204,5 +262,14 @@ final maxCompletions = mission.maxCompletionsPerUser ?? 1;
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60);
+    final seconds = d.inSeconds.remainder(60);
+    if (d.inHours > 0) {
+      return '${d.inHours}h ${minutes}m';
+    }
+    return '${minutes}m ${seconds}s';
   }
 }

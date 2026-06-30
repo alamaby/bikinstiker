@@ -8,6 +8,9 @@ class Mission {
   final int rewardCredits;
   final SubscriptionTier requiredTier;
   final int? maxCompletionsPerUser;
+  final int? cooldownSeconds;
+  final int? maxCompletionsPerDay;
+  final String validationType;
   final int sortOrder;
 
   const Mission({
@@ -18,6 +21,9 @@ class Mission {
     required this.rewardCredits,
     required this.requiredTier,
     this.maxCompletionsPerUser,
+    this.cooldownSeconds,
+    this.maxCompletionsPerDay,
+    this.validationType = 'manual',
     required this.sortOrder,
   });
 
@@ -37,6 +43,9 @@ class Mission {
         json['required_tier'] as String?,
       ),
       maxCompletionsPerUser: json['max_completions_per_user'] as int?,
+      cooldownSeconds: json['cooldown_seconds'] as int?,
+      maxCompletionsPerDay: json['max_completions_per_day'] as int?,
+      validationType: json['validation_type'] as String? ?? 'manual',
       sortOrder: json['sort_order'] as int? ?? 100,
     );
   }

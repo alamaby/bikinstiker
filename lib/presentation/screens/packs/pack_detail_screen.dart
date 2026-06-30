@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/di.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/whatsapp_pack_exporter.dart';
 import '../../../data/models/sticker_pack.dart';
 import '../../../data/models/sticker_pack_item.dart';
+import '../../../data/repositories/sticker_pack_repository.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 
 /// Screen showing a single sticker pack's details.
@@ -148,14 +151,11 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
                     item: item,
                     isPending: isPending,
                     onRemove: pack.canRemoveStickers
-                        ? () {
-                            context.read<StickerPackBloc>().add(
-                              StickerPackRemoveStickerRequested(
-                                pack.id,
-                                item.stickerGenerationId,
-                              ),
-                            );
-                          }
+                        ? () => _showRemoveStickerDialog(
+                            context,
+                            pack,
+                            item.stickerGenerationId,
+                          )
                         : null,
                   );
                 }, childCount: items.length),
@@ -184,14 +184,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: canExport
-                  ? () {
-                      // TODO: Navigate to WhatsApp export flow
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('WhatsApp export coming soon'),
-                        ),
-                      );
-                    }
+                  ? () => _onExportToWhatsApp(context, pack)
                   : null,
               icon: const Icon(Icons.send),
               label: Text(
@@ -210,6 +203,62 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _onExportToWhatsApp(
+    BuildContext context,
+    StickerPack pack,
+  ) async {
+    final items = context.read<StickerPackBloc>().state.selectedPackItems;
+    final exporter = WhatsAppPackExporter();
+
+    // Show loading overlay
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final result = await exporter.exportPack(
+      pack: pack,
+      items: items,
+      prepareFn: (packId, packItems) async {
+        final repo = getIt<StickerPackRepository>();
+        return repo.preparePackForExport(packId, packItems);
+      },
+    );
+
+    // Dismiss loading overlay
+    if (context.mounted) Navigator.of(context).pop();
+
+    if (!context.mounted) return;
+
+    switch (result) {
+      case WhatsAppExportSuccess():
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Opening WhatsApp...'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      case WhatsAppExportNotInstalled():
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'WhatsApp is not installed. Please install WhatsApp first.',
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      case WhatsAppExportError(:final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $message'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+    }
   }
 
   Future<void> _showRenameDialog(BuildContext context, StickerPack pack) async {
@@ -284,6 +333,42 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
       if (context.mounted) {
         Navigator.of(context).pop();
       }
+    }
+  }
+
+  Future<void> _showRemoveStickerDialog(
+    BuildContext context,
+    StickerPack pack,
+    String stickerGenerationId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Remove Sticker?'),
+          content: Text(
+            'Remove this sticker from "${pack.name}"? '
+            'The sticker will remain in your history.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      context.read<StickerPackBloc>().add(
+        StickerPackRemoveStickerRequested(pack.id, stickerGenerationId),
+      );
     }
   }
 }
@@ -383,7 +468,8 @@ class _StickerItemTile extends StatelessWidget {
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
-                      errorBuilder: (context, error, stackTrace) => _placeholder(context),
+                      errorBuilder: (context, error, stackTrace) =>
+                          _placeholder(context),
                     )
                   : _placeholder(context),
             ),

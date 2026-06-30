@@ -255,7 +255,7 @@ class StickerPackBloc extends Bloc<StickerPackEvent, StickerPackState> {
     final pendingKey = '${event.packId}:${event.stickerId}';
     emit(state.copyWith(pendingPackIds: {...state.pendingPackIds, pendingKey}));
     try {
-      await _repo.addStickerToPack(
+      final result = await _repo.addStickerToPack(
         packId: event.packId,
         stickerId: event.stickerId,
         emojis: event.emojis,
@@ -263,6 +263,14 @@ class StickerPackBloc extends Bloc<StickerPackEvent, StickerPackState> {
       );
       final newPending = {...state.pendingPackIds}..remove(pendingKey);
       emit(state.copyWith(pendingPackIds: newPending));
+
+      // --- Local cache + tray icon derivation (fire-and-forget) ---
+      _cacheStickerAndMaybeDeriveTray(
+        event.packId,
+        event.stickerId,
+        result.packSize,
+      );
+
       // Refresh detail if viewing this pack, and the list
       if (state.selectedPack?.id == event.packId) {
         add(StickerPackDetailLoadRequested(event.packId));
@@ -273,6 +281,45 @@ class StickerPackBloc extends Bloc<StickerPackEvent, StickerPackState> {
       emit(
         state.copyWith(pendingPackIds: newPending, errorMessage: e.toString()),
       );
+    }
+  }
+
+  /// Fire-and-forget: cache the new sticker locally, and if this was the
+  /// first sticker in the pack, invoke the derive-tray-icon Edge Function.
+  Future<void> _cacheStickerAndMaybeDeriveTray(
+    String packId,
+    String stickerId,
+    int newPackSize,
+  ) async {
+    try {
+      // Re-fetch detail to get the signed URL for the new sticker
+      final detail = await _repo.getPackDetail(packId);
+      final newItem = detail.items
+          .where((i) => i.stickerGenerationId == stickerId)
+          .firstOrNull;
+      if (newItem == null || newItem.stickerSignedUrl == null) return;
+
+      // Cache the single sticker
+      await _repo.cachePackStickersLocally(packId, [
+        (stickerId: stickerId, signedUrl: newItem.stickerSignedUrl!),
+      ]);
+
+      // If first sticker in pack, derive tray icon
+      if (newPackSize == 1) {
+        final trayResult = await _repo.invokeDeriveTrayIcon(
+          packId: packId,
+          sourceStickerId: stickerId,
+        );
+        if (trayResult.ok) {
+          final trayPath = detail.pack.trayIconPath;
+          final trayUrl = await _repo.signedUrlForTrayIcon(trayPath);
+          if (trayUrl != null) {
+            await _repo.cacheTrayIconLocally(packId, trayUrl);
+          }
+        }
+      }
+    } catch (_) {
+      // Non-fatal: errors surfaced when user tries to export
     }
   }
 

@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/sticker_pack.dart';
@@ -52,6 +56,32 @@ abstract class StickerPackRepository {
   /// Get a signed URL for a pack's tray icon.
   /// Returns null if the tray icon doesn't exist.
   Future<String?> signedUrlForTrayIcon(String trayIconPath);
+
+  /// Download sticker WebP bytes from signed URLs and cache them locally
+  /// for the ContentProvider to serve.
+  /// Skips files that already exist on disk.
+  Future<void> cachePackStickersLocally(
+    String packId,
+    List<({String stickerId, String signedUrl})> stickers,
+  );
+
+  /// Download tray icon PNG from a signed URL and cache it locally.
+  /// Skips if file already exists on disk.
+  Future<void> cacheTrayIconLocally(String packId, String signedTrayUrl);
+
+  /// Invoke the derive-tray-icon Edge Function to generate a 96x96 PNG
+  /// tray icon from the first sticker in the pack.
+  Future<({bool ok, String? error})> invokeDeriveTrayIcon({
+    required String packId,
+    required String sourceStickerId,
+  });
+
+  /// Ensure all sticker files + tray icon are cached locally for export.
+  /// Self-healing: fetches missing assets. Returns null on success or error string.
+  Future<String?> preparePackForExport(
+    String packId,
+    List<StickerPackItem> items,
+  );
 }
 
 class SupabaseStickerPackRepository implements StickerPackRepository {
@@ -92,7 +122,9 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     final signedUrls = <String, String>{};
     if (paths.isNotEmpty) {
       try {
-        final urls = await _client.storage.from('stickers').createSignedUrls(paths, 3600);
+        final urls = await _client.storage
+            .from('stickers')
+            .createSignedUrls(paths, 3600);
         for (int i = 0; i < paths.length; i++) {
           final signedUrl = urls[i];
           if (signedUrl.signedUrl.isNotEmpty) {
@@ -104,16 +136,14 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
       }
     }
 
-    final items = itemRows
-        .map((r) {
-          final row = r as Map<String, dynamic>;
-          final path = row['sticker_path'] as String?;
-          return StickerPackItem.fromJson(
-            row,
-            signedUrl: path != null ? signedUrls[path] : null,
-          );
-        })
-        .toList();
+    final items = itemRows.map((r) {
+      final row = r as Map<String, dynamic>;
+      final path = row['sticker_path'] as String?;
+      return StickerPackItem.fromJson(
+        row,
+        signedUrl: path != null ? signedUrls[path] : null,
+      );
+    }).toList();
 
     return (pack: pack, items: items);
   }
@@ -201,12 +231,129 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
   @override
   Future<String?> signedUrlForTrayIcon(String trayIconPath) async {
     try {
+      // trayIconPath may be "tray_icons/{uid}/{packId}.png" — strip bucket prefix
+      final objectPath = trayIconPath.startsWith('tray_icons/')
+          ? trayIconPath.substring('tray_icons/'.length)
+          : trayIconPath;
       final res = await _client.storage
           .from('tray_icons')
-          .createSignedUrl(trayIconPath, 3600);
+          .createSignedUrl(objectPath, 3600);
       return res;
     } catch (_) {
       return null;
     }
+  }
+
+  @override
+  Future<void> cachePackStickersLocally(
+    String packId,
+    List<({String stickerId, String signedUrl})> stickers,
+  ) async {
+    final appDir = await getApplicationSupportDirectory();
+    final packDir = Directory('${appDir.path}/pack_stickers/$packId');
+    if (!await packDir.exists()) {
+      await packDir.create(recursive: true);
+    }
+
+    for (final sticker in stickers) {
+      final file = File('${packDir.path}/${sticker.stickerId}.webp');
+      if (await file.exists()) continue;
+
+      try {
+        final response = await http.get(Uri.parse(sticker.signedUrl));
+        if (response.statusCode == 200) {
+          await file.writeAsBytes(response.bodyBytes, flush: true);
+        }
+      } catch (_) {
+        // Non-fatal: ContentProvider will fail with FileNotFoundException
+        // if user tries to export before cache is warm.
+      }
+    }
+  }
+
+  @override
+  Future<void> cacheTrayIconLocally(String packId, String signedTrayUrl) async {
+    final appDir = await getApplicationSupportDirectory();
+    final trayDir = Directory('${appDir.path}/tray_icons');
+    if (!await trayDir.exists()) {
+      await trayDir.create(recursive: true);
+    }
+
+    final file = File('${trayDir.path}/$packId.png');
+    if (await file.exists()) return;
+
+    try {
+      final response = await http.get(Uri.parse(signedTrayUrl));
+      if (response.statusCode == 200) {
+        await file.writeAsBytes(response.bodyBytes, flush: true);
+      }
+    } catch (_) {
+      // Non-fatal
+    }
+  }
+
+  @override
+  Future<({bool ok, String? error})> invokeDeriveTrayIcon({
+    required String packId,
+    required String sourceStickerId,
+  }) async {
+    try {
+      await _client.functions.invoke(
+        'derive-tray-icon',
+        method: HttpMethod.post,
+        body: {'pack_id': packId, 'source_sticker_id': sourceStickerId},
+      );
+      return (ok: true, error: null);
+    } catch (e) {
+      return (ok: false, error: e.toString());
+    }
+  }
+
+  @override
+  Future<String?> preparePackForExport(
+    String packId,
+    List<StickerPackItem> items,
+  ) async {
+    // 1. Cache all sticker WebP files locally
+    final stickerPairs = <({String stickerId, String signedUrl})>[];
+    for (final item in items) {
+      if (item.stickerSignedUrl != null) {
+        stickerPairs.add((
+          stickerId: item.stickerGenerationId,
+          signedUrl: item.stickerSignedUrl!,
+        ));
+      }
+    }
+    if (stickerPairs.isNotEmpty) {
+      await cachePackStickersLocally(packId, stickerPairs);
+    }
+
+    // 2. Check if tray icon is cached locally
+    final appDir = await getApplicationSupportDirectory();
+    final trayFile = File('${appDir.path}/tray_icons/$packId.png');
+    if (!await trayFile.exists()) {
+      // 3. Derive tray icon from first sticker
+      if (items.isEmpty) {
+        return 'Pack has no stickers';
+      }
+      final firstItem = items.first;
+      final deriveResult = await invokeDeriveTrayIcon(
+        packId: packId,
+        sourceStickerId: firstItem.stickerGenerationId,
+      );
+      if (!deriveResult.ok) {
+        return 'Failed to generate tray icon: ${deriveResult.error}';
+      }
+
+      // 4. Fetch signed URL and cache tray icon
+      final detail = await getPackDetail(packId);
+      final trayUrl = await signedUrlForTrayIcon(detail.pack.trayIconPath);
+      if (trayUrl == null) {
+        return 'Failed to get tray icon URL';
+      }
+      await cacheTrayIconLocally(packId, trayUrl);
+    }
+
+    return null; // success
   }
 }

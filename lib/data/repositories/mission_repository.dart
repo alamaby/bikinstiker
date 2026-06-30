@@ -44,10 +44,7 @@ class SupabaseMissionRepository implements MissionRepository {
     required String userId,
     required String missionId,
   }) async {
-    await _client.rpc(
-      'complete_mission',
-      params: {'p_mission_id': missionId},
-    );
+    await _client.rpc('complete_mission', params: {'p_mission_id': missionId});
 
     final row = await _client
         .from('user_mission_progress')

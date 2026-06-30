@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/mission.dart';
 import '../../../data/models/mission_progress.dart';
 import '../../../data/repositories/mission_repository.dart';
+import '../../../data/repositories/rewarded_ad_repository.dart';
 
 sealed class MissionEvent extends Equatable {
   const MissionEvent();
@@ -22,6 +23,14 @@ class MissionCompleteRequested extends MissionEvent {
   final String userId;
   final String missionId;
   const MissionCompleteRequested(this.userId, this.missionId);
+  @override
+  List<Object?> get props => [userId, missionId];
+}
+
+class MissionWatchAdRequested extends MissionEvent {
+  final String userId;
+  final String missionId;
+  const MissionWatchAdRequested(this.userId, this.missionId);
   @override
   List<Object?> get props => [userId, missionId];
 }
@@ -62,6 +71,48 @@ class MissionState extends Equatable {
     return DateTime.now().difference(ts) < const Duration(milliseconds: 500);
   }
 
+  /// Returns the remaining cooldown duration for a mission, or null if no cooldown or not in cooldown.
+  Duration? cooldownRemainingFor(String missionId, Mission mission) {
+    if (mission.cooldownSeconds == null) return null;
+    final lastCompleted = _lastCompletedAt(missionId);
+    if (lastCompleted == null) return null;
+    final cooldownEnd = lastCompleted.add(
+      Duration(seconds: mission.cooldownSeconds!),
+    );
+    final remaining = cooldownEnd.difference(DateTime.now());
+    if (remaining.isNegative) return null;
+    return remaining;
+  }
+
+  /// Returns true if daily limit is reached for this mission.
+  bool isDailyLimitReached(String missionId, Mission mission) {
+    if (mission.maxCompletionsPerDay == null) return false;
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final count = progress
+        .where(
+          (p) => p.missionId == missionId && p.completedAt.isAfter(startOfDay),
+        )
+        .length;
+    return count >= mission.maxCompletionsPerDay!;
+  }
+
+  /// Returns true if mission is completed (for one-time missions) or daily limit reached.
+  bool isMissionCompleted(String missionId, Mission mission) {
+    final maxCompletions = mission.maxCompletionsPerUser ?? 1;
+    final completions = completionsFor(missionId);
+    if (completions >= maxCompletions) return true;
+    if (isDailyLimitReached(missionId, mission)) return true;
+    return false;
+  }
+
+  DateTime? _lastCompletedAt(String missionId) {
+    final relevant = progress.where((p) => p.missionId == missionId).toList();
+    if (relevant.isEmpty) return null;
+    relevant.sort((a, b) => b.completedAt.compareTo(a.completedAt));
+    return relevant.first.completedAt;
+  }
+
   static const Object _undefined = Object();
 
   MissionState copyWith({
@@ -97,10 +148,12 @@ class MissionState extends Equatable {
 
 class MissionBloc extends Bloc<MissionEvent, MissionState> {
   final MissionRepository _repo;
+  final RewardedAdRepository _adRepo;
 
-  MissionBloc(this._repo) : super(const MissionState()) {
+  MissionBloc(this._repo, this._adRepo) : super(const MissionState()) {
     on<MissionLoadRequested>(_onLoad);
     on<MissionCompleteRequested>(_onComplete);
+    on<MissionWatchAdRequested>(_onWatchAd);
     on<MissionErrorCleared>(_onErrorCleared);
   }
 
@@ -161,6 +214,28 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
         ),
       );
     }
+  }
+
+  Future<void> _onWatchAd(
+    MissionWatchAdRequested e,
+    Emitter<MissionState> emit,
+  ) async {
+    // First show the rewarded ad
+    final rewardEarned = await _adRepo.loadAndShow();
+    if (!rewardEarned) {
+      final detail = _adRepo.lastErrorMessage;
+      emit(
+        state.copyWith(
+          errorMessage: detail != null && detail.isNotEmpty
+              ? 'Ad error: $detail'
+              : 'Failed to load or watch ad. Please try again.',
+        ),
+      );
+      return;
+    }
+
+    // If reward earned, proceed with mission completion
+    add(MissionCompleteRequested(e.userId, e.missionId));
   }
 
   Future<void> _onErrorCleared(

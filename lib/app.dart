@@ -9,6 +9,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/legal_consent_repository.dart';
 import 'data/repositories/mission_repository.dart';
 import 'data/repositories/preset_repository.dart';
+import 'data/repositories/rewarded_ad_repository.dart';
 import 'data/repositories/sticker_pack_repository.dart';
 import 'data/repositories/sticker_repository.dart';
 import 'data/repositories/subscription_repository.dart';
@@ -53,6 +54,9 @@ class BikinStikerApp extends StatelessWidget {
         RepositoryProvider<MissionRepository>.value(
           value: getIt<MissionRepository>(),
         ),
+        RepositoryProvider<RewardedAdRepository>.value(
+          value: getIt<RewardedAdRepository>(),
+        ),
         RepositoryProvider<StickerPackRepository>.value(
           value: getIt<StickerPackRepository>(),
         ),
@@ -80,7 +84,10 @@ class BikinStikerApp extends StatelessWidget {
                 SubscriptionBloc(ctx.read<SubscriptionRepository>()),
           ),
           BlocProvider(
-            create: (ctx) => MissionBloc(ctx.read<MissionRepository>()),
+            create: (ctx) => MissionBloc(
+              ctx.read<MissionRepository>(),
+              ctx.read<RewardedAdRepository>(),
+            ),
           ),
           BlocProvider(
             create: (ctx) => StickerPackBloc(ctx.read<StickerPackRepository>()),

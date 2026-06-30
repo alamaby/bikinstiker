@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:developer' as developer;
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -29,8 +28,7 @@ class WhatsAppExportError extends WhatsAppExportResult {
 }
 
 class WhatsAppPackExporter {
-  static const _channel =
-      MethodChannel('com.alamaby.bikin_stiker/whatsapp');
+  static const _channel = MethodChannel('com.alamaby.bikin_stiker/whatsapp');
 
   Future<WhatsAppExportResult> exportPack({
     required StickerPack pack,
@@ -82,13 +80,10 @@ class WhatsAppPackExporter {
   ) async {
     final appDir = await getApplicationSupportDirectory();
 
-    final trayFile = File('${appDir.path}/tray_icons/${pack.packIdentifier}.png');
-    final trayExists = await trayFile.exists();
-    developer.log(
-      'Verify cache: tray=${trayFile.path}, exists=$trayExists, '
-      'size=${trayExists ? await trayFile.length() : "N/A"}',
-      name: 'WhatsAppPackExporter',
+    final trayFile = File(
+      '${appDir.path}/tray_icons/${pack.packIdentifier}.png',
     );
+    final trayExists = await trayFile.exists();
     if (!trayExists) {
       return const WhatsAppExportError(
         'Tray icon not ready. Please try again.',
@@ -100,10 +95,6 @@ class WhatsAppPackExporter {
         '${appDir.path}/pack_stickers/${pack.packIdentifier}/${item.stickerGenerationId}.webp',
       );
       if (!await stickerFile.exists()) {
-        developer.log(
-          'Verify cache: MISSING sticker ${item.stickerGenerationId}',
-          name: 'WhatsAppPackExporter',
-        );
         return const WhatsAppExportError(
           'Some stickers are not cached. Please pull to refresh.',
         );
@@ -121,15 +112,15 @@ class WhatsAppPackExporter {
     final indexFile = File('${appDir.path}/packs_index.json');
 
     final stickers = items
-        .map((item) => {
-              'file_name': '${item.stickerGenerationId}.webp',
-              'emoji': item.emojis.isNotEmpty
-                  ? item.emojis.join(',')
-                  : '🙂',
-              'accessibility_text': (item.accessibilityText ?? '').isNotEmpty
-                  ? item.accessibilityText!
-                  : 'Sticker',
-            })
+        .map(
+          (item) => {
+            'file_name': '${item.stickerGenerationId}.webp',
+            'emoji': item.emojis.isNotEmpty ? item.emojis.join(',') : '🙂',
+            'accessibility_text': (item.accessibilityText ?? '').isNotEmpty
+                ? item.accessibilityText!
+                : 'Sticker',
+          },
+        )
         .toList();
 
     final packsArray = [
@@ -155,41 +146,19 @@ class WhatsAppPackExporter {
 
     final jsonStr = jsonEncode(packsArray);
     await indexFile.writeAsString(jsonStr);
-    developer.log(
-      'Wrote packs_index.json: ${jsonStr.length} chars to ${indexFile.path}',
-      name: 'WhatsAppPackExporter',
-    );
   }
 
   Future<void> _launchEnableStickerPack(StickerPack pack) async {
-    developer.log(
-      'Launching via MethodChannel: id=${pack.packIdentifier}, '
-      'authority=$kContentProviderAuthority, name=${pack.name}',
-      name: 'WhatsAppPackExporter',
-    );
-
-    final resultCode = await _channel.invokeMethod<int>(
-      'launchWhatsAppStickerActivity',
-      {
-        'sticker_pack_id': pack.packIdentifier,
-        'sticker_pack_authority': kContentProviderAuthority,
-        'sticker_pack_name': pack.name,
-        'sticker_pack_publisher': 'BikinStiker',
-      },
-    );
-
-    developer.log(
-      'WhatsApp activity result code: $resultCode',
-      name: 'WhatsAppPackExporter',
-    );
+    final resultCode = await _channel
+        .invokeMethod<int>('launchWhatsAppStickerActivity', {
+          'sticker_pack_id': pack.packIdentifier,
+          'sticker_pack_authority': kContentProviderAuthority,
+          'sticker_pack_name': pack.name,
+          'sticker_pack_publisher': 'BikinStiker',
+        });
 
     if (resultCode != null && resultCode != -1) {
       // RESULT_OK = -1, RESULT_CANCELED = 0
-      // resultCode 0 means user cancelled or activity rejected
-      developer.log(
-        'Activity finished with code $resultCode (non-OK)',
-        name: 'WhatsAppPackExporter',
-      );
     }
   }
 }

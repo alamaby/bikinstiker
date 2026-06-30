@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:developer' as developer;
 
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
@@ -72,7 +71,10 @@ abstract class StickerPackRepository {
   /// Download tray icon PNG from a signed URL and cache it locally.
   /// Skips if file already exists on disk.
   /// [packIdentifier] must match the pack_identifier used by ContentProvider.
-  Future<void> cacheTrayIconLocally(String packIdentifier, String signedTrayUrl);
+  Future<void> cacheTrayIconLocally(
+    String packIdentifier,
+    String signedTrayUrl,
+  );
 
   /// Invoke the derive-tray-icon Edge Function to generate a 96x96 PNG
   /// tray icon from the first sticker in the pack.
@@ -265,15 +267,14 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
 
     for (final sticker in stickers) {
       final webpFile = File('${packDir.path}/${sticker.stickerId}.webp');
-      final pngTempFile = File('${packDir.path}/${sticker.stickerId}_tmp.png');
 
-      // Skip if valid WebP already cached (< 100KB)
-      if (await webpFile.exists()) {
-        final size = await webpFile.length();
-        if (size > 0 && size <= 100 * 1024) continue;
-        // Invalid size: delete and re-encode
-        await webpFile.delete();
-      }
+      // Skip if cached WebP is valid (correct RIFF header, 512x512, < 100KB)
+      if (await _isValidWebpCache(webpFile)) continue;
+
+      // Invalid or missing: delete and re-encode
+      if (await webpFile.exists()) await webpFile.delete();
+
+      final pngTempFile = File('${packDir.path}/${sticker.stickerId}_tmp.png');
 
       try {
         // Download PNG from storage
@@ -296,10 +297,6 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
           );
           if (result != null && result.length <= 100 * 1024) {
             webpBytes = result;
-            developer.log(
-              'Re-encoded ${sticker.stickerId}: q=$q, ${result.length} bytes',
-              name: 'StickerPackRepository',
-            );
             break;
           }
         }
@@ -315,25 +312,14 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
           );
           if (result != null) {
             webpBytes = result;
-            developer.log(
-              'Re-encoded ${sticker.stickerId}: q=25 (fallback), ${result.length} bytes',
-              name: 'StickerPackRepository',
-            );
           }
         }
 
         if (webpBytes != null) {
           await webpFile.writeAsBytes(webpBytes, flush: true);
-          developer.log(
-            'Cached ${sticker.stickerId}.webp: ${webpBytes.length} bytes',
-            name: 'StickerPackRepository',
-          );
         }
       } catch (e) {
-        developer.log(
-          'Failed to cache ${sticker.stickerId}: $e',
-          name: 'StickerPackRepository',
-        );
+        // Non-fatal
       } finally {
         // Cleanup temp PNG
         if (await pngTempFile.exists()) await pngTempFile.delete();
@@ -342,7 +328,10 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
   }
 
   @override
-  Future<void> cacheTrayIconLocally(String packIdentifier, String signedTrayUrl) async {
+  Future<void> cacheTrayIconLocally(
+    String packIdentifier,
+    String signedTrayUrl,
+  ) async {
     final appDir = await getApplicationSupportDirectory();
     final trayDir = Directory('${appDir.path}/tray_icons');
     if (!await trayDir.exists()) {
@@ -445,5 +434,71 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     }
 
     return null; // success
+  }
+
+  /// Check if a cached WebP file is valid (RIFF header, 512x512, <= 100KB).
+  Future<bool> _isValidWebpCache(File file) async {
+    if (!await file.exists()) return false;
+    final size = await file.length();
+    if (size <= 0 || size > 100 * 1024) return false;
+
+    try {
+      final raf = await file.open();
+      final header = Uint8List(30);
+      final read = await raf.readInto(header);
+      await raf.close();
+      if (read < 30) return false;
+
+      // RIFF....WEBP signature
+      if (header[0] != 0x52 ||
+          header[1] != 0x49 ||
+          header[2] != 0x46 ||
+          header[3] != 0x46) {
+        return false;
+      }
+      if (header[8] != 0x57 ||
+          header[9] != 0x45 ||
+          header[10] != 0x42 ||
+          header[11] != 0x50) {
+        return false;
+      }
+
+      // Check chunk type: VP8X (extended/alpha) or VP8L (lossless)
+      final chunk = String.fromCharCodes(header.sublist(12, 16));
+      if (chunk != 'VP8X' && chunk != 'VP8L') return false;
+
+      // Verify dimensions are 512x512
+      final dims = _parseWebPDims(header, chunk);
+      return dims == const (512, 512);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Parse WebP dimensions from header bytes.
+  /// Returns (width, height) or null if unparseable.
+  static (int, int)? _parseWebPDims(Uint8List header, String chunk) {
+    if (chunk == 'VP8X') {
+      final w =
+          (header[24] & 0xff) |
+          ((header[25] & 0xff) << 8) |
+          ((header[26] & 0xff) << 16);
+      final h =
+          (header[27] & 0xff) |
+          ((header[28] & 0xff) << 8) |
+          ((header[29] & 0xff) << 16);
+      return (w + 1, h + 1);
+    } else if (chunk == 'VP8L') {
+      final w =
+          (header[21] & 0xff) |
+          ((header[22] & 0xff) << 8) |
+          ((header[23] & 0x3f) << 16);
+      final h =
+          (header[24] & 0xff) |
+          ((header[25] & 0xff) << 8) |
+          ((header[26] & 0x3f) << 16);
+      return (w + 1, h + 1);
+    }
+    return null;
   }
 }

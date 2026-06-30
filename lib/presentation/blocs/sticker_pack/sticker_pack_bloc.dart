@@ -300,7 +300,7 @@ class StickerPackBloc extends Bloc<StickerPackEvent, StickerPackState> {
       if (newItem == null || newItem.stickerSignedUrl == null) return;
 
       // Cache the single sticker
-      await _repo.cachePackStickersLocally(packId, [
+      await _repo.cachePackStickersLocally(detail.pack.packIdentifier, [
         (stickerId: stickerId, signedUrl: newItem.stickerSignedUrl!),
       ]);
 
@@ -314,7 +314,7 @@ class StickerPackBloc extends Bloc<StickerPackEvent, StickerPackState> {
           final trayPath = detail.pack.trayIconPath;
           final trayUrl = await _repo.signedUrlForTrayIcon(trayPath);
           if (trayUrl != null) {
-            await _repo.cacheTrayIconLocally(packId, trayUrl);
+            await _repo.cacheTrayIconLocally(detail.pack.packIdentifier, trayUrl);
           }
         }
       }

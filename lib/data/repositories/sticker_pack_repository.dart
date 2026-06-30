@@ -60,14 +60,16 @@ abstract class StickerPackRepository {
   /// Download sticker WebP bytes from signed URLs and cache them locally
   /// for the ContentProvider to serve.
   /// Skips files that already exist on disk.
+  /// [packIdentifier] must match the pack_identifier used by ContentProvider.
   Future<void> cachePackStickersLocally(
-    String packId,
+    String packIdentifier,
     List<({String stickerId, String signedUrl})> stickers,
   );
 
   /// Download tray icon PNG from a signed URL and cache it locally.
   /// Skips if file already exists on disk.
-  Future<void> cacheTrayIconLocally(String packId, String signedTrayUrl);
+  /// [packIdentifier] must match the pack_identifier used by ContentProvider.
+  Future<void> cacheTrayIconLocally(String packIdentifier, String signedTrayUrl);
 
   /// Invoke the derive-tray-icon Edge Function to generate a 96x96 PNG
   /// tray icon from the first sticker in the pack.
@@ -78,10 +80,13 @@ abstract class StickerPackRepository {
 
   /// Ensure all sticker files + tray icon are cached locally for export.
   /// Self-healing: fetches missing assets. Returns null on success or error string.
-  Future<String?> preparePackForExport(
-    String packId,
-    List<StickerPackItem> items,
-  );
+  /// [packId] is the UUID (for Edge Function), [packIdentifier] is the string
+  /// identifier (for ContentProvider cache paths).
+  Future<String?> preparePackForExport({
+    required String packId,
+    required String packIdentifier,
+    required List<StickerPackItem> items,
+  });
 }
 
 class SupabaseStickerPackRepository implements StickerPackRepository {
@@ -246,11 +251,11 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
 
   @override
   Future<void> cachePackStickersLocally(
-    String packId,
+    String packIdentifier,
     List<({String stickerId, String signedUrl})> stickers,
   ) async {
     final appDir = await getApplicationSupportDirectory();
-    final packDir = Directory('${appDir.path}/pack_stickers/$packId');
+    final packDir = Directory('${appDir.path}/pack_stickers/$packIdentifier');
     if (!await packDir.exists()) {
       await packDir.create(recursive: true);
     }
@@ -272,14 +277,14 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
   }
 
   @override
-  Future<void> cacheTrayIconLocally(String packId, String signedTrayUrl) async {
+  Future<void> cacheTrayIconLocally(String packIdentifier, String signedTrayUrl) async {
     final appDir = await getApplicationSupportDirectory();
     final trayDir = Directory('${appDir.path}/tray_icons');
     if (!await trayDir.exists()) {
       await trayDir.create(recursive: true);
     }
 
-    final file = File('${trayDir.path}/$packId.png');
+    final file = File('${trayDir.path}/$packIdentifier.png');
     if (await file.exists()) return;
 
     try {
@@ -310,10 +315,11 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
   }
 
   @override
-  Future<String?> preparePackForExport(
-    String packId,
-    List<StickerPackItem> items,
-  ) async {
+  Future<String?> preparePackForExport({
+    required String packId,
+    required String packIdentifier,
+    required List<StickerPackItem> items,
+  }) async {
     // 1. Cache all sticker WebP files locally
     final stickerPairs = <({String stickerId, String signedUrl})>[];
     for (final item in items) {
@@ -325,12 +331,12 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
       }
     }
     if (stickerPairs.isNotEmpty) {
-      await cachePackStickersLocally(packId, stickerPairs);
+      await cachePackStickersLocally(packIdentifier, stickerPairs);
     }
 
     // 2. Check if tray icon is cached locally
     final appDir = await getApplicationSupportDirectory();
-    final trayFile = File('${appDir.path}/tray_icons/$packId.png');
+    final trayFile = File('${appDir.path}/tray_icons/$packIdentifier.png');
     if (!await trayFile.exists()) {
       // 3. Derive tray icon from first sticker
       if (items.isEmpty) {
@@ -351,7 +357,7 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
       if (trayUrl == null) {
         return 'Failed to get tray icon URL';
       }
-      await cacheTrayIconLocally(packId, trayUrl);
+      await cacheTrayIconLocally(packIdentifier, trayUrl);
     }
 
     return null; // success

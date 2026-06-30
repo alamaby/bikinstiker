@@ -225,7 +225,11 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
       items: items,
       prepareFn: (packId, packItems) async {
         final repo = getIt<StickerPackRepository>();
-        return repo.preparePackForExport(packId, packItems);
+        return repo.preparePackForExport(
+          packId: packId,
+          packIdentifier: pack.packIdentifier,
+          items: packItems,
+        );
       },
     );
 

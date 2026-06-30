@@ -152,11 +152,13 @@ class StickerContentProvider : ContentProvider() {
     }
 
     private fun addPackRow(cursor: MatrixCursor, pack: JSONObject) {
+        val identifier = pack.optString("identifier", "")
+        val trayIconUri = "content://$authority/sticker_tray/$identifier"
         cursor.addRow(arrayOf(
-            pack.optString("identifier", ""),
+            identifier,
             pack.optString("name", ""),
             pack.optString("publisher", "BikinStiker"),
-            pack.optString("tray_icon_file", ""),
+            trayIconUri,
             pack.optString("android_play_store_link",
                 "https://play.google.com/store/apps/details?id=com.alamaby.bikin_stiker"),
             pack.optString("ios_app_store_link", ""),

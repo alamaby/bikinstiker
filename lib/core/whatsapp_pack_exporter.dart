@@ -98,7 +98,7 @@ class WhatsAppPackExporter {
     final appDir = await getApplicationSupportDirectory();
 
     // Check tray icon
-    final trayFile = File('${appDir.path}/tray_icons/${pack.id}.png');
+    final trayFile = File('${appDir.path}/tray_icons/${pack.packIdentifier}.png');
     if (!await trayFile.exists()) {
       return const WhatsAppExportError(
         'Tray icon not ready. Please try again.',
@@ -108,7 +108,7 @@ class WhatsAppPackExporter {
     // Check all sticker files
     for (final item in items) {
       final stickerFile = File(
-        '${appDir.path}/pack_stickers/${pack.id}/${item.stickerGenerationId}.webp',
+        '${appDir.path}/pack_stickers/${pack.packIdentifier}/${item.stickerGenerationId}.webp',
       );
       if (!await stickerFile.exists()) {
         return const WhatsAppExportError(

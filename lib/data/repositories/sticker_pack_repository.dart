@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:developer' as developer;
 
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -261,17 +264,79 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     }
 
     for (final sticker in stickers) {
-      final file = File('${packDir.path}/${sticker.stickerId}.webp');
-      if (await file.exists()) continue;
+      final webpFile = File('${packDir.path}/${sticker.stickerId}.webp');
+      final pngTempFile = File('${packDir.path}/${sticker.stickerId}_tmp.png');
+
+      // Skip if valid WebP already cached (< 100KB)
+      if (await webpFile.exists()) {
+        final size = await webpFile.length();
+        if (size > 0 && size <= 100 * 1024) continue;
+        // Invalid size: delete and re-encode
+        await webpFile.delete();
+      }
 
       try {
+        // Download PNG from storage
         final response = await http.get(Uri.parse(sticker.signedUrl));
-        if (response.statusCode == 200) {
-          await file.writeAsBytes(response.bodyBytes, flush: true);
+        if (response.statusCode != 200) continue;
+
+        await pngTempFile.writeAsBytes(response.bodyBytes, flush: true);
+
+        // Re-encode PNG → WebP via Android system encoder (preserves alpha)
+        final qualityLevels = [75, 65, 55, 45, 35, 25];
+        Uint8List? webpBytes;
+
+        for (final q in qualityLevels) {
+          final result = await FlutterImageCompress.compressWithFile(
+            pngTempFile.absolute.path,
+            minWidth: 512,
+            minHeight: 512,
+            quality: q,
+            format: CompressFormat.webp,
+          );
+          if (result != null && result.length <= 100 * 1024) {
+            webpBytes = result;
+            developer.log(
+              'Re-encoded ${sticker.stickerId}: q=$q, ${result.length} bytes',
+              name: 'StickerPackRepository',
+            );
+            break;
+          }
         }
-      } catch (_) {
-        // Non-fatal: ContentProvider will fail with FileNotFoundException
-        // if user tries to export before cache is warm.
+
+        // Fallback: lowest quality even if > 100KB
+        if (webpBytes == null) {
+          final result = await FlutterImageCompress.compressWithFile(
+            pngTempFile.absolute.path,
+            minWidth: 512,
+            minHeight: 512,
+            quality: 25,
+            format: CompressFormat.webp,
+          );
+          if (result != null) {
+            webpBytes = result;
+            developer.log(
+              'Re-encoded ${sticker.stickerId}: q=25 (fallback), ${result.length} bytes',
+              name: 'StickerPackRepository',
+            );
+          }
+        }
+
+        if (webpBytes != null) {
+          await webpFile.writeAsBytes(webpBytes, flush: true);
+          developer.log(
+            'Cached ${sticker.stickerId}.webp: ${webpBytes.length} bytes',
+            name: 'StickerPackRepository',
+          );
+        }
+      } catch (e) {
+        developer.log(
+          'Failed to cache ${sticker.stickerId}: $e',
+          name: 'StickerPackRepository',
+        );
+      } finally {
+        // Cleanup temp PNG
+        if (await pngTempFile.exists()) await pngTempFile.delete();
       }
     }
   }
@@ -320,18 +385,37 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     required String packIdentifier,
     required List<StickerPackItem> items,
   }) async {
-    // 1. Cache all sticker WebP files locally
-    final stickerPairs = <({String stickerId, String signedUrl})>[];
+    // 1. Cache all stickers by downloading PNG + re-encoding to WebP
+    final pngPairs = <({String stickerId, String signedUrl})>[];
     for (final item in items) {
-      if (item.stickerSignedUrl != null) {
-        stickerPairs.add((
+      final pngPath = item.stickerPath?.replaceFirst('.webp', '.png');
+      if (pngPath != null && pngPath.isNotEmpty) {
+        try {
+          final pngUrl = await _client.storage
+              .from('stickers')
+              .createSignedUrl(pngPath, 3600);
+          pngPairs.add((
+            stickerId: item.stickerGenerationId,
+            signedUrl: pngUrl,
+          ));
+        } catch (_) {
+          // Fallback to WebP if PNG URL fails
+          if (item.stickerSignedUrl != null) {
+            pngPairs.add((
+              stickerId: item.stickerGenerationId,
+              signedUrl: item.stickerSignedUrl!,
+            ));
+          }
+        }
+      } else if (item.stickerSignedUrl != null) {
+        pngPairs.add((
           stickerId: item.stickerGenerationId,
           signedUrl: item.stickerSignedUrl!,
         ));
       }
     }
-    if (stickerPairs.isNotEmpty) {
-      await cachePackStickersLocally(packIdentifier, stickerPairs);
+    if (pngPairs.isNotEmpty) {
+      await cachePackStickersLocally(packIdentifier, pngPairs);
     }
 
     // 2. Check if tray icon is cached locally

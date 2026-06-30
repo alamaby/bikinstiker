@@ -1,19 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:developer' as developer;
 
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:android_intent_plus/flag.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../data/models/sticker_pack.dart';
 import '../data/models/sticker_pack_item.dart';
 
-/// Authority used by the StickerContentProvider in AndroidManifest.xml.
-/// Must match exactly: applicationId + ".stickercontentprovider"
 const String kContentProviderAuthority =
     'com.alamaby.bikin_stiker.stickercontentprovider';
 
-/// Result of attempting to export a sticker pack to WhatsApp.
 sealed class WhatsAppExportResult {
   const WhatsAppExportResult();
 }
@@ -31,27 +28,21 @@ class WhatsAppExportError extends WhatsAppExportResult {
   const WhatsAppExportError(this.message);
 }
 
-/// Orchestrates the native WhatsApp sticker pack import flow:
-/// 1. Checks WhatsApp is installed
-/// 2. Writes packs_index.json for the ContentProvider to read
-/// 3. Launches the ENABLE_STICKER_PACK intent
 class WhatsAppPackExporter {
-  /// Export [pack] with its [items] to WhatsApp.
-  ///
-  /// Calls [prepareFn] to self-heal missing cache before launching.
+  static const _channel =
+      MethodChannel('com.alamaby.bikin_stiker/whatsapp');
+
   Future<WhatsAppExportResult> exportPack({
     required StickerPack pack,
     required List<StickerPackItem> items,
     Future<String?> Function(String packId, List<StickerPackItem> items)?
     prepareFn,
   }) async {
-    // 1. Check WhatsApp is installed
     final waInstalled = await _isWhatsAppInstalled();
     if (!waInstalled) {
       return const WhatsAppExportNotInstalled();
     }
 
-    // 2. Self-heal: ensure all assets are cached locally
     if (prepareFn != null) {
       final prepareError = await prepareFn(pack.id, items);
       if (prepareError != null) {
@@ -59,18 +50,15 @@ class WhatsAppPackExporter {
       }
     }
 
-    // 3. Final verification of local cache
     final cacheError = await _verifyLocalCache(pack, items);
     if (cacheError != null) return cacheError;
 
-    // 4. Write packs_index.json for ContentProvider
     try {
       await _writePacksIndex(pack, items);
     } catch (e) {
       return WhatsAppExportError('Failed to write pack index: $e');
     }
 
-    // 5. Launch intent
     try {
       await _launchEnableStickerPack(pack);
       return const WhatsAppExportSuccess();
@@ -81,11 +69,8 @@ class WhatsAppPackExporter {
 
   Future<bool> _isWhatsAppInstalled() async {
     try {
-      const intent = AndroidIntent(
-        action: 'android.intent.action.VIEW',
-        data: 'whatsapp://',
-      );
-      return await intent.canResolveActivity() ?? false;
+      final result = await _channel.invokeMethod<bool>('isWhatsAppInstalled');
+      return result ?? false;
     } catch (_) {
       return false;
     }
@@ -97,20 +82,28 @@ class WhatsAppPackExporter {
   ) async {
     final appDir = await getApplicationSupportDirectory();
 
-    // Check tray icon
     final trayFile = File('${appDir.path}/tray_icons/${pack.packIdentifier}.png');
-    if (!await trayFile.exists()) {
+    final trayExists = await trayFile.exists();
+    developer.log(
+      'Verify cache: tray=${trayFile.path}, exists=$trayExists, '
+      'size=${trayExists ? await trayFile.length() : "N/A"}',
+      name: 'WhatsAppPackExporter',
+    );
+    if (!trayExists) {
       return const WhatsAppExportError(
         'Tray icon not ready. Please try again.',
       );
     }
 
-    // Check all sticker files
     for (final item in items) {
       final stickerFile = File(
         '${appDir.path}/pack_stickers/${pack.packIdentifier}/${item.stickerGenerationId}.webp',
       );
       if (!await stickerFile.exists()) {
+        developer.log(
+          'Verify cache: MISSING sticker ${item.stickerGenerationId}',
+          name: 'WhatsAppPackExporter',
+        );
         return const WhatsAppExportError(
           'Some stickers are not cached. Please pull to refresh.',
         );
@@ -127,8 +120,16 @@ class WhatsAppPackExporter {
     final appDir = await getApplicationSupportDirectory();
     final indexFile = File('${appDir.path}/packs_index.json');
 
-    final stickerFiles = items
-        .map((item) => '${item.stickerGenerationId}.webp')
+    final stickers = items
+        .map((item) => {
+              'file_name': '${item.stickerGenerationId}.webp',
+              'emoji': item.emojis.isNotEmpty
+                  ? item.emojis.join(',')
+                  : '🙂',
+              'accessibility_text': (item.accessibilityText ?? '').isNotEmpty
+                  ? item.accessibilityText!
+                  : 'Sticker',
+            })
         .toList();
 
     final packsArray = [
@@ -136,30 +137,59 @@ class WhatsAppPackExporter {
         'identifier': pack.packIdentifier,
         'name': pack.name,
         'publisher': 'BikinStiker',
-        'tray_icon_file': '${pack.id}.png',
+        'tray_icon_file': '${pack.packIdentifier}.png',
         'android_play_store_link':
             'https://play.google.com/store/apps/details?id=com.alamaby.bikin_stiker',
-        'ios_app_store_link': '',
+        'ios_app_download_link': '',
+        'sticker_pack_publisher_email': '',
+        'sticker_pack_publisher_website': '',
+        'sticker_pack_privacy_policy_website': '',
+        'sticker_pack_license_agreement_website': '',
+        'image_data_version': '1',
+        'whatsapp_will_not_cache_stickers': false,
         'animated_sticker_pack': false,
         'sticker_count': items.length,
-        'sticker_files': stickerFiles,
+        'stickers': stickers,
       },
     ];
 
-    await indexFile.writeAsString(jsonEncode(packsArray));
+    final jsonStr = jsonEncode(packsArray);
+    await indexFile.writeAsString(jsonStr);
+    developer.log(
+      'Wrote packs_index.json: ${jsonStr.length} chars to ${indexFile.path}',
+      name: 'WhatsAppPackExporter',
+    );
   }
 
   Future<void> _launchEnableStickerPack(StickerPack pack) async {
-    final intent = AndroidIntent(
-      action: 'com.whatsapp.intent.action.ENABLE_STICKER_PACK',
-      arguments: <String, dynamic>{
+    developer.log(
+      'Launching via MethodChannel: id=${pack.packIdentifier}, '
+      'authority=$kContentProviderAuthority, name=${pack.name}',
+      name: 'WhatsAppPackExporter',
+    );
+
+    final resultCode = await _channel.invokeMethod<int>(
+      'launchWhatsAppStickerActivity',
+      {
         'sticker_pack_id': pack.packIdentifier,
         'sticker_pack_authority': kContentProviderAuthority,
         'sticker_pack_name': pack.name,
+        'sticker_pack_publisher': 'BikinStiker',
       },
-      package: 'com.whatsapp',
-      flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
     );
-    await intent.launch();
+
+    developer.log(
+      'WhatsApp activity result code: $resultCode',
+      name: 'WhatsAppPackExporter',
+    );
+
+    if (resultCode != null && resultCode != -1) {
+      // RESULT_OK = -1, RESULT_CANCELED = 0
+      // resultCode 0 means user cancelled or activity rejected
+      developer.log(
+        'Activity finished with code $resultCode (non-OK)',
+        name: 'WhatsAppPackExporter',
+      );
+    }
   }
 }

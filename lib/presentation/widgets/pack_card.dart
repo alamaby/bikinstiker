@@ -37,37 +37,40 @@ class PackCard extends StatelessWidget {
               ),
             ),
             // Pack name and count
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          pack.name,
-                          style: Theme.of(context).textTheme.titleSmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            pack.name,
+                            style: Theme.of(context).textTheme.titleSmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      if (pack.isLocked)
-                        const Icon(
-                          Icons.lock,
-                          size: 16,
-                          color: AppColors.warning,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${pack.stickerCount}/30 stickers',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.onSurface.withValues(alpha: 0.6),
+                        if (pack.isLocked)
+                          const Icon(
+                            Icons.lock,
+                            size: 16,
+                            color: AppColors.warning,
+                          ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '${pack.stickerCount}/30 stickers',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

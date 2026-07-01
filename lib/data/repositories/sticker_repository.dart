@@ -18,6 +18,8 @@ abstract class StickerRepository {
   Future<GenerateStickerResult> generate({
     required String presetId,
     required String userInput,
+    String? caption,
+    String? captionPosition,
   });
 
   Future<List<StickerGeneration>> fetchHistory({int limit = 50});
@@ -40,11 +42,18 @@ class SupabaseStickerRepository implements StickerRepository {
   Future<GenerateStickerResult> generate({
     required String presetId,
     required String userInput,
+    String? caption,
+    String? captionPosition,
   }) async {
     try {
       final res = await _client.functions.invoke(
         'generate-sticker',
-        body: {'presetId': presetId, 'userInput': userInput},
+        body: {
+          'presetId': presetId,
+          'userInput': userInput,
+          if (caption != null && caption.isNotEmpty) 'caption': caption,
+          if (caption != null && caption.isNotEmpty) 'captionPosition': captionPosition,
+        },
       );
 
       final data = res.data;

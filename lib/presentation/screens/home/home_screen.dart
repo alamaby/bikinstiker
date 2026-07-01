@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/presets.dart';
@@ -34,6 +35,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String? _presetId;
   final _promptCtrl = TextEditingController();
+  final _captionCtrl = TextEditingController();
+  String _captionPosition = 'bottom';
   final _scrollController = ScrollController();
   final _resultKey = GlobalKey();
 
@@ -46,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _promptCtrl.dispose();
+    _captionCtrl.dispose();
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
@@ -77,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onGenerate(List<StickerPreset> presets) {
     final input = _promptCtrl.text.trim();
+    final captionRaw = _captionCtrl.text.trim().toUpperCase();
     final validPresetIds = presets.map((p) => p.id).toSet();
     if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +104,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     context.read<StickerGenBloc>().add(
-      StickerGenSubmitted(presetId: _presetId!, prompt: input),
+      StickerGenSubmitted(
+        presetId: _presetId!,
+        prompt: input,
+        caption: captionRaw.isEmpty ? null : captionRaw,
+        captionPosition: captionRaw.isEmpty ? null : _captionPosition,
+      ),
     );
   }
 
@@ -292,6 +302,80 @@ class _HomeScreenState extends State<HomeScreen> {
                                   .withValues(alpha: 0.3),
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Caption (optional)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '${_captionCtrl.text.length} / 10',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.outline,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _captionCtrl,
+                            enabled: !submitting && !isEmpty,
+                            maxLength: 10,
+                            textCapitalization: TextCapitalization.characters,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[A-Z0-9 .!?\-]'),
+                              ),
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            decoration: InputDecoration(
+                              hintText: 'e.g. READY',
+                              counterText: '',
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          if (_captionCtrl.text.trim().isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  'Position',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const Spacer(),
+                                SegmentedButton<String>(
+                                  segments: const [
+                                    ButtonSegment(
+                                      value: 'top',
+                                      label: Text('Top'),
+                                    ),
+                                    ButtonSegment(
+                                      value: 'bottom',
+                                      label: Text('Bottom'),
+                                    ),
+                                  ],
+                                  selected: {_captionPosition},
+                                  onSelectionChanged: submitting
+                                      ? null
+                                      : (s) => setState(
+                                            () =>
+                                                _captionPosition = s.first,
+                                          ),
+                                ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 8),
                           _GenerateButton(
                             onPressed: () => _onGenerate(presets),
@@ -526,33 +610,39 @@ class _PresetPickerSheet extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
-          ...presets.map((p) {
-            final selected = p.id == selectedId;
-            return ListTile(
-              leading: Text(
-                p.emoji ?? '',
-                style: const TextStyle(fontSize: 24),
-              ),
-              title: Text(
-                p.label,
-                style: TextStyle(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-              subtitle: Text(
-                p.description,
-                style: const TextStyle(fontSize: 13),
-              ),
-              trailing: selected
-                  ? const Icon(Icons.check_circle, color: AppColors.primary)
-                  : null,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              onTap: () => onSelect(p.id),
-            );
-          }),
-          const SizedBox(height: 8),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: presets.length,
+              itemBuilder: (context, i) {
+                final p = presets[i];
+                final selected = p.id == selectedId;
+                return ListTile(
+                  leading: Text(
+                    p.emoji ?? '',
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  title: Text(
+                    p.label,
+                    style: TextStyle(
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text(
+                    p.description,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  trailing: selected
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : null,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  onTap: () => onSelect(p.id),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );

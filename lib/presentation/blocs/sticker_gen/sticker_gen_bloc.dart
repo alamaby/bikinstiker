@@ -13,9 +13,16 @@ sealed class StickerGenEvent extends Equatable {
 class StickerGenSubmitted extends StickerGenEvent {
   final String presetId;
   final String prompt;
-  const StickerGenSubmitted({required this.presetId, required this.prompt});
+  final String? caption;
+  final String? captionPosition;
+  const StickerGenSubmitted({
+    required this.presetId,
+    required this.prompt,
+    this.caption,
+    this.captionPosition,
+  });
   @override
-  List<Object?> get props => [presetId, prompt];
+  List<Object?> get props => [presetId, prompt, caption, captionPosition];
 }
 
 class StickerGenReset extends StickerGenEvent {
@@ -58,6 +65,8 @@ class StickerGenBloc extends Bloc<StickerGenEvent, StickerGenBlocState> {
       final result = await _repo.generate(
         presetId: e.presetId,
         userInput: e.prompt,
+        caption: e.caption,
+        captionPosition: e.captionPosition,
       );
       emit(
         StickerGenBlocState(

@@ -170,34 +170,49 @@ class _AuthScreenState extends State<AuthScreen>
                     ),
                     const SizedBox(height: 24),
                   ],
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _emailCtrl,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.alternate_email),
+                  AutofillGroup(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _emailCtrl,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.alternate_email),
+                            ),
+                            validator: (v) => v == null || !v.contains('@')
+                                ? 'Enter a valid email'
+                                : null,
                           ),
-                          validator: (v) => v == null || !v.contains('@')
-                              ? 'Enter a valid email'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passCtrl,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passCtrl,
+                            obscureText: true,
+                            autofillHints: [
+                              _isSignUp
+                                  ? AutofillHints.newPassword
+                                  : AutofillHints.password,
+                            ],
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textInputAction: TextInputAction.done,
+                            onEditingComplete: _submit,
+                            decoration: const InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: Icon(Icons.lock_outline),
+                            ),
+                            validator: (v) => v == null || v.length < 6
+                                ? 'Min 6 characters'
+                                : null,
                           ),
-                          validator: (v) => v == null || v.length < 6
-                              ? 'Min 6 characters'
-                              : null,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),

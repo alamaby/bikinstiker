@@ -218,7 +218,7 @@ class _AuthScreenState extends State<AuthScreen>
                                 ? 'Min 6 characters'
                                 : null,
                           ),
-                          if (_isSignUp && !_isGuestWall) ...[
+                          if (_isSignUp) ...[
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _displayNameCtrl,
@@ -270,28 +270,26 @@ class _AuthScreenState extends State<AuthScreen>
                       submitting ? 'Please wait...' : _submitButtonLabel,
                     ),
                   ),
-                  if (!_isGuestWall) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: const [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'or',
-                            style: TextStyle(color: Colors.black54),
-                          ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: const [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or',
+                          style: TextStyle(color: Colors.black54),
                         ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: submitting ? null : _googleSignIn,
-                      icon: const Icon(Icons.g_mobiledata, size: 24),
-                      label: const Text('Continue with Google'),
-                    ),
-                  ],
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: submitting ? null : _googleSignIn,
+                    icon: const Icon(Icons.g_mobiledata, size: 24),
+                    label: const Text('Continue with Google'),
+                  ),
                   if (_isGuestWall && !submitting) ...[
                     const SizedBox(height: 16),
                     _GuestWallWarning(),

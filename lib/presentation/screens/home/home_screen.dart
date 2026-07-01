@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_preset.dart';
 import '../../../data/models/user_subscription.dart';
 import '../../blocs/auth/auth_bloc.dart';
+import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
@@ -37,6 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final _promptCtrl = TextEditingController();
   final _captionCtrl = TextEditingController();
   String _captionPosition = 'bottom';
+  String? _lastSuccessfulPrompt;
+  String? _lastSuccessfulPresetId;
   final _scrollController = ScrollController();
   final _resultKey = GlobalKey();
 
@@ -111,6 +114,18 @@ class _HomeScreenState extends State<HomeScreen> {
         captionPosition: captionRaw.isEmpty ? null : _captionPosition,
       ),
     );
+  }
+
+  void _reuseLastPrompt() {
+    if (_lastSuccessfulPrompt == null || _lastSuccessfulPresetId == null) {
+      return;
+    }
+    setState(() {
+      _promptCtrl.text = _lastSuccessfulPrompt!;
+      _presetId = _lastSuccessfulPresetId;
+      _captionCtrl.clear();
+      _captionPosition = 'bottom';
+    });
   }
 
   void _onRefresh() {
@@ -195,9 +210,38 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: BlocListener<StickerGenBloc, StickerGenBlocState>(
+      body: BlocListener<HomePrefillCubit, HomePrefillState>(
+        listenWhen: (p, n) => n.hasData,
+        listener: (context, state) {
+          if (state.prompt != null) {
+            _promptCtrl.text = state.prompt!;
+          }
+          if (state.presetId != null) {
+            final presetState = context.read<PresetBloc>().state;
+            final allowedIds = presetState.presets.map((p) => p.id).toSet();
+            if (allowedIds.contains(state.presetId)) {
+              setState(() => _presetId = state.presetId);
+            }
+          }
+          if (state.captionText != null) {
+            _captionCtrl.text = state.captionText!;
+            _captionPosition = state.captionPosition ?? 'bottom';
+          } else {
+            _captionCtrl.clear();
+            _captionPosition = 'bottom';
+          }
+          setState(() {});
+          context.read<HomePrefillCubit>().clear();
+        },
+        child: BlocListener<StickerGenBloc, StickerGenBlocState>(
         listenWhen: (p, n) => p.status != n.status,
         listener: (context, state) {
+          if (state.status == StickerGenStatus.success) {
+            setState(() {
+              _lastSuccessfulPrompt = _promptCtrl.text.trim();
+              _lastSuccessfulPresetId = _presetId;
+            });
+          }
           if (state.status == StickerGenStatus.success ||
               state.status == StickerGenStatus.failure) {
             final userId = context.read<AuthBloc>().state.user?.id;
@@ -279,12 +323,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               onSelected: submitting ? null : _onPresetSelected,
                             ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Describe your sticker',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Describe your sticker',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              if (_lastSuccessfulPrompt != null)
+                                TextButton.icon(
+                                  onPressed:
+                                      submitting ? null : _reuseLastPrompt,
+                                  icon: const Icon(Icons.replay, size: 16),
+                                  label: const Text('Use last'),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           TextField(
@@ -395,7 +452,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

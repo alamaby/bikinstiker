@@ -19,6 +19,7 @@ import 'presentation/blocs/history/history_bloc.dart';
 import 'presentation/blocs/mission/mission_bloc.dart';
 import 'presentation/blocs/preset/preset_bloc.dart';
 import 'presentation/blocs/sticker_pack/sticker_pack_bloc.dart';
+import 'presentation/blocs/home_prefill/home_prefill_cubit.dart';
 import 'presentation/blocs/sticker_gen/sticker_gen_bloc.dart';
 import 'presentation/blocs/subscription/subscription_bloc.dart';
 import 'presentation/blocs/wallet/wallet_bloc.dart';
@@ -91,6 +92,9 @@ class BikinStikerApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (ctx) => StickerPackBloc(ctx.read<StickerPackRepository>()),
+          ),
+          BlocProvider(
+            create: (_) => HomePrefillCubit(),
           ),
         ],
         child: MaterialApp(

@@ -9,6 +9,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
 import '../../../data/repositories/sticker_repository.dart';
 import '../../blocs/history/history_bloc.dart';
+import '../../blocs/home_prefill/home_prefill_cubit.dart';
+import '../../blocs/subscription/subscription_bloc.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/status_indicator.dart';
 
@@ -168,7 +170,68 @@ class _HistoryTile extends StatelessWidget {
     );
 
     if (!_canOpen) return tile;
-    return GestureDetector(onTap: () => _openPreview(context), child: tile);
+    return GestureDetector(
+      onTap: () => _openPreview(context),
+      onLongPress: () => _showContextMenu(context),
+      child: tile,
+    );
+  }
+
+  void _showContextMenu(BuildContext context) {
+    final isPlus = context.read<SubscriptionBloc>().state.isPlus;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                Icons.replay,
+                color: isPlus ? AppColors.primary : Colors.black38,
+              ),
+              title: Text(
+                'Regenerate with same prompt',
+                style: TextStyle(
+                  color: isPlus ? null : Colors.black54,
+                  fontWeight: isPlus ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              subtitle: isPlus
+                  ? null
+                  : const Text('Plus only', style: TextStyle(fontSize: 12)),
+              trailing: isPlus
+                  ? null
+                  : const Icon(Icons.lock_outline, size: 16, color: Colors.black38),
+              onTap: isPlus
+                  ? () {
+                      Navigator.of(sheetCtx).pop();
+                      _regenerate(context);
+                    }
+                  : () {
+                      Navigator.of(sheetCtx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Regenerate is a Plus feature'),
+                        ),
+                      );
+                    },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _regenerate(BuildContext context) {
+    context.read<HomePrefillCubit>().set(
+          presetId: item.presetName,
+          prompt: item.userPrompt,
+        );
+    Navigator.of(context).pop();
   }
 }
 

@@ -29,6 +29,7 @@ import '../auth/auth_screen.dart';
 import '../packs/packs_list_screen.dart';
 import '../history/history_screen.dart';
 import '../missions/missions_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -202,10 +203,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Sign out',
-                    icon: const Icon(Icons.logout),
-                    onPressed: () => context.read<AuthBloc>().add(
-                      const AuthSignOutRequested(),
+                    tooltip: 'Profile',
+                    icon: const Icon(Icons.person_outline),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
                     ),
                   ),
                 ],
@@ -238,245 +239,251 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<HomePrefillCubit>().clear();
         },
         child: BlocListener<StickerGenBloc, StickerGenBlocState>(
-        listenWhen: (p, n) => p.status != n.status,
-        listener: (context, state) {
-          if (state.status == StickerGenStatus.success) {
-            setState(() {
-              _lastSuccessfulPrompt = _promptCtrl.text.trim();
-              _lastSuccessfulPresetId = _presetId;
-            });
-          }
-          if (state.status == StickerGenStatus.success ||
-              state.status == StickerGenStatus.failure) {
-            final userId = context.read<AuthBloc>().state.user?.id;
-            if (userId != null) {
-              context.read<WalletBloc>().add(WalletRefreshRequested(userId));
+          listenWhen: (p, n) => p.status != n.status,
+          listener: (context, state) {
+            if (state.status == StickerGenStatus.success) {
+              setState(() {
+                _lastSuccessfulPrompt = _promptCtrl.text.trim();
+                _lastSuccessfulPresetId = _presetId;
+              });
             }
-            _scrollToResult();
-          }
-        },
-        child: SafeArea(
-          child: BlocBuilder<PresetBloc, PresetState>(
-            builder: (context, presetState) {
-              final presets = presetState.presets;
-              final isLoading = presetState.status == PresetStatus.loading;
-              final isError = presetState.status == PresetStatus.failure;
-              final isEmpty = presets.isEmpty && !isLoading && !isError;
-
-              if (isError && presets.isEmpty) {
-                return _PresetErrorView(
-                  message: presetState.errorMessage ?? 'Failed to load styles',
-                  onRetry: _onRefresh,
-                );
+            if (state.status == StickerGenStatus.success ||
+                state.status == StickerGenStatus.failure) {
+              final userId = context.read<AuthBloc>().state.user?.id;
+              if (userId != null) {
+                context.read<WalletBloc>().add(WalletRefreshRequested(userId));
               }
+              _scrollToResult();
+            }
+          },
+          child: SafeArea(
+            child: BlocBuilder<PresetBloc, PresetState>(
+              builder: (context, presetState) {
+                final presets = presetState.presets;
+                final isLoading = presetState.status == PresetStatus.loading;
+                final isError = presetState.status == PresetStatus.failure;
+                final isEmpty = presets.isEmpty && !isLoading && !isError;
 
-              // Ensure _presetId is set to first available preset
-              if (presets.isNotEmpty &&
-                  (_presetId == null ||
-                      !presets.any((p) => p.id == _presetId))) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted && presets.isNotEmpty) {
-                    setState(() => _presetId = presets.first.id);
-                  }
-                });
-              }
+                if (isError && presets.isEmpty) {
+                  return _PresetErrorView(
+                    message:
+                        presetState.errorMessage ?? 'Failed to load styles',
+                    onRetry: _onRefresh,
+                  );
+                }
 
-              return RefreshIndicator(
-                onRefresh: () async => _onRefresh(),
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  child: BlocBuilder<StickerGenBloc, StickerGenBlocState>(
-                    builder: (context, genState) {
-                      final submitting =
-                          genState.status == StickerGenStatus.submitting;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _CreditsCard(),
-                          const SizedBox(height: 8),
-                          BlocBuilder<SubscriptionBloc, SubscriptionState>(
-                            builder: (context, subState) {
-                              final isGuest = context
-                                  .read<AuthBloc>()
-                                  .state
-                                  .isGuest;
-                              final showAd = !isGuest && !subState.isPlus;
-                              if (!showAd) return const SizedBox.shrink();
-                              return const AdsBannerPlaceholder();
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Choose a style',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                // Ensure _presetId is set to first available preset
+                if (presets.isNotEmpty &&
+                    (_presetId == null ||
+                        !presets.any((p) => p.id == _presetId))) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && presets.isNotEmpty) {
+                      setState(() => _presetId = presets.first.id);
+                    }
+                  });
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async => _onRefresh(),
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: BlocBuilder<StickerGenBloc, StickerGenBlocState>(
+                      builder: (context, genState) {
+                        final submitting =
+                            genState.status == StickerGenStatus.submitting;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _CreditsCard(),
+                            const SizedBox(height: 8),
+                            BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                              builder: (context, subState) {
+                                final isGuest = context
+                                    .read<AuthBloc>()
+                                    .state
+                                    .isGuest;
+                                final showAd = !isGuest && !subState.isPlus;
+                                if (!showAd) return const SizedBox.shrink();
+                                return const AdsBannerPlaceholder();
+                              },
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          if (isLoading && presets.isEmpty)
-                            const _PresetSkeleton()
-                          else if (isEmpty)
-                            _EmptyPresetsView(onRefresh: _onRefresh)
-                          else
-                            _PresetSelector(
-                              presets: presets,
-                              selectedId: _presetId,
-                              onSelected: submitting ? null : _onPresetSelected,
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Choose a style',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
                             ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Describe your sticker',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
+                            const SizedBox(height: 8),
+                            if (isLoading && presets.isEmpty)
+                              const _PresetSkeleton()
+                            else if (isEmpty)
+                              _EmptyPresetsView(onRefresh: _onRefresh)
+                            else
+                              _PresetSelector(
+                                presets: presets,
+                                selectedId: _presetId,
+                                onSelected: submitting
+                                    ? null
+                                    : _onPresetSelected,
+                              ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Describe your sticker',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              if (_lastSuccessfulPrompt != null)
-                                TextButton.icon(
-                                  onPressed:
-                                      submitting ? null : _reuseLastPrompt,
-                                  icon: const Icon(Icons.replay, size: 16),
-                                  label: const Text('Use last'),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _promptCtrl,
-                            enabled: !submitting && !isEmpty,
-                            maxLength: kMaxPromptChars,
-                            maxLines: 3,
-                            onChanged: (_) => setState(() {}),
-                            decoration: InputDecoration(
-                              hintText:
-                                  'e.g. a smiling boba tea cup waving hello',
-                              filled: submitting,
-                              fillColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
+                                if (_lastSuccessfulPrompt != null)
+                                  TextButton.icon(
+                                    onPressed: submitting
+                                        ? null
+                                        : _reuseLastPrompt,
+                                    icon: const Icon(Icons.replay, size: 16),
+                                    label: const Text('Use last'),
+                                  ),
+                              ],
                             ),
-                          ),
-                          SurpriseMeButton(
-                            presetId: _presetId ?? 'kawaii',
-                            enabled: !submitting,
-                            onPressed: (suggestion) {
-                              _promptCtrl.text = suggestion;
-                              setState(() {});
-                            },
-                          ),
-                          if (_promptCtrl.text.isEmpty && _presetId != null)
-                            PromptSuggestionChip(
-                              key: ValueKey('chip_$_presetId'),
-                              presetId: _presetId!,
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _promptCtrl,
+                              enabled: !submitting && !isEmpty,
+                              maxLength: kMaxPromptChars,
+                              maxLines: 3,
+                              onChanged: (_) => setState(() {}),
+                              decoration: InputDecoration(
+                                hintText:
+                                    'e.g. a smiling boba tea cup waving hello',
+                                filled: submitting,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            SurpriseMeButton(
+                              presetId: _presetId ?? 'kawaii',
                               enabled: !submitting,
-                              onSuggestionSelected: (suggestion) {
+                              onPressed: (suggestion) {
                                 _promptCtrl.text = suggestion;
                                 setState(() {});
                               },
                             ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Caption (optional)',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                  ),
-                                ),
+                            if (_promptCtrl.text.isEmpty && _presetId != null)
+                              PromptSuggestionChip(
+                                key: ValueKey('chip_$_presetId'),
+                                presetId: _presetId!,
+                                enabled: !submitting,
+                                onSuggestionSelected: (suggestion) {
+                                  _promptCtrl.text = suggestion;
+                                  setState(() {});
+                                },
                               ),
-                              Text(
-                                '${_captionCtrl.text.length} / 10',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.outline,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _captionCtrl,
-                            enabled: !submitting && !isEmpty,
-                            maxLength: 10,
-                            textCapitalization: TextCapitalization.characters,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'[A-Z0-9 .!?\-]'),
-                              ),
-                              LengthLimitingTextInputFormatter(10),
-                            ],
-                            decoration: InputDecoration(
-                              hintText: 'e.g. READY',
-                              counterText: '',
-                            ),
-                            onChanged: (_) => setState(() {}),
-                          ),
-                          if (_captionCtrl.text.trim().isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 16),
                             Row(
                               children: [
-                                Text(
-                                  'Position',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.outline,
-                                    fontSize: 13,
+                                const Expanded(
+                                  child: Text(
+                                    'Caption (optional)',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                                const Spacer(),
-                                SegmentedButton<String>(
-                                  segments: const [
-                                    ButtonSegment(
-                                      value: 'top',
-                                      label: Text('Top'),
-                                    ),
-                                    ButtonSegment(
-                                      value: 'bottom',
-                                      label: Text('Bottom'),
-                                    ),
-                                  ],
-                                  selected: {_captionPosition},
-                                  onSelectionChanged: submitting
-                                      ? null
-                                      : (s) => setState(
-                                            () =>
-                                                _captionPosition = s.first,
-                                          ),
+                                Text(
+                                  '${_captionCtrl.text.length} / 10',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _captionCtrl,
+                              enabled: !submitting && !isEmpty,
+                              maxLength: 10,
+                              textCapitalization: TextCapitalization.characters,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[A-Z0-9 .!?\-]'),
+                                ),
+                                LengthLimitingTextInputFormatter(10),
+                              ],
+                              decoration: InputDecoration(
+                                hintText: 'e.g. READY',
+                                counterText: '',
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                            if (_captionCtrl.text.trim().isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Position',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  SegmentedButton<String>(
+                                    segments: const [
+                                      ButtonSegment(
+                                        value: 'top',
+                                        label: Text('Top'),
+                                      ),
+                                      ButtonSegment(
+                                        value: 'bottom',
+                                        label: Text('Bottom'),
+                                      ),
+                                    ],
+                                    selected: {_captionPosition},
+                                    onSelectionChanged: submitting
+                                        ? null
+                                        : (s) => setState(
+                                            () => _captionPosition = s.first,
+                                          ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            _GenerateButton(
+                              onPressed: () => _onGenerate(presets),
+                            ),
+                            const SizedBox(height: 24),
+                            KeyedSubtree(
+                              key: _resultKey,
+                              child: const _ResultPanel(),
+                            ),
                           ],
-                          const SizedBox(height: 8),
-                          _GenerateButton(
-                            onPressed: () => _onGenerate(presets),
-                          ),
-                          const SizedBox(height: 24),
-                          KeyedSubtree(
-                            key: _resultKey,
-                            child: const _ResultPanel(),
-                          ),
-                        ],
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 
@@ -839,13 +846,12 @@ class _ResultPanel extends StatelessWidget {
                           aspectRatio: 1,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: genState.imageUrl != null &&
+                            child:
+                                genState.imageUrl != null &&
                                     genState.imageUrl!.isNotEmpty
                                 ? FutureBuilder<File?>(
                                     future: getIt<StickerRepository>()
-                                        .getCachedImageFile(
-                                      genState.imageUrl!,
-                                    ),
+                                        .getCachedImageFile(genState.imageUrl!),
                                     builder: (context, snap) {
                                       if (snap.hasError) {
                                         return const Center(

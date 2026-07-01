@@ -3,9 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/datasources/supabase_client.dart';
 import '../data/repositories/auth_repository.dart';
+import '../data/repositories/credit_transaction_repository.dart';
 import '../data/repositories/legal_consent_repository.dart';
 import '../data/repositories/mission_repository.dart';
 import '../data/repositories/preset_repository.dart';
+import '../data/repositories/profile_repository.dart';
 import '../data/repositories/rewarded_ad_repository.dart';
 import '../data/repositories/sticker_pack_repository.dart';
 import '../data/repositories/sticker_repository.dart';
@@ -28,9 +30,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<WalletRepository>(
     () => SupabaseWalletRepository(client),
   );
-  getIt.registerLazySingleton<ImageCacheService>(
-    () => ImageCacheService(),
-  );
+  getIt.registerLazySingleton<ImageCacheService>(() => ImageCacheService());
   getIt.registerLazySingleton<StickerRepository>(
     () => SupabaseStickerRepository(client, getIt<ImageCacheService>()),
   );
@@ -48,5 +48,11 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<RewardedAdRepository>(
     () => RewardedAdRepository(),
+  );
+  getIt.registerLazySingleton<ProfileRepository>(
+    () => SupabaseProfileRepository(client),
+  );
+  getIt.registerLazySingleton<CreditTransactionRepository>(
+    () => SupabaseCreditTransactionRepository(client),
   );
 }

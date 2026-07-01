@@ -38,3 +38,7 @@ class GenerationInProgressFailure extends Failure {
 class UnknownFailure extends Failure {
   const UnknownFailure(super.message);
 }
+
+class ServerFailure extends Failure {
+  const ServerFailure(super.message);
+}

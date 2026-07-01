@@ -60,6 +60,10 @@ class AuthUpgradeAnonymousRequested extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
+class AuthGoogleSignInRequested extends AuthEvent {
+  const AuthGoogleSignInRequested();
+}
+
 class _AuthUserChanged extends AuthEvent {
   final User? user;
   const _AuthUserChanged(this.user);
@@ -121,6 +125,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     on<AuthSignOutRequested>(_onSignOut);
     on<AuthAnonymousRequested>(_onAnonymous);
     on<AuthUpgradeAnonymousRequested>(_onUpgradeAnonymous);
+    on<AuthGoogleSignInRequested>(_onGoogleSignIn);
     on<_AuthUserChanged>(_onUserChanged);
   }
 
@@ -137,6 +142,39 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     if (user == null) return AuthStatus.unauthenticated;
     if (user.isAnonymous) return AuthStatus.guest;
     return AuthStatus.authenticated;
+  }
+
+  Future<void> _onGoogleSignIn(
+    AuthGoogleSignInRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+      ),
+    );
+    try {
+      await _repo.signInWithGoogle();
+      final user = _repo.currentUser;
+      final status = _resolveStatus(user);
+      emit(
+        state.copyWith(
+          status: status,
+          user: user,
+          errorMessage: null,
+          infoMessage: null,
+        ),
+      );
+    } on Failure catch (f) {
+      emit(
+        state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: f.message,
+        ),
+      );
+    }
   }
 
   void _onUserChanged(_AuthUserChanged e, Emitter<AuthBlocState> emit) {

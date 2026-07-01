@@ -9,6 +9,7 @@ abstract class AuthRepository {
   Future<void> signUp({required String email, required String password});
   Future<void> signOut();
   Future<void> signInAnonymously();
+  Future<void> signInWithGoogle();
   Future<void> upgradeAnonymousAccount({
     required String email,
     required String password,
@@ -70,6 +71,20 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       await _client.auth.updateUser(
         UserAttributes(email: email, password: password),
+      );
+    } on AuthException catch (e) {
+      throw AuthFailure(e.message);
+    } catch (e) {
+      throw UnknownFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    try {
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.bikinstiker://login-callback/',
       );
     } on AuthException catch (e) {
       throw AuthFailure(e.message);

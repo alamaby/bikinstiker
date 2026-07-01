@@ -6,9 +6,11 @@ import 'core/di.dart';
 import 'core/theme/app_theme.dart';
 import 'data/models/sticker_preset.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/credit_transaction_repository.dart';
 import 'data/repositories/legal_consent_repository.dart';
 import 'data/repositories/mission_repository.dart';
 import 'data/repositories/preset_repository.dart';
+import 'data/repositories/profile_repository.dart';
 import 'data/repositories/rewarded_ad_repository.dart';
 import 'data/repositories/sticker_pack_repository.dart';
 import 'data/repositories/sticker_repository.dart';
@@ -61,6 +63,12 @@ class BikinStikerApp extends StatelessWidget {
         RepositoryProvider<StickerPackRepository>.value(
           value: getIt<StickerPackRepository>(),
         ),
+        RepositoryProvider<ProfileRepository>.value(
+          value: getIt<ProfileRepository>(),
+        ),
+        RepositoryProvider<CreditTransactionRepository>.value(
+          value: getIt<CreditTransactionRepository>(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -93,9 +101,7 @@ class BikinStikerApp extends StatelessWidget {
           BlocProvider(
             create: (ctx) => StickerPackBloc(ctx.read<StickerPackRepository>()),
           ),
-          BlocProvider(
-            create: (_) => HomePrefillCubit(),
-          ),
+          BlocProvider(create: (_) => HomePrefillCubit()),
         ],
         child: MaterialApp(
           title: 'BikinStiker',

@@ -1,0 +1,147 @@
+import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../core/errors/failures.dart';
+import '../../../data/models/credit_transaction.dart';
+import '../../../data/repositories/credit_transaction_repository.dart';
+
+// --- Events ---
+
+sealed class CreditTransactionsEvent extends Equatable {
+  const CreditTransactionsEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+class CreditTransactionsStarted extends CreditTransactionsEvent {
+  final String userId;
+  const CreditTransactionsStarted(this.userId);
+  @override
+  List<Object?> get props => [userId];
+}
+
+class CreditTransactionsRefreshed extends CreditTransactionsEvent {
+  const CreditTransactionsRefreshed();
+}
+
+class CreditTransactionsTypeFilterChanged extends CreditTransactionsEvent {
+  final CreditTxType? type;
+  const CreditTransactionsTypeFilterChanged(this.type);
+  @override
+  List<Object?> get props => [type];
+}
+
+// --- State ---
+
+enum CreditTransactionsStatus { initial, loading, loaded, error }
+
+class CreditTransactionsState extends Equatable {
+  final CreditTransactionsStatus status;
+  final List<CreditTransaction> transactions;
+  final CreditTxType? filterType;
+  final String? error;
+  final String? userId;
+
+  const CreditTransactionsState({
+    this.status = CreditTransactionsStatus.initial,
+    this.transactions = const [],
+    this.filterType,
+    this.error,
+    this.userId,
+  });
+
+  CreditTransactionsState copyWith({
+    CreditTransactionsStatus? status,
+    List<CreditTransaction>? transactions,
+    CreditTxType? filterType,
+    String? error,
+    String? userId,
+  }) {
+    return CreditTransactionsState(
+      status: status ?? this.status,
+      transactions: transactions ?? this.transactions,
+      filterType: filterType ?? this.filterType,
+      error: error,
+      userId: userId ?? this.userId,
+    );
+  }
+
+  @override
+  List<Object?> get props => [status, transactions, filterType, error, userId];
+}
+
+// --- Bloc ---
+
+class CreditTransactionsBloc
+    extends Bloc<CreditTransactionsEvent, CreditTransactionsState> {
+  final CreditTransactionRepository _repo;
+
+  CreditTransactionsBloc(this._repo) : super(const CreditTransactionsState()) {
+    on<CreditTransactionsStarted>(_onStarted);
+    on<CreditTransactionsRefreshed>(_onRefreshed);
+    on<CreditTransactionsTypeFilterChanged>(_onFilterChanged);
+  }
+
+  Future<void> _onStarted(
+    CreditTransactionsStarted event,
+    Emitter<CreditTransactionsState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: CreditTransactionsStatus.loading,
+        userId: event.userId,
+      ),
+    );
+    await _fetch(emit);
+  }
+
+  Future<void> _onRefreshed(
+    CreditTransactionsRefreshed event,
+    Emitter<CreditTransactionsState> emit,
+  ) async {
+    emit(state.copyWith(status: CreditTransactionsStatus.loading));
+    await _fetch(emit);
+  }
+
+  Future<void> _onFilterChanged(
+    CreditTransactionsTypeFilterChanged event,
+    Emitter<CreditTransactionsState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: CreditTransactionsStatus.loading,
+        filterType: event.type,
+      ),
+    );
+    await _fetch(emit);
+  }
+
+  Future<void> _fetch(Emitter<CreditTransactionsState> emit) async {
+    final userId = state.userId;
+    if (userId == null) {
+      emit(
+        state.copyWith(
+          status: CreditTransactionsStatus.error,
+          error: 'User not authenticated',
+        ),
+      );
+      return;
+    }
+    try {
+      final txs = await _repo.fetchTransactions(userId, type: state.filterType);
+      emit(
+        state.copyWith(
+          status: CreditTransactionsStatus.loaded,
+          transactions: txs,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: CreditTransactionsStatus.error,
+          error: e is Failure ? e.message : e.toString(),
+        ),
+      );
+    }
+  }
+}

@@ -21,7 +21,9 @@ class _AuthScreenState extends State<AuthScreen>
   late final TabController _tab = TabController(length: 2, vsync: this);
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _displayNameCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _emailMarketing = false;
 
   bool get _isGuestWall => widget.mode == AuthScreenMode.guestAuthWall;
   bool get _isSignUp => _isGuestWall ? _tab.index == 0 : _tab.index == 1;
@@ -37,6 +39,7 @@ class _AuthScreenState extends State<AuthScreen>
     _tab.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _displayNameCtrl.dispose();
     super.dispose();
   }
 
@@ -60,6 +63,10 @@ class _AuthScreenState extends State<AuthScreen>
         auth.add(AuthSignUpRequested(email, pass));
       }
     }
+  }
+
+  void _googleSignIn() {
+    context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
   }
 
   @override
@@ -211,6 +218,40 @@ class _AuthScreenState extends State<AuthScreen>
                                 ? 'Min 6 characters'
                                 : null,
                           ),
+                          if (_isSignUp && !_isGuestWall) ...[
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _displayNameCtrl,
+                              textCapitalization: TextCapitalization.words,
+                              autofillHints: const [AutofillHints.name],
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              textInputAction: TextInputAction.next,
+                              decoration: const InputDecoration(
+                                labelText: 'Display Name (optional)',
+                                prefixIcon: Icon(Icons.person_outline),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _emailMarketing,
+                                  onChanged: (v) {
+                                    setState(
+                                      () => _emailMarketing = v ?? false,
+                                    );
+                                  },
+                                ),
+                                const Expanded(
+                                  child: Text(
+                                    'Send me tips and promotions',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -229,6 +270,28 @@ class _AuthScreenState extends State<AuthScreen>
                       submitting ? 'Please wait...' : _submitButtonLabel,
                     ),
                   ),
+                  if (!_isGuestWall) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: const [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'or',
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: submitting ? null : _googleSignIn,
+                      icon: const Icon(Icons.g_mobiledata, size: 24),
+                      label: const Text('Continue with Google'),
+                    ),
+                  ],
                   if (_isGuestWall && !submitting) ...[
                     const SizedBox(height: 16),
                     _GuestWallWarning(),

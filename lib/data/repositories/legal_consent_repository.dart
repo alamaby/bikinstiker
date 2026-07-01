@@ -5,8 +5,8 @@ class LegalConsentRepository {
   static const String _privacyKey = 'legal_privacy_version';
   static const String _acceptedAtKey = 'legal_accepted_at';
 
-  static const String currentTermsVersion = '2026-06-27';
-  static const String currentPrivacyVersion = '2026-06-27';
+  static const String currentTermsVersion = '2026-07-01';
+  static const String currentPrivacyVersion = '2026-07-01';
 
   final SharedPreferences _prefs;
 

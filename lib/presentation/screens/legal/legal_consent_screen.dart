@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/legal_consent_repository.dart';
@@ -13,30 +15,36 @@ class LegalConsentScreen extends StatefulWidget {
   State<LegalConsentScreen> createState() => _LegalConsentScreenState();
 }
 
-class _LegalConsentScreenState extends State<LegalConsentScreen> {
+class _LegalConsentScreenState extends State<LegalConsentScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab = TabController(length: 2, vsync: this);
   bool _accepted = false;
   bool _submitting = false;
-  final _scrollController = ScrollController();
+  String _privacyMarkdown = '';
+  String _termsMarkdown = '';
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    _loadDocuments();
   }
 
   @override
   void dispose() {
-    _scrollController
-      ..removeListener(_onScroll)
-      ..dispose();
+    _tab.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 50) {
-      setState(() {});
-    }
+  Future<void> _loadDocuments() async {
+    final results = await Future.wait([
+      rootBundle.loadString('docs/privacy-policy.md'),
+      rootBundle.loadString('docs/terms-of-service.md'),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _privacyMarkdown = results[0];
+      _termsMarkdown = results[1];
+    });
   }
 
   Future<void> _onContinue() async {
@@ -60,14 +68,12 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
                       children: [
                         const Icon(
                           Icons.auto_awesome,
@@ -84,163 +90,129 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
                       'Terms of Service & Privacy Policy',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
-                    const SizedBox(height: 24),
-                    _section('What this app does', [
-                      'BikinStiker generates AI-powered WhatsApp stickers from your text prompts.',
-                      'You pick a style, type a short description, and the app creates a die-cut sticker with a white background.',
-                    ]),
-                    _section('Credits & accounts', [
-                      'Guest users receive 1 free credit to try the app.',
-                      'Registered users receive 5 starter credits.',
-                      'Each sticker generation costs 1 credit.',
-                      'Saving or sharing generated stickers requires creating an account or signing in.',
-                      'If you create an account from the guest session, your sticker is kept.',
-                      'If you sign in to an existing account, the guest sticker is discarded and not transferred.',
-                    ]),
-                    _section('Advertising (Google AdMob)', [
-                      'BikinStiker plans to use Google AdMob for advertising and monetization.',
-                      'Google AdMob may collect and process advertising identifiers, device information, app interactions, diagnostics, and approximate location depending on your device settings, consent choices, and Google\'s policies.',
-                    ]),
-                    _section('Data we process', [
-                      'Account data (email, authentication state).',
-                      'Prompts and generated sticker metadata.',
-                      'Credit balances and transaction history.',
-                      'Anti-bot events for abuse prevention.',
-                      'Advertising-related data when ads are enabled.',
-                    ]),
-                    _section('Your responsibilities', [
-                      'Do not submit prompts that violate applicable laws, third-party rights, or platform policies.',
-                      'You are responsible for the content you generate.',
-                    ]),
-                    _section('Changes', [
-                      'Credits, generation limits, and ad behavior may change to prevent abuse and maintain service availability.',
-                      'Significant changes to these terms will require renewed acceptance.',
-                    ]),
-                    const SizedBox(height: 24),
-                    _AcceptCheckbox(
-                      value: _accepted,
-                      onChanged: (v) => setState(() => _accepted = v),
+                  ),
+                  const SizedBox(height: 12),
+                  // Tab bar
+                  TabBar(
+                    controller: _tab,
+                    indicatorColor: AppColors.primary,
+                    labelColor: AppColors.primary,
+                    unselectedLabelColor: Colors.black54,
+                    dividerHeight: 0,
+                    tabs: const [
+                      Tab(text: 'Privacy Policy'),
+                      Tab(text: 'Terms of Service'),
+                    ],
+                  ),
+                  // Markdown content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tab,
+                      children: [
+                        _MarkdownDoc(markdown: _privacyMarkdown),
+                        _MarkdownDoc(markdown: _termsMarkdown),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            _BottomBar(
-              accepted: _accepted,
-              submitting: _submitting,
-              onPressed: _onContinue,
+            // Checkbox + Continue
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Checkbox(
+                        value: _accepted,
+                        onChanged: (v) =>
+                            setState(() => _accepted = v ?? false),
+                        activeColor: AppColors.secondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'I have read and accept the Terms of Service and Privacy Policy',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton(
+                    onPressed: _accepted && !_submitting
+                        ? _onContinue
+                        : null,
+                    child: _submitting
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Continue'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-  Widget _section(String title, List<String> bullets) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        ...bullets.map(
-          (b) => Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '\u2022 ',
-                  style: TextStyle(fontSize: 14, color: Colors.black87),
-                ),
-                Expanded(
-                  child: Text(
-                    b,
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
 }
 
-class _AcceptCheckbox extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
+/// Renders a markdown document in a scrollable container.
+class _MarkdownDoc extends StatelessWidget {
+  final String markdown;
 
-  const _AcceptCheckbox({required this.value, required this.onChanged});
+  const _MarkdownDoc({required this.markdown});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Checkbox(
-          value: value,
-          onChanged: (v) => onChanged(v ?? false),
-          activeColor: AppColors.secondary,
+    if (markdown.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Markdown(
+      data: markdown,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      styleSheet: MarkdownStyleSheet(
+        h1: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        h2: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        h3: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        p: const TextStyle(fontSize: 14, color: Colors.black87),
+        listBullet: const TextStyle(fontSize: 14, color: Colors.black87),
+        tableHead: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'I have read and accept the Terms of Service and Privacy Policy',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BottomBar extends StatelessWidget {
-  final bool accepted;
-  final bool submitting;
-  final VoidCallback onPressed;
-
-  const _BottomBar({
-    required this.accepted,
-    required this.submitting,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: FilledButton(
-        onPressed: accepted && !submitting ? onPressed : null,
-        child: submitting
-            ? const SizedBox(
-                height: 16,
-                width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Text('Continue'),
+        tableBody: const TextStyle(fontSize: 13),
       ),
     );
   }

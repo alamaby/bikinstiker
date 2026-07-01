@@ -1,86 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/constants/emoji_categories.dart';
+import '../../core/constants/emoji_keywords.dart';
+import '../../core/recent_emojis_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/sticker_pack.dart';
 import '../blocs/sticker_pack/sticker_pack_bloc.dart';
 import '../screens/packs/pack_create_screen.dart';
-
-/// Common emojis for WhatsApp sticker packs
-const _kEmojiOptions = <String>[
-  '😀',
-  '😂',
-  '😍',
-  '🥰',
-  '😎',
-  '😭',
-  '😡',
-  '👍',
-  '❤️',
-  '🔥',
-  '🎉',
-  '✨',
-  '🌟',
-  '💯',
-  '👌',
-  '🙌',
-  '🐱',
-  '🐶',
-  '🐰',
-  '🐻',
-  '🦁',
-  '🐯',
-  '🐨',
-  '🐸',
-  '🍕',
-  '🍔',
-  '🍟',
-  '🌮',
-  '🍣',
-  '🍦',
-  '🍰',
-  '☕',
-  '⚽',
-  '🏀',
-  '🏈',
-  '⚾',
-  '🎾',
-  '🏓',
-  '🏸',
-  '🥊',
-  '🚗',
-  '✈️',
-  '🚀',
-  '🛸',
-  '🚁',
-  '🛶',
-  '⛵',
-  '🏍️',
-  '🎮',
-  '🎲',
-  '🎨',
-  '🎭',
-  '🎪',
-  '🎤',
-  '🎸',
-  '🎹',
-  '🌈',
-  '☀️',
-  '🌙',
-  '⭐',
-  '☁️',
-  '❄️',
-  '🌸',
-  '🌻',
-  '💡',
-  '💭',
-  '💬',
-  '💌',
-  '📷',
-  '📱',
-  '💻',
-  '🎧',
-];
 
 /// Modal bottom sheet that lets the user add a sticker to one of their
 /// packs, or create a new pack on the fly.
@@ -106,16 +33,43 @@ class AddToPackSheet extends StatefulWidget {
   State<AddToPackSheet> createState() => _AddToPackSheetState();
 }
 
-class _AddToPackSheetState extends State<AddToPackSheet> {
+class _AddToPackSheetState extends State<AddToPackSheet>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab = TabController(
+    length: kEmojiCategories.length,
+    vsync: this,
+    initialIndex: 1, // Smileys (index 1)
+  );
   final List<String> _selectedEmojis = [];
+  final _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+  List<String> _recentEmojis = [];
 
   @override
   void initState() {
     super.initState();
-    // Refresh packs list when sheet opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<StickerPackBloc>().add(const StickerPackLoadRequested());
+    });
+    _loadRecent();
+    _searchCtrl.addListener(() {
+      setState(() => _searchQuery = _searchCtrl.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadRecent() async {
+    final recent = await RecentEmojisService.load();
+    if (!mounted) return;
+    setState(() {
+      _recentEmojis = recent;
     });
   }
 
@@ -125,14 +79,19 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
         _selectedEmojis.remove(emoji);
       } else if (_selectedEmojis.length < 3) {
         _selectedEmojis.add(emoji);
+        RecentEmojisService.add(emoji);
+        _loadRecent();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final searchResults =
+        _searchQuery.isEmpty ? <String>[] : searchEmojis(_searchQuery);
+
     return FractionallySizedBox(
-      heightFactor: 0.85,
+      heightFactor: 0.95,
       child: Padding(
         padding: EdgeInsets.only(
           left: 16,
@@ -152,49 +111,70 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
               'Choose a pack and select 1-3 emojis for WhatsApp.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: 16),
-            // Emoji picker - fixed height, scrollable grid
+            const SizedBox(height: 12),
+            // Search bar
+            TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: 'Search emojis...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _searchQuery.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: () => _searchCtrl.clear(),
+                      ),
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Tab bar (hidden when searching)
+            if (_searchQuery.isEmpty)
+              TabBar(
+                controller: _tab,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorColor: AppColors.primary,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: Colors.black54,
+                dividerHeight: 0,
+                tabs: kEmojiCategories.asMap().entries.map((entry) {
+                  final cat = entry.value;
+                  return Tab(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(cat.icon, style: const TextStyle(fontSize: 20)),
+                        const SizedBox(height: 2),
+                        Text(cat.name, style: const TextStyle(fontSize: 11)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 8),
+            // Emoji count label
             Text(
               'Emojis (${_selectedEmojis.length}/3)',
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
+            // Emoji grid
             SizedBox(
-              height: 160,
-              child: GridView.builder(
-                itemCount: _kEmojiOptions.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 8,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1,
-                ),
-                itemBuilder: (context, index) {
-                  final emoji = _kEmojiOptions[index];
-                  final selected = _selectedEmojis.contains(emoji);
-                  return InkWell(
-                    onTap: () => _toggleEmoji(emoji),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? AppColors.secondary.withValues(alpha: 0.2)
-                            : AppColors.surface,
-                        border: Border.all(
-                          color: selected
-                              ? AppColors.secondary
-                              : AppColors.outline,
-                          width: selected ? 2 : 1,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                    ),
-                  );
-                },
-              ),
+              height: 200,
+              child: _searchQuery.isEmpty
+                  ? TabBarView(
+                      controller: _tab,
+                      children: _buildCategoryTabs(),
+                    )
+                  : _buildSearchResults(searchResults),
             ),
+            // Selected chips
             if (_selectedEmojis.isNotEmpty) ...[
               const SizedBox(height: 8),
               Wrap(
@@ -210,7 +190,7 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
                 }).toList(),
               ),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Expanded(
               child: BlocBuilder<StickerPackBloc, StickerPackState>(
                 builder: (context, state) {
@@ -219,9 +199,8 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final availablePacks = state.packs
-                      .where((p) => p.canAddStickers)
-                      .toList();
+                  final availablePacks =
+                      state.packs.where((p) => p.canAddStickers).toList();
 
                   if (availablePacks.isEmpty) {
                     return _EmptyOrFullState(
@@ -278,6 +257,71 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
     );
   }
 
+  List<Widget> _buildCategoryTabs() {
+    return kEmojiCategories.asMap().entries.map((entry) {
+      final i = entry.key;
+      final emojis = i == 0 ? _recentEmojis : entry.value.emojis;
+      return _buildEmojiGrid(
+        emojis,
+        emptyText: i == 0 ? 'No recent emojis yet' : null,
+      );
+    }).toList();
+  }
+
+  Widget _buildSearchResults(List<String> results) {
+    if (results.isEmpty) {
+      return Center(
+        child: Text(
+          'No emojis match "$_searchQuery"',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+    return _buildEmojiGrid(results);
+  }
+
+  Widget _buildEmojiGrid(List<String> emojis, {String? emptyText}) {
+    if (emojis.isEmpty) {
+      return Center(
+        child: Text(
+          emptyText ?? 'No emojis',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      itemCount: emojis.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 6,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemBuilder: (ctx, i) {
+        final emoji = emojis[i];
+        final selected = _selectedEmojis.contains(emoji);
+        return InkWell(
+          onTap: () => _toggleEmoji(emoji),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppColors.secondary.withValues(alpha: 0.2)
+                  : AppColors.surface,
+              border: Border.all(
+                color: selected ? AppColors.secondary : AppColors.outline,
+                width: selected ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: Text(emoji, style: const TextStyle(fontSize: 28)),
+          ),
+        );
+      },
+    );
+  }
+
   void _addToPack(BuildContext context, StickerPack pack) {
     if (_selectedEmojis.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -290,12 +334,12 @@ class _AddToPackSheetState extends State<AddToPackSheet> {
     }
 
     context.read<StickerPackBloc>().add(
-      StickerPackAddStickerRequested(
-        packId: pack.id,
-        stickerId: widget.stickerId,
-        emojis: _selectedEmojis,
-      ),
-    );
+          StickerPackAddStickerRequested(
+            packId: pack.id,
+            stickerId: widget.stickerId,
+            emojis: _selectedEmojis,
+          ),
+        );
 
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(

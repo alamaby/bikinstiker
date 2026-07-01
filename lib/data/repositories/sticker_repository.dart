@@ -26,7 +26,16 @@ abstract class StickerRepository {
     String? captionPosition,
   });
 
-  Future<List<StickerGeneration>> fetchHistory({int limit = 50});
+  Future<List<StickerGeneration>> fetchHistory({
+    int limit = 100,
+    String? presetName,
+    String? status,
+    DateTime? createdAfter,
+    DateTime? createdBefore,
+    String? searchPrompt,
+    String sortBy = 'created_at',
+    bool sortAscending = false,
+  });
 
   Future<String?> signedUrlForPath(String path, {int ttlSeconds = 3600});
 
@@ -123,12 +132,43 @@ class SupabaseStickerRepository implements StickerRepository {
   }
 
   @override
-  Future<List<StickerGeneration>> fetchHistory({int limit = 50}) async {
-    final rows = await _client
-        .from('sticker_generations')
-        .select()
-        .order('created_at', ascending: false)
+  Future<List<StickerGeneration>> fetchHistory({
+    int limit = 100,
+    String? presetName,
+    String? status,
+    DateTime? createdAfter,
+    DateTime? createdBefore,
+    String? searchPrompt,
+    String sortBy = 'created_at',
+    bool sortAscending = false,
+  }) async {
+    var query = _client.from('sticker_generations').select();
+
+    if (presetName != null && presetName.isNotEmpty) {
+      query = query.eq('preset_name', presetName);
+    }
+    if (status != null && status.isNotEmpty) {
+      query = query.eq('status', status);
+    }
+    if (createdAfter != null) {
+      query = query.gte('created_at', createdAfter.toIso8601String());
+    }
+    if (createdBefore != null) {
+      query = query.lte('created_at', createdBefore.toIso8601String());
+    }
+    if (searchPrompt != null && searchPrompt.trim().isNotEmpty) {
+      final sanitized = searchPrompt
+          .trim()
+          .replaceAll('\\', '\\\\')
+          .replaceAll('%', '\\%')
+          .replaceAll('_', '\\_');
+      query = query.ilike('user_prompt', '%$sanitized%');
+    }
+
+    final rows = await query
+        .order(sortBy, ascending: sortAscending)
         .limit(limit);
+
     return rows
         .map<StickerGeneration>((r) => StickerGeneration.fromJson(r))
         .toList();

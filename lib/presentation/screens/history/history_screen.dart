@@ -8,12 +8,16 @@ import '../../../core/di.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
+import '../../../data/models/sticker_preset.dart';
 import '../../../data/repositories/sticker_repository.dart';
 import '../../blocs/history/history_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
+import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/status_indicator.dart';
+import 'widgets/history_filter_chips.dart';
+import 'widgets/history_search_field.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -26,9 +30,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    // HistoryBloc lives at the app root (see app.dart) so the list and
-    // signed-URL cache are retained across visits. We just kick off a
-    // refresh each time the screen mounts.
     context.read<HistoryBloc>().add(const HistoryRefreshed());
   }
 
@@ -44,7 +45,22 @@ class _HistoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Your stickers')),
+      appBar: AppBar(
+        title: const Text('Your stickers'),
+        actions: [
+          BlocBuilder<HistoryBloc, HistoryBlocState>(
+            builder: (context, state) {
+              if (!state.hasActiveFilters) return const SizedBox.shrink();
+              return TextButton(
+                onPressed: () {
+                  context.read<HistoryBloc>().add(const HistoryFiltersCleared());
+                },
+                child: const Text('Clear'),
+              );
+            },
+          ),
+        ],
+      ),
       body: BlocBuilder<HistoryBloc, HistoryBlocState>(
         builder: (context, state) {
           if (state.status == HistoryStatus.loading && state.items.isEmpty) {
@@ -70,29 +86,183 @@ class _HistoryView extends StatelessWidget {
               ),
             );
           }
-          if (state.items.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('No stickers yet — generate your first one!'),
+          return Column(
+            children: [
+              _FilterBar(state: state),
+              const SizedBox(height: 8),
+              Expanded(
+                child: state.items.isEmpty
+                    ? _EmptyState(hasActiveFilters: state.hasActiveFilters)
+                    : RefreshIndicator(
+                        onRefresh: () async => context
+                            .read<HistoryBloc>()
+                            .add(const HistoryRefreshed()),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: state.items.length,
+                          separatorBuilder: (_, i) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (_, i) =>
+                              _HistoryTile(item: state.items[i]),
+                        ),
+                      ),
               ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async =>
-                context.read<HistoryBloc>().add(const HistoryRefreshed()),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.items.length,
-              separatorBuilder: (_, i) => const SizedBox(height: 12),
-              itemBuilder: (_, i) => _HistoryTile(item: state.items[i]),
-            ),
+            ],
           );
         },
       ),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Filter bar
+// ---------------------------------------------------------------------------
+
+class _FilterBar extends StatelessWidget {
+  final HistoryBlocState state;
+  const _FilterBar({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlus = context.read<SubscriptionBloc>().state.isPlus;
+    final presets = context.watch<PresetBloc>().state.presets;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              FilterChipDropdown<HistoryStatusFilter>(
+                label: 'Status',
+                value: state.statusFilter.label,
+                items: buildStatusFilterItems(),
+                onSelected: (f) => context
+                    .read<HistoryBloc>()
+                    .add(HistoryStatusFilterChanged(f)),
+              ),
+              const SizedBox(width: 8),
+              FilterChipDropdown<String>(
+                label: 'Preset',
+                value: _presetLabel(state.presetFilter, presets),
+                items: buildPresetFilterItems(presets: presets),
+                onSelected: (id) => context.read<HistoryBloc>().add(
+                      HistoryPresetFilterChanged(id.isEmpty ? null : id),
+                    ),
+              ),
+              const SizedBox(width: 8),
+              FilterChipDropdown<HistoryDateFilter>(
+                label: 'Date',
+                value: state.dateFilter.label,
+                items: buildDateFilterItems(),
+                onSelected: isPlus
+                    ? (f) => context
+                        .read<HistoryBloc>()
+                        .add(HistoryDateFilterChanged(f))
+                    : (_) => _showPlusOnlySnackBar(context, 'Date filter'),
+                locked: !isPlus,
+              ),
+              const Spacer(),
+              PopupMenuButton<HistorySort>(
+                onSelected: (s) => context
+                    .read<HistoryBloc>()
+                    .add(HistorySortChanged(s)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                itemBuilder: (_) => buildSortItems(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      state.sort.label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Icon(Icons.arrow_drop_down, size: 16),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          HistorySearchField(
+            enabled: state.status != HistoryStatus.loading,
+            locked: !isPlus,
+            onChanged: (q) =>
+                context.read<HistoryBloc>().add(HistorySearchChanged(q)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _presetLabel(String? presetId, List<StickerPreset> presets) {
+    if (presetId == null || presetId.isEmpty) return 'All';
+    try {
+      return presets.firstWhere((p) => p.id == presetId).label;
+    } catch (_) {
+      return presetId;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+
+class _EmptyState extends StatelessWidget {
+  final bool hasActiveFilters;
+  const _EmptyState({required this.hasActiveFilters});
+
+  @override
+  Widget build(BuildContext context) {
+    if (hasActiveFilters) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.filter_list_off,
+                size: 40,
+                color: Colors.black38,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'No stickers match your filters',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonal(
+                onPressed: () {
+                  context
+                      .read<HistoryBloc>()
+                      .add(const HistoryFiltersCleared());
+                },
+                child: const Text('Clear filters'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text('No stickers yet — generate your first one!'),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// History tile (unchanged except uses state.items)
+// ---------------------------------------------------------------------------
 
 class _HistoryTile extends StatelessWidget {
   final StickerGeneration item;
@@ -203,10 +373,12 @@ class _HistoryTile extends StatelessWidget {
               ),
               subtitle: isPlus
                   ? null
-                  : const Text('Plus only', style: TextStyle(fontSize: 12)),
+                  : const Text('Plus only',
+                      style: TextStyle(fontSize: 12)),
               trailing: isPlus
                   ? null
-                  : const Icon(Icons.lock_outline, size: 16, color: Colors.black38),
+                  : const Icon(Icons.lock_outline,
+                      size: 16, color: Colors.black38),
               onTap: isPlus
                   ? () {
                       Navigator.of(sheetCtx).pop();
@@ -235,6 +407,10 @@ class _HistoryTile extends StatelessWidget {
     Navigator.of(context).pop();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Thumbnail (local file cache)
+// ---------------------------------------------------------------------------
 
 class _Thumb extends StatelessWidget {
   final String? path;
@@ -281,6 +457,10 @@ class _Thumb extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Sticker preview sheet
+// ---------------------------------------------------------------------------
 
 class _StickerPreviewSheet extends StatelessWidget {
   final StickerGeneration item;
@@ -376,4 +556,14 @@ class _StickerPreviewSheet extends StatelessWidget {
       },
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+void _showPlusOnlySnackBar(BuildContext context, String feature) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('$feature is a Plus feature')),
+  );
 }

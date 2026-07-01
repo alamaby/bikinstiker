@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/errors/failures.dart';
+import '../../core/image_cache.dart';
 import '../models/sticker_generation.dart';
 
 class GenerateStickerResult {
@@ -25,18 +29,27 @@ abstract class StickerRepository {
   Future<List<StickerGeneration>> fetchHistory({int limit = 50});
 
   Future<String?> signedUrlForPath(String path, {int ttlSeconds = 3600});
+
+  /// Returns a locally-cached image file for [storagePath].
+  /// Fetches from network on cache miss.
+  Future<File?> getCachedImageFile(String storagePath);
+}
+
+class _CachedSignedUrl {
+  final Future<String?> future;
+  final DateTime issuedAt;
+  _CachedSignedUrl(this.future, this.issuedAt);
 }
 
 class SupabaseStickerRepository implements StickerRepository {
   final SupabaseClient _client;
+  final ImageCacheService _imageCache;
   static const String _bucket = 'stickers';
-  // In-memory cache keyed by storage path. Signed URLs have a 1h TTL on the
-  // server side, so caching for the lifetime of the app is safe: repeated
-  // calls for the same path (e.g. from a rebuilding History list) share one
-  // in-flight request instead of issuing a new one per build.
-  final Map<String, Future<String?>> _signedUrlCache = {};
+  static const _signedUrlTtl = Duration(minutes: 50);
 
-  SupabaseStickerRepository(this._client);
+  final Map<String, _CachedSignedUrl> _signedUrlCache = {};
+
+  SupabaseStickerRepository(this._client, this._imageCache);
 
   @override
   Future<GenerateStickerResult> generate({
@@ -52,7 +65,8 @@ class SupabaseStickerRepository implements StickerRepository {
           'presetId': presetId,
           'userInput': userInput,
           if (caption != null && caption.isNotEmpty) 'caption': caption,
-          if (caption != null && caption.isNotEmpty) 'captionPosition': captionPosition,
+          if (caption != null && caption.isNotEmpty)
+            'captionPosition': captionPosition,
         },
       );
 
@@ -83,7 +97,6 @@ class SupabaseStickerRepository implements StickerRepository {
           ? (detail['error'] as String)
           : e.reasonPhrase ?? '';
 
-      // 429 Too Many Requests
       if (statusCode == 429) {
         final retry = detail is Map && detail['retryAfterSeconds'] is int
             ? detail['retryAfterSeconds'] as int
@@ -91,7 +104,6 @@ class SupabaseStickerRepository implements StickerRepository {
         throw RateLimitedFailure(retry);
       }
 
-      // 409 Conflict (parallel generation in progress)
       if (statusCode == 409) {
         final retry = detail is Map && detail['retryAfterSeconds'] is int
             ? detail['retryAfterSeconds'] as int
@@ -125,10 +137,43 @@ class SupabaseStickerRepository implements StickerRepository {
   @override
   Future<String?> signedUrlForPath(String path, {int ttlSeconds = 3600}) async {
     if (path.isEmpty) return null;
-    return _signedUrlCache.putIfAbsent(
-      path,
-      () => _fetchSignedUrl(path, ttlSeconds),
+
+    final cached = _signedUrlCache[path];
+    if (cached != null &&
+        DateTime.now().difference(cached.issuedAt) < _signedUrlTtl) {
+      return cached.future;
+    }
+
+    final entry = _CachedSignedUrl(
+      _fetchSignedUrl(path, ttlSeconds),
+      DateTime.now(),
     );
+    _signedUrlCache[path] = entry;
+    return entry.future;
+  }
+
+  @override
+  Future<File?> getCachedImageFile(String storagePath) async {
+    if (storagePath.isEmpty) return null;
+
+    // L1: local file cache
+    final existing = await _imageCache.get(storagePath);
+    if (existing != null) return existing;
+
+    // L2: signed URL (TTL-aware)
+    final signedUrl = await signedUrlForPath(storagePath);
+    if (signedUrl == null) return null;
+
+    // L3: network fetch → store locally
+    try {
+      final res = await http.get(Uri.parse(signedUrl));
+      if (res.statusCode != 200) return null;
+      final file = await _imageCache.put(storagePath, res.bodyBytes);
+      await _imageCache.enforceMaxSize();
+      return file;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<String?> _fetchSignedUrl(String path, int ttlSeconds) async {

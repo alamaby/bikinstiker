@@ -35,17 +35,19 @@ class StickerGenBlocState extends Equatable {
   final StickerGenStatus status;
   final String? signedUrl;
   final String? stickerId;
+  final String? imageUrl;
   final Failure? failure;
 
   const StickerGenBlocState({
     this.status = StickerGenStatus.idle,
     this.signedUrl,
     this.stickerId,
+    this.imageUrl,
     this.failure,
   });
 
   @override
-  List<Object?> get props => [status, signedUrl, stickerId, failure];
+  List<Object?> get props => [status, signedUrl, stickerId, imageUrl, failure];
 }
 
 class StickerGenBloc extends Bloc<StickerGenEvent, StickerGenBlocState> {
@@ -73,6 +75,7 @@ class StickerGenBloc extends Bloc<StickerGenEvent, StickerGenBlocState> {
           status: StickerGenStatus.success,
           signedUrl: result.signedUrl,
           stickerId: result.stickerId,
+          imageUrl: result.path,
         ),
       );
     } on Failure catch (f) {

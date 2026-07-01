@@ -1,4 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -250,8 +251,8 @@ class _Thumb extends StatelessWidget {
         ),
       );
     }
-    return FutureBuilder<String?>(
-      future: getIt<StickerRepository>().signedUrlForPath(path!),
+    return FutureBuilder<File?>(
+      future: getIt<StickerRepository>().getCachedImageFile(path!),
       builder: (context, snap) {
         if (snap.hasError) {
           return Container(
@@ -262,7 +263,8 @@ class _Thumb extends StatelessWidget {
             ),
           );
         }
-        if (!snap.hasData || snap.data == null) {
+        final file = snap.data;
+        if (file == null) {
           return Container(
             color: AppColors.surface,
             child: const Center(
@@ -274,7 +276,7 @@ class _Thumb extends StatelessWidget {
             ),
           );
         }
-        return CachedNetworkImage(imageUrl: snap.data!, fit: BoxFit.cover);
+        return Image.file(file, fit: BoxFit.cover);
       },
     );
   }

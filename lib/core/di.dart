@@ -11,6 +11,7 @@ import '../data/repositories/sticker_pack_repository.dart';
 import '../data/repositories/sticker_repository.dart';
 import '../data/repositories/subscription_repository.dart';
 import '../data/repositories/wallet_repository.dart';
+import 'image_cache.dart';
 
 final getIt = GetIt.instance;
 
@@ -27,8 +28,11 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<WalletRepository>(
     () => SupabaseWalletRepository(client),
   );
+  getIt.registerLazySingleton<ImageCacheService>(
+    () => ImageCacheService(),
+  );
   getIt.registerLazySingleton<StickerRepository>(
-    () => SupabaseStickerRepository(client),
+    () => SupabaseStickerRepository(client, getIt<ImageCacheService>()),
   );
   getIt.registerLazySingleton<PresetRepository>(
     () => SupabasePresetRepository(client),

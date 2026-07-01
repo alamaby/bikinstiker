@@ -1,15 +1,17 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/presets.dart';
+import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_preset.dart';
 import '../../../data/models/user_subscription.dart';
+import '../../../data/repositories/sticker_repository.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
@@ -816,21 +818,42 @@ class _ResultPanel extends StatelessWidget {
                           aspectRatio: 1,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: genState.signedUrl!,
-                              fit: BoxFit.contain,
-                              placeholder: (_, _) => const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                              errorWidget: (_, _, _) => const Center(
-                                child: Icon(
-                                  Icons.broken_image_outlined,
-                                  color: AppColors.error,
-                                ),
-                              ),
-                            ),
+                            child: genState.imageUrl != null &&
+                                    genState.imageUrl!.isNotEmpty
+                                ? FutureBuilder<File?>(
+                                    future: getIt<StickerRepository>()
+                                        .getCachedImageFile(
+                                      genState.imageUrl!,
+                                    ),
+                                    builder: (context, snap) {
+                                      if (snap.hasError) {
+                                        return const Center(
+                                          child: Icon(
+                                            Icons.broken_image_outlined,
+                                            color: AppColors.error,
+                                          ),
+                                        );
+                                      }
+                                      final file = snap.data;
+                                      if (file == null) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        );
+                                      }
+                                      return Image.file(
+                                        file,
+                                        fit: BoxFit.contain,
+                                      );
+                                    },
+                                  )
+                                : const Center(
+                                    child: Icon(
+                                      Icons.broken_image_outlined,
+                                      color: AppColors.error,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 12),

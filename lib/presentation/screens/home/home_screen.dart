@@ -22,6 +22,8 @@ import '../../blocs/wallet/wallet_bloc.dart';
 import '../../widgets/ads_banner_placeholder.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/loading_lottie.dart';
+import '../../widgets/prompt_suggestion_chip.dart';
+import '../../widgets/surprise_me_button.dart';
 import '../../widgets/tier_badge.dart';
 import '../auth/auth_screen.dart';
 import '../packs/packs_list_screen.dart';
@@ -351,6 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             enabled: !submitting && !isEmpty,
                             maxLength: kMaxPromptChars,
                             maxLines: 3,
+                            onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
                               hintText:
                                   'e.g. a smiling boba tea cup waving hello',
@@ -361,6 +364,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                   .withValues(alpha: 0.3),
                             ),
                           ),
+                          SurpriseMeButton(
+                            presetId: _presetId ?? 'kawaii',
+                            enabled: !submitting,
+                            onPressed: (suggestion) {
+                              _promptCtrl.text = suggestion;
+                              setState(() {});
+                            },
+                          ),
+                          if (_promptCtrl.text.isEmpty && _presetId != null)
+                            PromptSuggestionChip(
+                              key: ValueKey('chip_$_presetId'),
+                              presetId: _presetId!,
+                              enabled: !submitting,
+                              onSuggestionSelected: (suggestion) {
+                                _promptCtrl.text = suggestion;
+                                setState(() {});
+                              },
+                            ),
                           const SizedBox(height: 16),
                           Row(
                             children: [

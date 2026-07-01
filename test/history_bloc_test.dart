@@ -30,7 +30,7 @@ void main() {
     bloc.close();
   });
 
-  void _stubFetchHistory() {
+  void stubFetchHistory() {
     when(() => repo.fetchHistory(
           limit: any(named: 'limit'),
           presetName: any(named: 'presetName'),
@@ -43,7 +43,7 @@ void main() {
         )).thenAnswer((_) async => []);
   }
 
-  void _stubFetchHistoryWithItems(List<StickerGeneration> items) {
+  void stubFetchHistoryWithItems(List<StickerGeneration> items) {
     when(() => repo.fetchHistory(
           limit: any(named: 'limit'),
           presetName: any(named: 'presetName'),
@@ -56,7 +56,7 @@ void main() {
         )).thenAnswer((_) async => items);
   }
 
-  StickerGeneration _stubGen({
+  StickerGeneration stubGen({
     String presetName = 'kawaii',
     StickerStatus status = StickerStatus.success,
     DateTime? createdAt,
@@ -89,7 +89,7 @@ void main() {
 
   group('HistoryRefreshed', () {
     test('calls fetchHistory with default params', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistoryRefreshed());
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -107,8 +107,8 @@ void main() {
     });
 
     test('emits loading then success with items', () async {
-      final items = [_stubGen()];
-      _stubFetchHistoryWithItems(items);
+      final items = [stubGen()];
+      stubFetchHistoryWithItems(items);
 
       bloc.add(const HistoryRefreshed());
       await expectLater(
@@ -126,7 +126,7 @@ void main() {
 
   group('HistorySortChanged', () {
     test('oldest sort triggers refetch with sortAscending=true', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistorySortChanged(HistorySort.oldest));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -144,7 +144,7 @@ void main() {
     });
 
     test('presetAZ sort triggers refetch with sortBy=preset_name', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistorySortChanged(HistorySort.presetAZ));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -164,7 +164,7 @@ void main() {
 
   group('HistoryStatusFilterChanged', () {
     test('success filter triggers refetch with status=success', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistoryStatusFilterChanged(HistoryStatusFilter.success));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -182,7 +182,7 @@ void main() {
     });
 
     test('all filter triggers refetch with status=null', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistoryStatusFilterChanged(HistoryStatusFilter.all));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -202,7 +202,7 @@ void main() {
 
   group('HistoryPresetFilterChanged', () {
     test('preset filter triggers refetch with presetName', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistoryPresetFilterChanged('kawaii'));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -221,7 +221,7 @@ void main() {
 
     test('clearing preset filter triggers refetch with presetName=null',
         () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistoryPresetFilterChanged(null));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -242,7 +242,7 @@ void main() {
   group('HistoryDateFilterChanged', () {
     test('last7d filter triggers refetch with createdAfter ~7 days ago',
         () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistoryDateFilterChanged(HistoryDateFilter.last7d));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -264,7 +264,7 @@ void main() {
     });
 
     test('all date filter triggers refetch with createdAfter=null', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistoryDateFilterChanged(HistoryDateFilter.all));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -284,7 +284,7 @@ void main() {
 
   group('HistorySearchChanged', () {
     test('search triggers refetch with searchPrompt', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistorySearchChanged('cat'));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -302,7 +302,7 @@ void main() {
     });
 
     test('empty search triggers refetch with searchPrompt=null', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       bloc.add(const HistorySearchChanged(''));
       await bloc.stream.firstWhere((s) => s.status == HistoryStatus.success);
@@ -322,7 +322,7 @@ void main() {
 
   group('HistoryFiltersCleared', () {
     test('resets state to defaults', () async {
-      _stubFetchHistory();
+      stubFetchHistory();
 
       // Set some filters first
       bloc.add(const HistoryStatusFilterChanged(HistoryStatusFilter.failed));

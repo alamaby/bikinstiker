@@ -134,187 +134,196 @@ class _AuthScreenState extends State<AuthScreen>
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 48),
-                  Row(
-                    children: const [
-                      Icon(
-                        Icons.auto_awesome,
-                        size: 32,
-                        color: AppColors.primary,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'BikinStiker',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'AI-powered WhatsApp sticker generator',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                  const SizedBox(height: 32),
-                  if (_isGuestWall) ...[
-                    _GuestAuthWallHeader(
-                      hasGuestResult: hasGuestResult,
-                      isSignUp: _isSignUp,
-                    ),
-                    const SizedBox(height: 24),
-                  ] else ...[
-                    TabBar(
-                      controller: _tab,
-                      indicatorColor: AppColors.primary,
-                      labelColor: AppColors.primary,
-                      unselectedLabelColor: Colors.black54,
-                      tabs: const [
-                        Tab(text: 'Sign in'),
-                        Tab(text: 'Sign up'),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  AutofillGroup(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _emailCtrl,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [AutofillHints.email],
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(Icons.alternate_email),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 48),
+                        Row(
+                          children: const [
+                            Icon(
+                              Icons.auto_awesome,
+                              size: 32,
+                              color: AppColors.primary,
                             ),
-                            validator: (v) => v == null || !v.contains('@')
-                                ? 'Enter a valid email'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passCtrl,
-                            obscureText: true,
-                            autofillHints: [
-                              _isSignUp
-                                  ? AutofillHints.newPassword
-                                  : AutofillHints.password,
-                            ],
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            textInputAction: TextInputAction.done,
-                            onEditingComplete: _submit,
-                            decoration: const InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: Icon(Icons.lock_outline),
-                            ),
-                            validator: (v) => v == null || v.length < 6
-                                ? 'Min 6 characters'
-                                : null,
-                          ),
-                          if (_isSignUp) ...[
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _displayNameCtrl,
-                              textCapitalization: TextCapitalization.words,
-                              autofillHints: const [AutofillHints.name],
-                              autocorrect: false,
-                              enableSuggestions: false,
-                              textInputAction: TextInputAction.next,
-                              decoration: const InputDecoration(
-                                labelText: 'Display Name (optional)',
-                                prefixIcon: Icon(Icons.person_outline),
+                            SizedBox(width: 8),
+                            Text(
+                              'BikinStiker',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _emailMarketing,
-                                  onChanged: (v) {
-                                    setState(
-                                      () => _emailMarketing = v ?? false,
-                                    );
-                                  },
-                                ),
-                                const Expanded(
-                                  child: Text(
-                                    'Send me tips and promotions',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  FilledButton.icon(
-                    onPressed: submitting ? null : _submit,
-                    icon: submitting
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.login),
-                    label: Text(
-                      submitting ? 'Please wait...' : _submitButtonLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: const [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'or',
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'AI-powered WhatsApp sticker generator',
                           style: TextStyle(color: Colors.black54),
                         ),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: submitting ? null : _googleSignIn,
-                    icon: const Icon(Icons.g_mobiledata, size: 24),
-                    label: const Text('Continue with Google'),
-                  ),
-                  if (_isGuestWall && !submitting) ...[
-                    const SizedBox(height: 16),
-                    _GuestWallWarning(),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: TextButton(
-                        onPressed: () => _tab.index = _isSignUp ? 1 : 0,
-                        child: Text(
-                          _isSignUp
-                              ? 'Already have an account? Sign in'
-                              : 'New here? Create account',
-                          style: const TextStyle(color: AppColors.primary),
+                        const SizedBox(height: 32),
+                        if (_isGuestWall) ...[
+                          _GuestAuthWallHeader(
+                            hasGuestResult: hasGuestResult,
+                            isSignUp: _isSignUp,
+                          ),
+                          const SizedBox(height: 24),
+                        ] else ...[
+                          TabBar(
+                            controller: _tab,
+                            indicatorColor: AppColors.primary,
+                            labelColor: AppColors.primary,
+                            unselectedLabelColor: Colors.black54,
+                            tabs: const [
+                              Tab(text: 'Sign in'),
+                              Tab(text: 'Sign up'),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                        AutofillGroup(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _emailCtrl,
+                                  keyboardType: TextInputType.emailAddress,
+                                  autofillHints: const [AutofillHints.email],
+                                  autocorrect: false,
+                                  enableSuggestions: false,
+                                  textInputAction: TextInputAction.next,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email',
+                                    prefixIcon: Icon(Icons.alternate_email),
+                                  ),
+                                  validator: (v) =>
+                                      v == null || !v.contains('@')
+                                      ? 'Enter a valid email'
+                                      : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _passCtrl,
+                                  obscureText: true,
+                                  autofillHints: [
+                                    _isSignUp
+                                        ? AutofillHints.newPassword
+                                        : AutofillHints.password,
+                                  ],
+                                  autocorrect: false,
+                                  enableSuggestions: false,
+                                  textInputAction: TextInputAction.done,
+                                  onEditingComplete: _submit,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon: Icon(Icons.lock_outline),
+                                  ),
+                                  validator: (v) => v == null || v.length < 6
+                                      ? 'Min 6 characters'
+                                      : null,
+                                ),
+                                if (_isSignUp) ...[
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _displayNameCtrl,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    autofillHints: const [AutofillHints.name],
+                                    autocorrect: false,
+                                    enableSuggestions: false,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Display Name (optional)',
+                                      prefixIcon: Icon(Icons.person_outline),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _emailMarketing,
+                                        onChanged: (v) {
+                                          setState(
+                                            () => _emailMarketing = v ?? false,
+                                          );
+                                        },
+                                      ),
+                                      const Expanded(
+                                        child: Text(
+                                          'Send me tips and promotions',
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+                        const SizedBox(height: 32),
+                        FilledButton.icon(
+                          onPressed: submitting ? null : _submit,
+                          icon: submitting
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.login),
+                          label: Text(
+                            submitting ? 'Please wait...' : _submitButtonLabel,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: const [
+                            Expanded(child: Divider()),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'or',
+                                style: TextStyle(color: Colors.black54),
+                              ),
+                            ),
+                            Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: submitting ? null : _googleSignIn,
+                          icon: const Icon(Icons.g_mobiledata, size: 24),
+                          label: const Text('Continue with Google'),
+                        ),
+                        if (_isGuestWall && !submitting) ...[
+                          const SizedBox(height: 16),
+                          _GuestWallWarning(),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: TextButton(
+                              onPressed: () => _tab.index = _isSignUp ? 1 : 0,
+                              child: Text(
+                                _isSignUp
+                                    ? 'Already have an account? Sign in'
+                                    : 'New here? Create account',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 );
+              },
+            );
           },
         ),
       ),

@@ -8,6 +8,8 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/mission/mission_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../widgets/tier_badge.dart';
+import 'widgets/daily_checkin_card.dart';
+import 'widgets/mission_section_header.dart';
 
 class MissionsScreen extends StatelessWidget {
   const MissionsScreen({super.key});
@@ -40,6 +42,76 @@ class MissionsScreen extends StatelessWidget {
               });
             },
           ),
+          BlocListener<MissionBloc, MissionState>(
+            listenWhen: (p, n) =>
+                p.successMessage != n.successMessage &&
+                n.successMessage != null,
+            listener: (context, state) {
+              final msg = state.successMessage ?? '';
+              if (msg.startsWith('checkin_success:')) {
+                final credits = msg.split(':').last;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: AppColors.success,
+                    content: Row(
+                      children: [
+                        const Text('\u{1F389}', style: TextStyle(fontSize: 26)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Check-in successful!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Come back tomorrow to continue your streak!',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '+$credits',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    duration: const Duration(seconds: 5),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+              Future.delayed(const Duration(seconds: 3), () {
+                if (context.mounted) {
+                  context.read<MissionBloc>().add(const MissionErrorCleared());
+                }
+              });
+            },
+          ),
         ],
         child: BlocBuilder<SubscriptionBloc, SubscriptionState>(
           builder: (context, subState) {
@@ -60,49 +132,146 @@ class MissionsScreen extends StatelessWidget {
                 final userTier =
                     subState.subscription?.tier ?? SubscriptionTier.free;
 
+                final dailyLogin = state.missions
+                    .where((m) => m.code == 'daily_login')
+                    .toList();
+                final quickRewards = _quickRewards(state.missions);
+                final achievements = _achievements(state.missions);
+
                 return RefreshIndicator(
                   onRefresh: () async {
                     context.read<MissionBloc>().add(
                       MissionLoadRequested(userId),
                     );
                   },
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: state.missions.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final mission = state.missions[index];
-                      return _MissionTile(
-                        mission: mission,
-                        completions: state.completionsFor(mission.id),
-                        canAccess: mission.canAccess(userTier),
-                        isPending: state.isMissionPending(mission.id),
-                        isDebounced: state.isMissionDebounced(mission.id),
-                        cooldownRemaining: state.cooldownRemainingFor(
-                          mission.id,
-                          mission,
+                  child: CustomScrollView(
+                    slivers: [
+                      // Daily Rewards section
+                      if (dailyLogin.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: MissionSectionHeader(
+                            icon: Icons.local_fire_department,
+                            title: 'Daily Rewards',
+                            count: dailyLogin.length,
+                          ),
                         ),
-                        isDailyLimitReached: state.isDailyLimitReached(
-                          mission.id,
-                          mission,
-                        ),
-                        isCompleted: state.isMissionCompleted(
-                          mission.id,
-                          mission,
-                        ),
-                        onComplete: () {
-                          if (mission.code == 'watch_video_ad') {
-                            context.read<MissionBloc>().add(
-                              MissionWatchAdRequested(userId, mission.id),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final m = dailyLogin[index];
+                            return DailyCheckinCard(
+                              mission: m,
+                              streak: state.streak,
+                              onClaim: () {
+                                context.read<MissionBloc>().add(
+                                  const MissionDailyCheckinClaimRequested(),
+                                );
+                              },
                             );
-                          } else {
-                            context.read<MissionBloc>().add(
-                              MissionCompleteRequested(userId, mission.id),
+                          }, childCount: dailyLogin.length),
+                        ),
+                      ],
+
+                      // Quick Rewards section
+                      if (quickRewards.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: MissionSectionHeader(
+                            icon: Icons.flash_on,
+                            title: 'Quick Rewards',
+                            count: quickRewards.length,
+                          ),
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final mission = quickRewards[index];
+                            return _MissionTile(
+                              mission: mission,
+                              completions: state.completionsFor(mission.id),
+                              canAccess: mission.canAccess(userTier),
+                              isPending: state.isMissionPending(mission.id),
+                              isDebounced: state.isMissionDebounced(mission.id),
+                              cooldownRemaining: state.cooldownRemainingFor(
+                                mission.id,
+                                mission,
+                              ),
+                              isDailyLimitReached: state.isDailyLimitReached(
+                                mission.id,
+                                mission,
+                              ),
+                              isCompleted: state.isMissionCompleted(
+                                mission.id,
+                                mission,
+                              ),
+                              onComplete: () {
+                                if (mission.code == 'watch_video_ad') {
+                                  context.read<MissionBloc>().add(
+                                    MissionWatchAdRequested(userId, mission.id),
+                                  );
+                                } else {
+                                  context.read<MissionBloc>().add(
+                                    MissionCompleteRequested(
+                                      userId,
+                                      mission.id,
+                                    ),
+                                  );
+                                }
+                              },
                             );
-                          }
-                        },
-                      );
-                    },
+                          }, childCount: quickRewards.length),
+                        ),
+                      ],
+
+                      // Achievements section
+                      if (achievements.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: MissionSectionHeader(
+                            icon: Icons.emoji_events,
+                            title: 'Achievements',
+                            count: achievements.length,
+                          ),
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final mission = achievements[index];
+                            return _MissionTile(
+                              mission: mission,
+                              completions: state.completionsFor(mission.id),
+                              canAccess: mission.canAccess(userTier),
+                              isPending: state.isMissionPending(mission.id),
+                              isDebounced: state.isMissionDebounced(mission.id),
+                              cooldownRemaining: state.cooldownRemainingFor(
+                                mission.id,
+                                mission,
+                              ),
+                              isDailyLimitReached: state.isDailyLimitReached(
+                                mission.id,
+                                mission,
+                              ),
+                              isCompleted: state.isMissionCompleted(
+                                mission.id,
+                                mission,
+                              ),
+                              onComplete: () {
+                                context.read<MissionBloc>().add(
+                                  MissionCompleteRequested(userId, mission.id),
+                                );
+                              },
+                            );
+                          }, childCount: achievements.length),
+                        ),
+                      ],
+
+                      // Bottom padding
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    ],
                   ),
                 );
               },
@@ -111,6 +280,26 @@ class MissionsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Quick rewards: recurring missions with cooldown/daily limit, excluding daily_login
+  List<Mission> _quickRewards(List<Mission> missions) {
+    return missions.where((m) {
+      final isRecurring =
+          m.maxCompletionsPerUser == null || m.maxCompletionsPerUser! > 1;
+      final isDailyStreak = m.code == 'daily_login';
+      return isRecurring && !isDailyStreak;
+    }).toList();
+  }
+
+  /// Achievements: one-time missions (max_completions_per_user = 1, no cooldown/daily limit)
+  List<Mission> _achievements(List<Mission> missions) {
+    return missions.where((m) {
+      final isOneTime = (m.maxCompletionsPerUser ?? 1) == 1;
+      final hasCooldownOrDailyLimit =
+          m.cooldownSeconds != null || m.maxCompletionsPerDay != null;
+      return isOneTime && !hasCooldownOrDailyLimit;
+    }).toList();
   }
 }
 
@@ -146,14 +335,11 @@ class _MissionTile extends StatelessWidget {
         !isDebounced &&
         !isDailyLimitReached;
 
-    // Determine button label based on mission type
     String buttonLabel = 'Claim';
     if (mission.code == 'watch_video_ad') {
       buttonLabel = 'Watch Ad';
     } else if (mission.code == 'share_app_daily') {
       buttonLabel = 'Share';
-    } else if (mission.code == 'daily_login') {
-      buttonLabel = 'Check-in';
     }
 
     return Card(

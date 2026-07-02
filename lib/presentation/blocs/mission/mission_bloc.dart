@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../data/models/daily_checkin_streak.dart';
 import '../../../data/models/mission.dart';
 import '../../../data/models/mission_progress.dart';
 import '../../../data/repositories/mission_repository.dart';
@@ -35,6 +36,10 @@ class MissionWatchAdRequested extends MissionEvent {
   List<Object?> get props => [userId, missionId];
 }
 
+class MissionDailyCheckinClaimRequested extends MissionEvent {
+  const MissionDailyCheckinClaimRequested();
+}
+
 class MissionErrorCleared extends MissionEvent {
   const MissionErrorCleared();
 }
@@ -45,7 +50,9 @@ class MissionState extends Equatable {
   final MissionStatus status;
   final List<Mission> missions;
   final List<MissionProgress> progress;
+  final DailyCheckinStreak? streak;
   final String? errorMessage;
+  final String? successMessage;
   final Set<String> pendingMissionIds;
   final Map<String, DateTime> lastClaimAt;
 
@@ -53,7 +60,9 @@ class MissionState extends Equatable {
     this.status = MissionStatus.initial,
     this.missions = const [],
     this.progress = const [],
+    this.streak,
     this.errorMessage,
+    this.successMessage,
     this.pendingMissionIds = const {},
     this.lastClaimAt = const {},
   });
@@ -119,7 +128,9 @@ class MissionState extends Equatable {
     MissionStatus? status,
     List<Mission>? missions,
     List<MissionProgress>? progress,
+    DailyCheckinStreak? streak,
     String? errorMessage,
+    String? successMessage,
     Set<String>? pendingMissionIds,
     Map<String, DateTime>? lastClaimAt,
   }) {
@@ -127,9 +138,13 @@ class MissionState extends Equatable {
       status: status ?? this.status,
       missions: missions ?? this.missions,
       progress: progress ?? this.progress,
+      streak: streak ?? this.streak,
       errorMessage: identical(errorMessage, _undefined)
           ? this.errorMessage
           : errorMessage,
+      successMessage: identical(successMessage, _undefined)
+          ? this.successMessage
+          : successMessage,
       pendingMissionIds: pendingMissionIds ?? this.pendingMissionIds,
       lastClaimAt: lastClaimAt ?? this.lastClaimAt,
     );
@@ -140,7 +155,9 @@ class MissionState extends Equatable {
     status,
     missions,
     progress,
+    streak,
     errorMessage,
+    successMessage,
     pendingMissionIds,
     lastClaimAt,
   ];
@@ -154,6 +171,7 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
     on<MissionLoadRequested>(_onLoad);
     on<MissionCompleteRequested>(_onComplete);
     on<MissionWatchAdRequested>(_onWatchAd);
+    on<MissionDailyCheckinClaimRequested>(_onDailyCheckinClaim);
     on<MissionErrorCleared>(_onErrorCleared);
   }
 
@@ -166,12 +184,14 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
       final results = await Future.wait([
         _repo.fetchMissions(),
         _repo.fetchUserProgress(e.userId),
+        _repo.fetchDailyCheckinStreak(),
       ]);
       emit(
         state.copyWith(
           status: MissionStatus.loaded,
           missions: results[0] as List<Mission>,
           progress: results[1] as List<MissionProgress>,
+          streak: results[2] as DailyCheckinStreak,
         ),
       );
     } catch (e) {
@@ -236,6 +256,26 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
 
     // If reward earned, proceed with mission completion
     add(MissionCompleteRequested(e.userId, e.missionId));
+  }
+
+  Future<void> _onDailyCheckinClaim(
+    MissionDailyCheckinClaimRequested e,
+    Emitter<MissionState> emit,
+  ) async {
+    emit(state.copyWith(successMessage: null));
+    try {
+      final result = await _repo.claimDailyCheckin();
+      // Refresh streak after claim
+      final streak = await _repo.fetchDailyCheckinStreak();
+      emit(
+        state.copyWith(
+          streak: streak,
+          successMessage: 'checkin_success:${result.creditsAwarded}',
+        ),
+      );
+    } catch (err) {
+      emit(state.copyWith(errorMessage: err.toString()));
+    }
   }
 
   Future<void> _onErrorCleared(

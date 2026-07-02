@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/daily_checkin_streak.dart';
 import '../models/mission.dart';
 import '../models/mission_progress.dart';
 
@@ -10,6 +11,8 @@ abstract class MissionRepository {
     required String userId,
     required String missionId,
   });
+  Future<DailyCheckinStreak> fetchDailyCheckinStreak();
+  Future<DailyCheckinClaimResult> claimDailyCheckin();
 }
 
 class SupabaseMissionRepository implements MissionRepository {
@@ -56,5 +59,23 @@ class SupabaseMissionRepository implements MissionRepository {
         .single();
 
     return MissionProgress.fromJson(row);
+  }
+
+  @override
+  Future<DailyCheckinStreak> fetchDailyCheckinStreak() async {
+    final rows = await _client.rpc('load_daily_checkin_streak').select();
+    if (rows == null || (rows as List).isEmpty) {
+      return DailyCheckinStreak.empty();
+    }
+    return DailyCheckinStreak.fromJson(rows.first as Map<String, dynamic>);
+  }
+
+  @override
+  Future<DailyCheckinClaimResult> claimDailyCheckin() async {
+    final rows = await _client.rpc('claim_daily_checkin').select();
+    if (rows == null || (rows as List).isEmpty) {
+      throw Exception('No response from server');
+    }
+    return DailyCheckinClaimResult.fromJson(rows.first as Map<String, dynamic>);
   }
 }

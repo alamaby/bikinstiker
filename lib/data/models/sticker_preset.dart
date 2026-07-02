@@ -14,12 +14,25 @@ StickerPresetRole _roleFrom(String? raw) {
   }
 }
 
+enum StickerPresetInputMode { subject, textOnly }
+
+StickerPresetInputMode _inputModeFrom(String? raw) {
+  switch (raw) {
+    case 'text_only':
+      return StickerPresetInputMode.textOnly;
+    case 'subject':
+    default:
+      return StickerPresetInputMode.subject;
+  }
+}
+
 class StickerPreset extends Equatable {
   final String id;
   final String label;
   final String description;
   final String? emoji;
   final StickerPresetRole requiredRole;
+  final StickerPresetInputMode inputMode;
   final DateTime? validFrom;
   final DateTime? validUntil;
 
@@ -29,6 +42,7 @@ class StickerPreset extends Equatable {
     required this.description,
     this.emoji,
     required this.requiredRole,
+    this.inputMode = StickerPresetInputMode.subject,
     this.validFrom,
     this.validUntil,
   });
@@ -40,6 +54,7 @@ class StickerPreset extends Equatable {
       description: json['description'] as String,
       emoji: json['emoji'] as String?,
       requiredRole: _roleFrom(json['requiredRole'] as String?),
+      inputMode: _inputModeFrom(json['inputMode'] as String?),
       validFrom: json['validFrom'] != null
           ? DateTime.parse(json['validFrom'] as String)
           : null,
@@ -48,6 +63,8 @@ class StickerPreset extends Equatable {
           : null,
     );
   }
+
+  bool get isTextOnly => inputMode == StickerPresetInputMode.textOnly;
 
   bool get isCurrentlyValid {
     final now = DateTime.now().toUtc();
@@ -63,12 +80,13 @@ class StickerPreset extends Equatable {
     description,
     emoji,
     requiredRole,
+    inputMode,
     validFrom,
     validUntil,
   ];
 
   @override
   String toString() {
-    return 'StickerPreset(id: $id, label: $label, requiredRole: $requiredRole)';
+    return 'StickerPreset(id: $id, label: $label, requiredRole: $requiredRole, inputMode: $inputMode)';
   }
 }

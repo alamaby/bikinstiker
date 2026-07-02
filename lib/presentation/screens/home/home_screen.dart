@@ -264,6 +264,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 final isError = presetState.status == PresetStatus.failure;
                 final isEmpty = presets.isEmpty && !isLoading && !isError;
 
+                // Look up the selected preset to determine input mode
+                final selectedPreset = _presetId != null
+                    ? presets.where((p) => p.id == _presetId).firstOrNull
+                    : null;
+                final isTextOnly = selectedPreset?.isTextOnly ?? false;
+                final inputMaxChars = isTextOnly ? 20 : kMaxPromptChars;
+                final inputHint = isTextOnly
+                    ? 'e.g. HELLO, YUM, WOW'
+                    : 'e.g. a smiling boba tea cup waving hello';
+                final inputLabel = isTextOnly
+                    ? 'Type your text'
+                    : 'Describe your sticker';
+
                 if (isError && presets.isEmpty) {
                   return _PresetErrorView(
                     message:
@@ -333,10 +346,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                const Expanded(
+                                Expanded(
                                   child: Text(
-                                    'Describe your sticker',
-                                    style: TextStyle(
+                                    inputLabel,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 16,
                                     ),
@@ -356,12 +369,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             TextField(
                               controller: _promptCtrl,
                               enabled: !submitting && !isEmpty,
-                              maxLength: kMaxPromptChars,
-                              maxLines: 3,
+                              maxLength: inputMaxChars,
+                              maxLines: isTextOnly ? 1 : 3,
                               onChanged: (_) => setState(() {}),
                               decoration: InputDecoration(
-                                hintText:
-                                    'e.g. a smiling boba tea cup waving hello',
+                                hintText: inputHint,
                                 filled: submitting,
                                 fillColor: Theme.of(context)
                                     .colorScheme
@@ -372,6 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             SurpriseMeButton(
                               presetId: _presetId ?? 'kawaii',
                               enabled: !submitting,
+                              textOnly: isTextOnly,
                               onPressed: (suggestion) {
                                 _promptCtrl.text = suggestion;
                                 setState(() {});
@@ -382,86 +395,89 @@ class _HomeScreenState extends State<HomeScreen> {
                                 key: ValueKey('chip_$_presetId'),
                                 presetId: _presetId!,
                                 enabled: !submitting,
+                                textOnly: isTextOnly,
                                 onSuggestionSelected: (suggestion) {
                                   _promptCtrl.text = suggestion;
                                   setState(() {});
                                 },
                               ),
                             const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: Text(
-                                    'Caption (optional)',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  '${_captionCtrl.text.length} / 10',
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outline,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _captionCtrl,
-                              enabled: !submitting && !isEmpty,
-                              maxLength: 10,
-                              textCapitalization: TextCapitalization.characters,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'[A-Z0-9 .!?\-]'),
-                                ),
-                                LengthLimitingTextInputFormatter(10),
-                              ],
-                              decoration: InputDecoration(
-                                hintText: 'e.g. READY',
-                                counterText: '',
-                              ),
-                              onChanged: (_) => setState(() {}),
-                            ),
-                            if (_captionCtrl.text.trim().isNotEmpty) ...[
-                              const SizedBox(height: 4),
+                            if (!isTextOnly) ...[
                               Row(
                                 children: [
+                                  const Expanded(
+                                    child: Text(
+                                      'Caption (optional)',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
                                   Text(
-                                    'Position',
+                                    '${_captionCtrl.text.length} / 10',
                                     style: TextStyle(
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.outline,
-                                      fontSize: 13,
+                                      fontSize: 12,
                                     ),
-                                  ),
-                                  const Spacer(),
-                                  SegmentedButton<String>(
-                                    segments: const [
-                                      ButtonSegment(
-                                        value: 'top',
-                                        label: Text('Top'),
-                                      ),
-                                      ButtonSegment(
-                                        value: 'bottom',
-                                        label: Text('Bottom'),
-                                      ),
-                                    ],
-                                    selected: {_captionPosition},
-                                    onSelectionChanged: submitting
-                                        ? null
-                                        : (s) => setState(
-                                            () => _captionPosition = s.first,
-                                          ),
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _captionCtrl,
+                                enabled: !submitting && !isEmpty,
+                                maxLength: 10,
+                                textCapitalization: TextCapitalization.characters,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[A-Z0-9 .!?\-]'),
+                                  ),
+                                  LengthLimitingTextInputFormatter(10),
+                                ],
+                                decoration: InputDecoration(
+                                  hintText: 'e.g. READY',
+                                  counterText: '',
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                              if (_captionCtrl.text.trim().isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Position',
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    SegmentedButton<String>(
+                                      segments: const [
+                                        ButtonSegment(
+                                          value: 'top',
+                                          label: Text('Top'),
+                                        ),
+                                        ButtonSegment(
+                                          value: 'bottom',
+                                          label: Text('Bottom'),
+                                        ),
+                                      ],
+                                      selected: {_captionPosition},
+                                      onSelectionChanged: submitting
+                                          ? null
+                                          : (s) => setState(
+                                              () => _captionPosition = s.first,
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
                             const SizedBox(height: 8),
                             _GenerateButton(

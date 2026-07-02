@@ -7,11 +7,13 @@ class SurpriseMeButton extends StatelessWidget {
   final String presetId;
   final ValueChanged<String> onPressed;
   final bool enabled;
+  final bool textOnly;
   const SurpriseMeButton({
     super.key,
     required this.presetId,
     required this.onPressed,
     this.enabled = true,
+    this.textOnly = false,
   });
 
   @override
@@ -22,7 +24,7 @@ class SurpriseMeButton extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
           onPressed: enabled
-              ? () => onPressed(randomSuggestionFor(presetId))
+              ? () => onPressed(randomSuggestionFor(presetId, textOnly: textOnly))
               : null,
           icon: const Icon(Icons.casino, size: 18),
           label: const Text('Surprise me'),

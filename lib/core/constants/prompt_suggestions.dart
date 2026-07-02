@@ -129,18 +129,101 @@ const kPromptSuggestions = <PromptSuggestion>[
   ),
 ];
 
-List<String> suggestionsForPreset(String presetId) {
-  final matched = kPromptSuggestions
+const kTypographySuggestions = <PromptSuggestion>[
+  // Bold Slogan
+  PromptSuggestion('YOLO', ['bold_slogan']),
+  PromptSuggestion('YAY', ['bold_slogan']),
+  PromptSuggestion('BOSS', ['bold_slogan']),
+  PromptSuggestion('SAY HI', ['bold_slogan']),
+  PromptSuggestion('NOPE', ['bold_slogan']),
+  PromptSuggestion('EPIC', ['bold_slogan']),
+
+  // Bubble Letter
+  PromptSuggestion('WOW', ['bubble_letter']),
+  PromptSuggestion('YUM', ['bubble_letter']),
+  PromptSuggestion('OMG', ['bubble_letter']),
+  PromptSuggestion('HI', ['bubble_letter']),
+  PromptSuggestion('BFF', ['bubble_letter']),
+  PromptSuggestion('LOL', ['bubble_letter']),
+
+  // Comic Sound FX
+  PromptSuggestion('POW', ['comic_sound_fx']),
+  PromptSuggestion('BOOM', ['comic_sound_fx']),
+  PromptSuggestion('ZAP', ['comic_sound_fx']),
+  PromptSuggestion('WHAM', ['comic_sound_fx']),
+  PromptSuggestion('CRASH', ['comic_sound_fx']),
+  PromptSuggestion('BAM', ['comic_sound_fx']),
+
+  // Retro Badge Text
+  PromptSuggestion('CERTIFIED COOL', ['retro_badge_text']),
+  PromptSuggestion('OG', ['retro_badge_text']),
+  PromptSuggestion('EST 2026', ['retro_badge_text']),
+  PromptSuggestion('NUMBER ONE', ['retro_badge_text']),
+  PromptSuggestion('VINTAGE', ['retro_badge_text']),
+  PromptSuggestion('SALE', ['retro_badge_text']),
+
+  // Handwritten Note
+  PromptSuggestion('thank you', ['handwritten_note']),
+  PromptSuggestion('you got this', ['handwritten_note']),
+  PromptSuggestion('good luck', ['handwritten_note']),
+  PromptSuggestion('love ya', ['handwritten_note']),
+  PromptSuggestion('miss you', ['handwritten_note']),
+  PromptSuggestion('sorry', ['handwritten_note']),
+
+  // Cute Chat Text
+  PromptSuggestion('omw', ['cute_chat_text']),
+  PromptSuggestion('brb', ['cute_chat_text']),
+  PromptSuggestion('ttyl', ['cute_chat_text']),
+  PromptSuggestion('kk', ['cute_chat_text']),
+  PromptSuggestion('same', ['cute_chat_text']),
+  PromptSuggestion('nice', ['cute_chat_text']),
+
+  // Chrome 3D Text (plus)
+  PromptSuggestion('BOSS', ['chrome_3d_text']),
+  PromptSuggestion('SALE', ['chrome_3d_text']),
+  PromptSuggestion('VIP', ['chrome_3d_text']),
+  PromptSuggestion('NEW', ['chrome_3d_text']),
+  PromptSuggestion('HOT', ['chrome_3d_text']),
+  PromptSuggestion('LIT', ['chrome_3d_text']),
+
+  // Neon Sign Text (plus)
+  PromptSuggestion('OPEN', ['neon_sign_text']),
+  PromptSuggestion('HELLO', ['neon_sign_text']),
+  PromptSuggestion('LOVE', ['neon_sign_text']),
+  PromptSuggestion('OPEN 24H', ['neon_sign_text']),
+  PromptSuggestion('BAR', ['neon_sign_text']),
+  PromptSuggestion('CAFE', ['neon_sign_text']),
+
+  // Graffiti Tag Text (plus)
+  PromptSuggestion('YO', ['graffiti_tag_text']),
+  PromptSuggestion('AIGHT', ['graffiti_tag_text']),
+  PromptSuggestion('SICK', ['graffiti_tag_text']),
+  PromptSuggestion('FIRE', ['graffiti_tag_text']),
+  PromptSuggestion('WASSUP', ['graffiti_tag_text']),
+  PromptSuggestion('NAH', ['graffiti_tag_text']),
+
+  // Luxury Gold Text (plus)
+  PromptSuggestion('THANK YOU', ['luxury_gold_text']),
+  PromptSuggestion('CHEERS', ['luxury_gold_text']),
+  PromptSuggestion('VIP', ['luxury_gold_text']),
+  PromptSuggestion('CONGRATS', ['luxury_gold_text']),
+  PromptSuggestion('GOLD', ['luxury_gold_text']),
+  PromptSuggestion('LEGEND', ['luxury_gold_text']),
+];
+
+List<String> suggestionsForPreset(String presetId, {bool textOnly = false}) {
+  final source = textOnly ? kTypographySuggestions : kPromptSuggestions;
+  final matched = source
       .where((s) => s.presetTags.contains(presetId))
       .map((s) => s.text)
       .toList();
   if (matched.isEmpty) {
-    return kPromptSuggestions.map((s) => s.text).toList();
+    return source.map((s) => s.text).toList();
   }
   return matched;
 }
 
-String randomSuggestionFor(String presetId) {
-  final list = suggestionsForPreset(presetId);
+String randomSuggestionFor(String presetId, {bool textOnly = false}) {
+  final list = suggestionsForPreset(presetId, textOnly: textOnly);
   return list[Random().nextInt(list.length)];
 }

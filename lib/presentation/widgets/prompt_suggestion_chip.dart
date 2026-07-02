@@ -7,11 +7,13 @@ class PromptSuggestionChip extends StatefulWidget {
   final String presetId;
   final ValueChanged<String> onSuggestionSelected;
   final bool enabled;
+  final bool textOnly;
   const PromptSuggestionChip({
     super.key,
     required this.presetId,
     required this.onSuggestionSelected,
     this.enabled = true,
+    this.textOnly = false,
   });
 
   @override
@@ -24,12 +26,12 @@ class _PromptSuggestionChipState extends State<PromptSuggestionChip> {
   @override
   void initState() {
     super.initState();
-    _current = randomSuggestionFor(widget.presetId);
+    _current = randomSuggestionFor(widget.presetId, textOnly: widget.textOnly);
   }
 
   void _shuffle() {
     setState(() {
-      _current = randomSuggestionFor(widget.presetId);
+      _current = randomSuggestionFor(widget.presetId, textOnly: widget.textOnly);
     });
   }
 

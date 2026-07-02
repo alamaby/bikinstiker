@@ -129,9 +129,13 @@ class _AuthScreenState extends State<AuthScreen>
           },
           builder: (context, state) {
             final submitting = state.status == AuthStatus.submitting;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 48),
@@ -308,7 +312,9 @@ class _AuthScreenState extends State<AuthScreen>
                   ],
                 ],
               ),
-            );
+                    ),
+                  ),
+                );
           },
         ),
       ),

@@ -20,4 +20,6 @@ class SupabaseBootstrap {
   }
 
   static SupabaseClient get client => Supabase.instance.client;
+
+  static String? get googleWebClientId => dotenv.env['GOOGLE_WEB_CLIENT_ID'];
 }

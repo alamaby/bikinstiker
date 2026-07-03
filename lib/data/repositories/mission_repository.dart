@@ -63,19 +63,23 @@ class SupabaseMissionRepository implements MissionRepository {
 
   @override
   Future<DailyCheckinStreak> fetchDailyCheckinStreak() async {
-    final rows = await _client.rpc('load_daily_checkin_streak').select();
-    if (rows == null || (rows as List).isEmpty) {
+    final List<Map<String, dynamic>> rows = await _client.rpc(
+      'load_daily_checkin_streak',
+    );
+    if (rows.isEmpty) {
       return DailyCheckinStreak.empty();
     }
-    return DailyCheckinStreak.fromJson(rows.first as Map<String, dynamic>);
+    return DailyCheckinStreak.fromJson(rows.first);
   }
 
   @override
   Future<DailyCheckinClaimResult> claimDailyCheckin() async {
-    final rows = await _client.rpc('claim_daily_checkin').select();
-    if (rows == null || (rows as List).isEmpty) {
+    final List<Map<String, dynamic>> rows = await _client.rpc(
+      'claim_daily_checkin',
+    );
+    if (rows.isEmpty) {
       throw Exception('No response from server');
     }
-    return DailyCheckinClaimResult.fromJson(rows.first as Map<String, dynamic>);
+    return DailyCheckinClaimResult.fromJson(rows.first);
   }
 }

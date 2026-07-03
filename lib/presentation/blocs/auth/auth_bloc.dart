@@ -61,7 +61,10 @@ class AuthUpgradeAnonymousRequested extends AuthEvent {
 }
 
 class AuthGoogleSignInRequested extends AuthEvent {
-  const AuthGoogleSignInRequested();
+  final bool upgradeGuest;
+  const AuthGoogleSignInRequested({this.upgradeGuest = false});
+  @override
+  List<Object?> get props => [upgradeGuest];
 }
 
 class _AuthUserChanged extends AuthEvent {
@@ -156,24 +159,67 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
       ),
     );
     try {
-      await _repo.signInWithGoogle();
-      final user = _repo.currentUser;
-      final status = _resolveStatus(user);
-      emit(
-        state.copyWith(
-          status: status,
-          user: user,
-          errorMessage: null,
-          infoMessage: null,
-        ),
-      );
+      if (e.upgradeGuest) {
+        // Guest upgrade with sticker migration
+        // Step 1: Create migration token while still anonymous
+        final token = await _repo.createGuestMigrationToken();
+
+        // Step 2: Sign in with Google (native modal)
+        final signedIn = await _repo.signInWithGoogleModal();
+        if (!signedIn) {
+          emit(
+            state.copyWith(
+              status: AuthStatus.guest,
+              infoMessage:
+                  'Google sign-in cancelled. Your guest sticker is still safe.',
+            ),
+          );
+          return;
+        }
+
+        // Step 3: Migrate guest stickers to new account
+        final result = await _repo.migrateGuestStickers(token: token);
+
+        final user = _repo.currentUser;
+        final status = _resolveStatus(user);
+        emit(
+          state.copyWith(
+            status: status,
+            user: user,
+            errorMessage: null,
+            infoMessage: result.stickersMoved > 0
+                ? 'Sticker migrated successfully!'
+                : null,
+          ),
+        );
+      } else {
+        // Normal Google sign-in (not guest upgrade)
+        final signedIn = await _repo.signInWithGoogleModal();
+        if (!signedIn) {
+          emit(
+            state.copyWith(
+              status: AuthStatus.unauthenticated,
+              infoMessage: 'Google sign-in cancelled.',
+            ),
+          );
+          return;
+        }
+        final user = _repo.currentUser;
+        final status = _resolveStatus(user);
+        emit(
+          state.copyWith(
+            status: status,
+            user: user,
+            errorMessage: null,
+            infoMessage: null,
+          ),
+        );
+      }
     } on Failure catch (f) {
-      emit(
-        state.copyWith(
-          status: AuthStatus.unauthenticated,
-          errorMessage: f.message,
-        ),
-      );
+      final fallbackStatus = e.upgradeGuest
+          ? AuthStatus.guest
+          : AuthStatus.unauthenticated;
+      emit(state.copyWith(status: fallbackStatus, errorMessage: f.message));
     }
   }
 

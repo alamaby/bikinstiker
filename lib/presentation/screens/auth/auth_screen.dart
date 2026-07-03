@@ -66,7 +66,9 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   void _googleSignIn() {
-    context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
+    context.read<AuthBloc>().add(
+      AuthGoogleSignInRequested(upgradeGuest: _isGuestWall),
+    );
   }
 
   @override
@@ -298,7 +300,11 @@ class _AuthScreenState extends State<AuthScreen>
                         OutlinedButton.icon(
                           onPressed: submitting ? null : _googleSignIn,
                           icon: const Icon(Icons.g_mobiledata, size: 24),
-                          label: const Text('Continue with Google'),
+                          label: Text(
+                            _isGuestWall
+                                ? 'Continue with Google and keep sticker'
+                                : 'Continue with Google',
+                          ),
                         ),
                         if (_isGuestWall && !submitting) ...[
                           const SizedBox(height: 16),

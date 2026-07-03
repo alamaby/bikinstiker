@@ -238,7 +238,15 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
     MissionWatchAdRequested e,
     Emitter<MissionState> emit,
   ) async {
-    // First show the rewarded ad
+    // Lock ad button early
+    emit(
+      state.copyWith(
+        pendingMissionIds: {...state.pendingMissionIds, e.missionId},
+        lastClaimAt: {...state.lastClaimAt, e.missionId: DateTime.now()},
+      ),
+    );
+
+    // Show rewarded ad
     final rewardEarned = await _adRepo.loadAndShow();
     if (!rewardEarned) {
       final detail = _adRepo.lastErrorMessage;
@@ -247,13 +255,37 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
           errorMessage: detail != null && detail.isNotEmpty
               ? 'Ad error: $detail'
               : 'Failed to load or watch ad. Please try again.',
+          pendingMissionIds: {...state.pendingMissionIds}..remove(e.missionId),
         ),
       );
       return;
     }
 
-    // If reward earned, proceed with mission completion
-    add(MissionCompleteRequested(e.userId, e.missionId));
+    // Reward earned, complete mission
+    try {
+      final newProgress = await _repo.completeMission(
+        userId: e.userId,
+        missionId: e.missionId,
+      );
+      final pending = {...state.pendingMissionIds}..remove(e.missionId);
+      emit(
+        state.copyWith(
+          status: MissionStatus.loaded,
+          progress: [...state.progress, newProgress],
+          pendingMissionIds: pending,
+          successMessage: 'mission_success:${newProgress.creditsAwarded}',
+        ),
+      );
+    } catch (err) {
+      final pending = {...state.pendingMissionIds}..remove(e.missionId);
+      emit(
+        state.copyWith(
+          status: MissionStatus.loaded,
+          errorMessage: err.toString(),
+          pendingMissionIds: pending,
+        ),
+      );
+    }
   }
 
   Future<void> _onDailyCheckinClaim(

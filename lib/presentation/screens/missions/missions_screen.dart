@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -7,12 +8,34 @@ import '../../../data/models/user_subscription.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/mission/mission_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
+import '../../blocs/wallet/wallet_bloc.dart';
 import '../../widgets/tier_badge.dart';
 import 'widgets/daily_checkin_card.dart';
 import 'widgets/mission_section_header.dart';
 
-class MissionsScreen extends StatelessWidget {
+class MissionsScreen extends StatefulWidget {
   const MissionsScreen({super.key});
+
+  @override
+  State<MissionsScreen> createState() => _MissionsScreenState();
+}
+
+class _MissionsScreenState extends State<MissionsScreen> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,63 +71,18 @@ class MissionsScreen extends StatelessWidget {
                 n.successMessage != null,
             listener: (context, state) {
               final msg = state.successMessage ?? '';
+
+              // Refresh wallet balance on mission success
+              context.read<WalletBloc>().add(WalletRefreshRequested(userId));
+
               if (msg.startsWith('checkin_success:')) {
                 final credits = msg.split(':').last;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppColors.success,
-                    content: Row(
-                      children: [
-                        const Text('\u{1F389}', style: TextStyle(fontSize: 26)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'Check-in successful!',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Come back tomorrow to continue your streak!',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '+$credits',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    duration: const Duration(seconds: 5),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                _showSuccessSnackBar(context, 'Check-in successful!', credits);
+              } else if (msg.startsWith('mission_success:')) {
+                final credits = msg.split(':').last;
+                _showSuccessSnackBar(context, 'Mission completed!', credits);
               }
+
               Future.delayed(const Duration(seconds: 3), () {
                 if (context.mounted) {
                   context.read<MissionBloc>().add(const MissionErrorCleared());
@@ -113,6 +91,7 @@ class MissionsScreen extends StatelessWidget {
             },
           ),
         ],
+
         child: BlocBuilder<SubscriptionBloc, SubscriptionState>(
           builder: (context, subState) {
             return BlocBuilder<MissionBloc, MissionState>(
@@ -290,6 +269,50 @@ class MissionsScreen extends StatelessWidget {
       final isDailyStreak = m.code == 'daily_login';
       return isRecurring && !isDailyStreak;
     }).toList();
+  }
+
+  void _showSuccessSnackBar(
+    BuildContext context,
+    String title,
+    String credits,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.success,
+        content: Row(
+          children: [
+            const Text('\u{1F389}', style: TextStyle(fontSize: 26)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '+$credits',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   /// Achievements: one-time missions (max_completions_per_user = 1, no cooldown/daily limit)

@@ -136,6 +136,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onRefresh() {
     final auth = context.read<AuthBloc>().state;
     final subState = context.read<SubscriptionBloc>().state;
+    final userId = auth.user?.id;
+    if (userId != null) {
+      context.read<WalletBloc>().add(WalletRefreshRequested(userId));
+    }
     StickerPresetRole role;
     if (auth.isGuest) {
       role = StickerPresetRole.guest;
@@ -430,7 +434,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 controller: _captionCtrl,
                                 enabled: !submitting && !isEmpty,
                                 maxLength: 10,
-                                textCapitalization: TextCapitalization.characters,
+                                textCapitalization:
+                                    TextCapitalization.characters,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
                                     RegExp(r'[A-Z0-9 .!?\-]'),

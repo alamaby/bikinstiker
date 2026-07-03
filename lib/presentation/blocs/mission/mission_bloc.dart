@@ -106,13 +106,11 @@ class MissionState extends Equatable {
     return count >= mission.maxCompletionsPerDay!;
   }
 
-  /// Returns true if mission is completed (for one-time missions) or daily limit reached.
+  /// Returns true if mission is completed (for one-time missions).
   bool isMissionCompleted(String missionId, Mission mission) {
-    final maxCompletions = mission.maxCompletionsPerUser ?? 1;
-    final completions = completionsFor(missionId);
-    if (completions >= maxCompletions) return true;
-    if (isDailyLimitReached(missionId, mission)) return true;
-    return false;
+    final maxCompletions = mission.maxCompletionsPerUser;
+    if (maxCompletions == null) return false;
+    return completionsFor(missionId) >= maxCompletions;
   }
 
   DateTime? _lastCompletedAt(String missionId) {

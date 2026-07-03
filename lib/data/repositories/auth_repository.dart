@@ -180,7 +180,7 @@ class SupabaseAuthRepository implements AuthRepository {
         headers: {
           'Authorization': 'Bearer ${session.accessToken}',
           'Content-Type': 'application/json',
-          'apikey': _client.supabaseKey,
+          'apikey': EnvConstants.supabaseAnonKey,
         },
       );
 
@@ -214,7 +214,7 @@ class SupabaseAuthRepository implements AuthRepository {
         headers: {
           'Authorization': 'Bearer ${session.accessToken}',
           'Content-Type': 'application/json',
-          'apikey': _client.supabaseKey,
+          'apikey': EnvConstants.supabaseAnonKey,
         },
         body: jsonEncode({'migrationToken': token}),
       );

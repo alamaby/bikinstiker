@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Legal consent version', () {
-    test('current versions are updated to 2026-07-01', () {
-      expect(LegalConsentRepository.currentTermsVersion, '2026-07-01');
-      expect(LegalConsentRepository.currentPrivacyVersion, '2026-07-01');
+    test('current versions are updated to 2026-07-03', () {
+      expect(LegalConsentRepository.currentTermsVersion, '2026-07-03');
+      expect(LegalConsentRepository.currentPrivacyVersion, '2026-07-03');
     });
 
     test('terms and privacy versions match', () {
@@ -67,15 +67,56 @@ void main() {
       expect(terms, contains('English'));
     });
 
-    test('both documents have placeholder fields', () {
+    test('both documents have effective date 2026-07-03', () {
       final privacy = File('docs/privacy-policy.md').readAsStringSync();
       final terms = File('docs/terms-of-service.md').readAsStringSync();
 
-      expect(privacy, contains('[LEGAL_ENTITY_NAME]'));
-      expect(privacy, contains('[PRIVACY_CONTACT_EMAIL]'));
-      expect(privacy, contains('[LEGAL_ADDRESS]'));
-      expect(terms, contains('[SUPPORT_EMAIL]'));
-      expect(terms, contains('[LEGAL_ADDRESS]'));
+      expect(privacy, contains('Effective Date:** 2026-07-03'));
+      expect(terms, contains('Effective Date:** 2026-07-03'));
+    });
+
+    test('privacy policy has filled privacy contact email', () {
+      final privacy = File('docs/privacy-policy.md').readAsStringSync();
+      expect(privacy, contains('privacy@bikinstiker.example'));
+      // Legacy bracket placeholder should be gone.
+      expect(privacy, isNot(contains('[PRIVACY_CONTACT_EMAIL]')));
+    });
+
+    test('terms of service has filled support email', () {
+      final terms = File('docs/terms-of-service.md').readAsStringSync();
+      expect(terms, contains('support@bikinstiker.example'));
+      expect(terms, isNot(contains('[SUPPORT_EMAIL]')));
+    });
+
+    test('terms of service declares Republic of Indonesia as governing law', () {
+      final terms = File('docs/terms-of-service.md').readAsStringSync();
+      expect(terms, contains('Republic of Indonesia'));
+    });
+
+    test('documents reference current AI providers (Pixazo, Mistral)', () {
+      final privacy = File('docs/privacy-policy.md').readAsStringSync();
+      final terms = File('docs/terms-of-service.md').readAsStringSync();
+
+      expect(privacy, contains('Pixazo'));
+      expect(privacy, contains('Mistral'));
+      expect(terms, contains('Pixazo'));
+      expect(terms, contains('Mistral'));
+    });
+
+    test('documents describe guest migration token mechanism', () {
+      final privacy = File('docs/privacy-policy.md').readAsStringSync();
+      expect(privacy, contains('guest_migration_tokens'));
+    });
+
+    test('documents retain explicit placeholder for legal entity / address', () {
+      // Per release plan, [TO_BE_FILLED_BY_LEGAL] is intentional and must be
+      // resolved by legal counsel before publish. It appears at least once in
+      // each document (entity + address sections).
+      final privacy = File('docs/privacy-policy.md').readAsStringSync();
+      final terms = File('docs/terms-of-service.md').readAsStringSync();
+
+      expect(privacy, contains('[TO_BE_FILLED_BY_LEGAL]'));
+      expect(terms, contains('[TO_BE_FILLED_BY_LEGAL]'));
     });
   });
 }

@@ -49,22 +49,24 @@ class SupabaseCreditTransactionRepository
     int limit = 50,
     CreditTxType? type,
   }) async {
-    var query = _client
+    // Build filter chain first (PostgrestFilterBuilder).
+    PostgrestFilterBuilder<PostgrestList> filtered = _client
         .from('credit_transactions')
         .select()
         .eq('user_id', userId)
         .not('type', 'is', null);
 
     if (type != null) {
-      query = query.eq('type', _txTypeToDb(type));
+      filtered = filtered.eq('type', _txTypeToDb(type));
     }
 
-    query = query.order('created_at', ascending: false);
+    // Apply ordering and (optional) limit in a separate transform chain.
+    var ordered = filtered.order('created_at', ascending: false);
     if (limit > 0) {
-      query = query.limit(limit);
+      ordered = ordered.limit(limit);
     }
 
-    final rows = await query;
+    final rows = await ordered;
 
     return (rows as List)
         .map((r) => CreditTransaction.fromJson(r as Map<String, dynamic>))

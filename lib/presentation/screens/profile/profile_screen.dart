@@ -119,6 +119,7 @@ class _ProfileView extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, dynamic profile) {
+    final user = context.read<AuthBloc>().state.user;
     return Center(
       child: Column(
         children: [
@@ -128,6 +129,14 @@ class _ProfileView extends StatelessWidget {
             profile.hasDisplayName ? profile.displayName! : 'Anonymous User',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
+          if (user?.email != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                user!.email!,
+                style: const TextStyle(color: Colors.black54),
+              ),
+            ),
           const SizedBox(height: 4),
           Text(
             _providerLabel(profile.provider),
@@ -338,7 +347,11 @@ class _ProfileView extends StatelessWidget {
                         .map((tx) => _buildTransactionTile(tx)),
                     if (state.transactions.length > 10)
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          context.read<CreditTransactionsBloc>().add(
+                            const CreditTransactionsViewAllRequested(),
+                          );
+                        },
                         child: const Text('View all'),
                       ),
                   ],
@@ -471,14 +484,34 @@ class _ProfileView extends StatelessWidget {
   Widget _buildDangerZone(BuildContext context) {
     return Card(
       color: AppColors.error.withValues(alpha: 0.05),
-      child: ListTile(
-        leading: Icon(Icons.delete_forever, color: AppColors.error),
-        title: Text('Delete Account', style: TextStyle(color: AppColors.error)),
-        subtitle: const Text(
-          'Permanently delete your account and data',
-          style: TextStyle(fontSize: 12),
-        ),
-        onTap: () => _showDeleteAccountDialog(context),
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.logout, color: AppColors.primary),
+            title: const Text(
+              'Logout',
+              style: TextStyle(color: AppColors.primary),
+            ),
+            subtitle: const Text(
+              'Sign out of this device',
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () => _showLogoutDialog(context),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: Icon(Icons.delete_forever, color: AppColors.error),
+            title: Text(
+              'Delete Account',
+              style: TextStyle(color: AppColors.error),
+            ),
+            subtitle: const Text(
+              'Permanently delete your account and data',
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () => _showDeleteAccountDialog(context),
+          ),
+        ],
       ),
     );
   }
@@ -667,6 +700,31 @@ class _ProfileView extends StatelessWidget {
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout?'),
+        content: const Text(
+          'You will need to sign in again to use the app on this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<AuthBloc>().add(const AuthSignOutRequested());
+            },
+            child: const Text('Logout'),
           ),
         ],
       ),

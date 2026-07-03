@@ -31,6 +31,10 @@ class CreditTransactionsTypeFilterChanged extends CreditTransactionsEvent {
   List<Object?> get props => [type];
 }
 
+class CreditTransactionsViewAllRequested extends CreditTransactionsEvent {
+  const CreditTransactionsViewAllRequested();
+}
+
 // --- State ---
 
 enum CreditTransactionsStatus { initial, loading, loaded, error }
@@ -80,6 +84,7 @@ class CreditTransactionsBloc
     on<CreditTransactionsStarted>(_onStarted);
     on<CreditTransactionsRefreshed>(_onRefreshed);
     on<CreditTransactionsTypeFilterChanged>(_onFilterChanged);
+    on<CreditTransactionsViewAllRequested>(_onViewAll);
   }
 
   Future<void> _onStarted(
@@ -114,6 +119,39 @@ class CreditTransactionsBloc
       ),
     );
     await _fetch(emit);
+  }
+
+  Future<void> _onViewAll(
+    CreditTransactionsViewAllRequested event,
+    Emitter<CreditTransactionsState> emit,
+  ) async {
+    final userId = state.userId;
+    if (userId == null) {
+      emit(
+        state.copyWith(
+          status: CreditTransactionsStatus.error,
+          error: 'User not authenticated',
+        ),
+      );
+      return;
+    }
+    emit(state.copyWith(status: CreditTransactionsStatus.loading));
+    try {
+      final txs = await _repo.fetchTransactions(userId, type: null, limit: 0);
+      emit(
+        state.copyWith(
+          status: CreditTransactionsStatus.loaded,
+          transactions: txs,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: CreditTransactionsStatus.error,
+          error: e is Failure ? e.message : e.toString(),
+        ),
+      );
+    }
   }
 
   Future<void> _fetch(Emitter<CreditTransactionsState> emit) async {

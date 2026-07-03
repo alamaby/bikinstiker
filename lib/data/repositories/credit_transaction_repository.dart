@@ -18,6 +18,31 @@ class SupabaseCreditTransactionRepository
 
   SupabaseCreditTransactionRepository(this._client);
 
+  String _txTypeToDb(CreditTxType type) {
+    switch (type) {
+      case CreditTxType.topup:
+        return 'topup';
+      case CreditTxType.dailyReward:
+        return 'daily_reward';
+      case CreditTxType.generateSticker:
+        return 'generate_sticker';
+      case CreditTxType.refund:
+        return 'refund';
+      case CreditTxType.subscriptionGrant:
+        return 'subscription_grant';
+      case CreditTxType.missionReward:
+        return 'mission_reward';
+      case CreditTxType.expired:
+        return 'expired';
+      case CreditTxType.locked:
+        return 'locked';
+      case CreditTxType.adminGrant:
+        return 'admin_grant';
+      default:
+        return 'unknown';
+    }
+  }
+
   @override
   Future<List<CreditTransaction>> fetchTransactions(
     String userId, {
@@ -31,10 +56,15 @@ class SupabaseCreditTransactionRepository
         .not('type', 'is', null);
 
     if (type != null) {
-      query = query.eq('type', type.name);
+      query = query.eq('type', _txTypeToDb(type));
     }
 
-    final rows = await query.order('created_at', ascending: false).limit(limit);
+    query = query.order('created_at', ascending: false);
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    final rows = await query;
 
     return (rows as List)
         .map((r) => CreditTransaction.fromJson(r as Map<String, dynamic>))

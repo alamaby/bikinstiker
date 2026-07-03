@@ -1,8 +1,8 @@
 # Terms of Service
 
-**Effective Date:** [EFFECTIVE_DATE] | **Last Updated:** [EFFECTIVE_DATE]
+**Effective Date:** 2026-07-03 | **Last Updated:** 2026-07-03
 **App:** BikinStiker
-**Contact:** [SUPPORT_EMAIL]
+**Contact:** support@bikinstiker.example
 
 ---
 
@@ -20,17 +20,17 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 
 #### 3.1 Guest (Anonymous) Account
 - On first launch, the App creates an anonymous session automatically.
-- Guest users receive 1 free credit to try the App.
-- Guest users can generate 1 sticker but cannot save or share stickers until they create a registered account.
-- Guest stickers are retained only if you upgrade the same anonymous session to a registered account. Guest stickers cannot be transferred to an existing account.
+- Guest users receive 1 starter credit to try the App.
+- Guest users can generate stickers but cannot save or share them until they create a registered account.
+- Guest stickers, packs, tray icons, and prompt logs are retained only if you upgrade the same anonymous session to a registered account, using a short-lived one-time migration token. Guest content cannot be transferred to a different existing account.
 
 #### 3.2 Registered Account
 - You may create an account using your email and password, or via a supported third-party sign-in provider (e.g., Google Sign-In).
-- Registered users receive 5 starter credits upon account creation.
+- Registered users receive 1 starter credit upon account creation, plus a +4 registration bonus (idempotent) granted automatically by the `grant_registered_bonus()` RPC after sign-up or anonymous upgrade, for a total of 5 starter credits.
 - Registered users can save, share, and export generated stickers.
 
-#### 3.3 Third-Party Sign-In (Future)
-- When available, you may sign in using a third-party OAuth provider such as Google Sign-In.
+#### 3.3 Third-Party Sign-In
+- You may sign in using a third-party OAuth provider such as Google Sign-In.
 - Third-party sign-in is subject to the provider's own terms and privacy policy.
 - You are responsible for maintaining the security of your third-party account.
 - We receive only basic profile information (e.g., name, email, profile photo) from the provider; we do not receive your password.
@@ -40,15 +40,18 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 #### 4.1 How Credits Work
 - Each sticker generation costs 1 credit.
 - Credits have no monetary value and cannot be exchanged for cash.
-- Credits are granted through: initial account setup, monthly subscription grants, mission rewards, or administrative grants.
+- Credits are granted through: initial account setup (1 starter + 4 registration bonus = 5 total for new registered users), monthly subscription grants, mission rewards, daily check-in streak rewards (mission_reward type), or administrative grants.
+- Registration bonus is granted automatically and idempotently via the `grant_registered_bonus()` RPC. If you signed up directly (non-anonymous), you also receive the bonus on first authentication.
 
 #### 4.2 Credit Expiration
 - Monthly subscription grants and mission rewards may have an expiration date (typically 30 days).
-- Expired credits are removed from your balance automatically.
+- Daily check-in rewards expire 30 days after they are granted.
+- Expired credits are removed from your balance automatically and the original grant row is marked with `expired_at`.
 
 #### 4.3 Free and Plus Tiers
-- **Free tier**: 5 credits per month, access to free presets, 2 pack slots.
-- **Plus tier**: 50 credits per month, access to all presets including Plus-only styles, 20 pack slots.
+- **Free tier**: 5 credits monthly grant, access to free presets, 2 pack slots. Wallet cap: 50 credits.
+- **Plus tier**: 50 credits monthly grant, access to all presets including Plus-only styles, 20 pack slots. Wallet cap: 50 credits (200 credits if granted administratively).
+- Monthly grants are skipped automatically if your current balance is already at or above `tier_cap`. The cap is per wallet, not per month.
 - Tier features and limits may change with prior notice.
 
 #### 4.4 Refund on Failed Generation
@@ -59,8 +62,9 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 
 #### 5.1 How It Works
 - You select a visual style preset, enter a text description (prompt), and optionally add a caption.
-- The App sends your request to our server, which uses AI models to generate a sticker image.
+- The App sends your request to our server, which may first enhance your prompt via a text-only reasoning model (Mistral) and then generate a sticker image using one of several AI providers (Pixazo Flux-1-Schnell, Pixazo SDXL Base 1.0, OpenRouter, Gemini, or Pollinations as fallback).
 - The generated sticker is a die-cut style image with a white background, sized for WhatsApp compatibility.
+- Caption text (max 10 characters) can be embedded into the sticker at top or bottom position.
 
 #### 5.2 AI-Generated Content
 - Generated stickers are produced by artificial intelligence models. Results may vary and may not exactly match your prompt.
@@ -71,7 +75,7 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 #### 5.3 Prompt and Caption Restrictions
 - Your prompts and captions must not contain content that is illegal, harmful, hateful, sexually explicit, defamatory, or that infringes on the rights of others.
 - We reserve the right to refuse or remove content that violates these restrictions.
-- We may log prompts and metadata for abuse prevention, service improvement, and diagnostic purposes.
+- We may log prompts, prompt enhancement metadata, and provider/model metadata for abuse prevention, service improvement, and diagnostic purposes.
 
 ### 6. User Content and License
 
@@ -82,7 +86,8 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 #### 6.2 Generated Stickers
 - You are granted a non-exclusive, worldwide, royalty-free license to use, copy, modify, and distribute generated stickers for personal and commercial purposes, subject to applicable law.
 - This license does not extend to the AI models, style descriptors, or the App's underlying technology.
-- You may not represent generated stickers as the work of a specific human artist.
+- Generated stickers are AI-produced. You are responsible for ensuring your use complies with applicable laws, including disclosure requirements for AI-generated content.
+- This license is subject to applicable laws in your jurisdiction, including any disclosure or labelling requirements for AI-generated content.
 
 ### 7. Sticker Packs and WhatsApp Export
 
@@ -104,7 +109,7 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 ### 8. Advertising
 
 #### 8.1 Google AdMob
-- The App may display advertisements provided by Google AdMob.
+- When enabled, the App displays banner ads via Google AdMob. Rewarded video ads are currently used to grant mission credits. Banner placement is opt-in and may be disabled without notice.
 - AdMob may collect device information, advertising identifiers, and usage data as described in Google's Privacy Policy.
 - Your ad personalization settings may affect which ads are shown.
 
@@ -127,7 +132,7 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 
 ### 10. Intellectual Property
 
-- The App, including its code, design, logos, and trademarks, is the property of [LEGAL_ENTITY_NAME] and protected by applicable intellectual property laws.
+- The App, including its code, design, logos, and trademarks, is the property of [TO_BE_FILLED_BY_LEGAL] and protected by applicable intellectual property laws.
 - You may not copy, modify, distribute, sell, or lease any part of the App without our written consent.
 - The visual style descriptors used for sticker generation are proprietary and not disclosed to users.
 
@@ -143,7 +148,7 @@ WE DO NOT WARRANT THAT:
 
 ### 12. Limitation of Liability
 
-TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, [LEGAL_ENTITY_NAME] SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF PROFITS, OR BUSINESS INTERRUPTION, ARISING FROM YOUR USE OF THE APP.
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, [TO_BE_FILLED_BY_LEGAL] SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF PROFITS, OR BUSINESS INTERRUPTION, ARISING FROM YOUR USE OF THE APP.
 
 OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID TO US IN THE 12 MONTHS PRECEDING THE CLAIM, OR $100 USD, WHICHEVER IS GREATER.
 
@@ -151,7 +156,8 @@ OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID TO US IN THE 12 MONTHS 
 
 - You may terminate your account at any time by contacting us or through the App's account settings.
 - We may suspend or terminate your account if you violate these Terms, engage in abusive behavior, or if required by law.
-- Upon termination, your right to use the App ceases. We may retain your data as described in our Privacy Policy.
+- Upon termination, your right to use the App ceases. Account data is soft-deleted immediately and hard-deleted by our scheduled job after a 30-day grace period. We may retain certain records as described in our Privacy Policy.
+- Marketing emails are sent only when you opt in via the Email Marketing toggle in Profile. You may opt out at any time; withdrawal does not affect prior processing.
 
 ### 14. Changes to These Terms
 
@@ -162,7 +168,7 @@ OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID TO US IN THE 12 MONTHS 
 
 ### 15. Governing Law
 
-These Terms are governed by the laws of [JURISDICTION], without regard to conflict of law principles. Any disputes arising from these Terms shall be resolved in the courts of [JURISDICTION], unless otherwise required by applicable consumer protection law.
+These Terms are governed by the laws of the Republic of Indonesia, without regard to conflict of law principles. Any disputes arising from these Terms shall be resolved in the courts of the Republic of Indonesia, unless otherwise required by applicable consumer protection law.
 
 ### 16. Severability
 
@@ -170,14 +176,14 @@ If any provision of these Terms is found to be unenforceable or invalid, that pr
 
 ### 17. Entire Agreement
 
-These Terms, together with our Privacy Policy, constitute the entire agreement between you and [LEGAL_ENTITY_NAME] regarding the use of the App.
+These Terms, together with our Privacy Policy, constitute the entire agreement between you and [TO_BE_FILLED_BY_LEGAL] regarding the use of the App.
 
 ### 18. Contact Us
 
 If you have questions about these Terms, contact us at:
 
-**Email:** [SUPPORT_EMAIL]
-**Address:** [LEGAL_ADDRESS]
+**Email:** support@bikinstiker.example
+**Address:** [TO_BE_FILLED_BY_LEGAL]
 
 ---
 
@@ -195,17 +201,17 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 
 #### 3.1 Akun Tamu (Anonim)
 - Saat peluncuran pertama, Aplikasi membuat sesi anonim secara otomatis.
-- Pengguna tamu menerima 1 kredit gratis untuk mencoba Aplikasi.
-- Pengguna tamu dapat membuat 1 stiker tetapi tidak dapat menyimpan atau membagikan stiker sampai mereka membuat akun terdaftar.
-- Stiker tamu hanya dipertahankan jika Anda mengupgrade sesi anonim yang sama ke akun terdaftar. Stiker tamu tidak dapat ditransfer ke akun yang sudah ada.
+- Pengguna tamu menerima 1 kredit awal untuk mencoba Aplikasi.
+- Pengguna tamu dapat membuat stiker tetapi tidak dapat menyimpan atau membagikannya sampai mereka membuat akun terdaftar.
+- Stiker, paket, ikon tray, dan log prompt tamu hanya dipertahankan jika Anda meningkatkan sesi anonim yang sama ke akun terdaftar, menggunakan token migrasi sekali-pakai berumur pendek. Konten tamu tidak dapat ditransfer ke akun yang sudah ada berbeda.
 
 #### 3.2 Akun Terdaftar
 - Anda dapat membuat akun menggunakan email dan kata sandi, atau melalui penyedia login pihak ketiga yang didukung (mis. Google Sign-In).
-- Pengguna terdaftar menerima 5 kredit awal saat pembuatan akun.
+- Pengguna terdaftar menerima 1 kredit awal saat pembuatan akun, ditambah bonus pendaftaran +4 (idempotent) yang diberikan secara otomatis oleh RPC `grant_registered_bonus()` setelah sign-up atau upgrade dari anonim, dengan total 5 kredit awal.
 - Pengguna terdaftar dapat menyimpan, membagikan, dan mengekspor stiker yang dihasilkan.
 
-#### 3.3 Login Pihak Ketiga (Mendatang)
-- Jika tersedia, Anda dapat login menggunakan penyedia OAuth pihak ketiga seperti Google Sign-In.
+#### 3.3 Login Pihak Ketiga
+- Anda dapat login menggunakan penyedia OAuth pihak ketiga seperti Google Sign-In.
 - Login pihak ketiga tunduk pada ketentuan dan kebijakan privasi penyedia tersebut.
 - Anda bertanggung jawab menjaga keamanan akun pihak ketiga Anda.
 - Kami hanya menerima informasi profil dasar (mis. nama, email, foto profil) dari penyedia; kami tidak menerima kata sandi Anda.
@@ -215,15 +221,18 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 #### 4.1 Cara Kerja Kredit
 - Setiap pembuatan stiker menghabiskan 1 kredit.
 - Kredit tidak memiliki nilai moneter dan tidak dapat ditukar dengan uang tunai.
-- Kredit diberikan melalui: pengaturan akun awal, pemberian langganan bulanan, hadiah misi, atau pemberian administratif.
+- Kredit diberikan melalui: pengaturan akun awal (1 starter + 4 bonus pendaftaran = 5 total untuk pengguna terdaftar baru), pemberian langganan bulanan, hadiah misi, hadiah streak check-in harian (tipe mission_reward), atau pemberian administratif.
+- Bonus pendaftaran diberikan secara otomatis dan idempotent melalui RPC `grant_registered_bonus()`. Jika Anda sign-up langsung (non-anonim), Anda juga menerima bonus pada autentikasi pertama.
 
 #### 4.2 Kedaluwarsa Kredit
 - Pemberian langganan bulanan dan hadiah misi mungkin memiliki tanggal kedaluwarsa (biasanya 30 hari).
-- Kredit yang kedaluwarsa dihapus dari saldo Anda secara otomatis.
+- Hadiah check-in harian kedaluwarsa 30 hari setelah diberikan.
+- Kredit yang kedaluwarsa dihapus dari saldo Anda secara otomatis dan baris pemberian asli ditandai dengan `expired_at`.
 
 #### 4.3 Tier Free dan Plus
-- **Tier Free**: 5 kredit per bulan, akses ke preset gratis, 2 slot paket.
-- **Tier Plus**: 50 kredit per bulan, akses ke semua preset termasuk gaya Plus-only, 20 slot paket.
+- **Tier Free**: pemberian bulanan 5 kredit, akses ke preset gratis, 2 slot paket. Batas dompet: 50 kredit.
+- **Tier Plus**: pemberian bulanan 50 kredit, akses ke semua preset termasuk gaya Plus-only, 20 slot paket. Batas dompet: 50 kredit (200 kredit jika diberikan secara administratif).
+- Pemberian bulanan dilewati secara otomatis jika saldo Anda saat ini sudah pada atau di atas `tier_cap`. Batas adalah per dompet, bukan per bulan.
 - Fitur dan batasan tier dapat berubah dengan pemberitahuan sebelumnya.
 
 #### 4.4 Pengembalian pada Kegagalan Generasi
@@ -234,8 +243,9 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 
 #### 5.1 Cara Kerja
 - Anda memilih preset gaya visual, memasukkan deskripsi teks (prompt), dan opsional menambahkan caption.
-- Aplikasi mengirimkan permintaan Anda ke server kami, yang menggunakan model AI untuk menghasilkan gambar stiker.
+- Aplikasi mengirimkan permintaan Anda ke server kami, yang mungkin pertama-tama meningkatkan prompt Anda melalui model reasoning berbasis teks saja (Mistral) dan kemudian menghasilkan gambar stiker menggunakan salah satu dari beberapa penyedia AI (Pixazo Flux-1-Schnell, Pixazo SDXL Base 1.0, OpenRouter, Gemini, atau Pollinations sebagai fallback).
 - Stiker yang dihasilkan adalah gambar gaya die-cut dengan latar belakang putih, berukuran untuk kompatibilitas WhatsApp.
+- Teks caption (maksimal 10 karakter) dapat disematkan ke dalam stiker di posisi atas atau bawah.
 
 #### 5.2 Konten yang Dihasilkan AI
 - Stiker yang dihasilkan diproduksi oleh model kecerdasan buatan. Hasil dapat bervariasi dan mungkin tidak sesuai persis dengan prompt Anda.
@@ -246,7 +256,7 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 #### 5.3 Batasan Prompt dan Caption
 - Prompt dan caption Anda tidak boleh mengandung konten yang ilegal, berbahaya, kebencian, eksplisit secara seksual, pencemaran nama baik, atau yang melanggar hak orang lain.
 - Kami berhak menolak atau menghapus konten yang melanggar batasan ini.
-- Kami mungkin mencatat prompt dan metadata untuk pencegahan penyalahgunaan, peningkatan layanan, dan keperluan diagnostik.
+- Kami mungkin mencatat prompt, metadata peningkatan prompt, dan metadata provider/model untuk pencegahan penyalahgunaan, peningkatan layanan, dan keperluan diagnostik.
 
 ### 6. Konten Pengguna dan Lisensi
 
@@ -257,7 +267,8 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 #### 6.2 Stiker yang Dihasilkan
 - Anda diberikan lisensi non-eksklusif, seluruh dunia, bebas royalti untuk menggunakan, menyalin, memodifikasi, dan mendistribusikan stiker yang dihasilkan untuk tujuan pribadi dan komersial, tunduk pada hukum yang berlaku.
 - Lisensi ini tidak meluas ke model AI, deskriptor gaya, atau teknologi dasar Aplikasi.
-- Anda tidak boleh menyatakan stiker yang dihasilkan sebagai karya dari seniman manusia tertentu.
+- Stiker yang dihasilkan diproduksi oleh AI. Anda bertanggung jawab memastikan penggunaan Anda mematuhi hukum yang berlaku, termasuk persyaratan pengungkapan konten AI.
+- Lisensi ini tunduk pada hukum yang berlaku di yurisdiksi Anda, termasuk persyaratan pengungkapan atau pelabelan untuk konten yang dihasilkan AI.
 
 ### 7. Paket Stiker dan Ekspor WhatsApp
 
@@ -279,7 +290,7 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 ### 8. Periklanan
 
 #### 8.1 Google AdMob
-- Aplikasi dapat menampilkan iklan yang disediakan oleh Google AdMob.
+- Jika diaktifkan, Aplikasi menampilkan iklan banner melalui Google AdMob. Iklan video berhadiah saat ini digunakan untuk memberikan kredit misi. Penempatan banner bersifat opt-in dan dapat dinonaktifkan tanpa pemberitahuan.
 - AdMob dapat mengumpulkan informasi perangkat, pengenal periklanan, dan data penggunaan sebagaimana dijelaskan dalam Kebijakan Privasi Google.
 - Pengaturan personalisasi iklan Anda dapat mempengaruhi iklan mana yang ditampilkan.
 
@@ -302,7 +313,7 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 
 ### 10. Hak Kekayaan Intelektual
 
-- Aplikasi, termasuk kode, desain, logo, dan merek dagangnya, adalah milik [LEGAL_ENTITY_NAME] dan dilindungi oleh hukum kekayaan intelektual yang berlaku.
+- Aplikasi, termasuk kode, desain, logo, dan merek dagangnya, adalah milik [TO_BE_FILLED_BY_LEGAL] dan dilindungi oleh hukum kekayaan intelektual yang berlaku.
 - Anda tidak boleh menyalin, memodifikasi, mendistribusikan, menjual, atau menyewakan bagian mana pun dari Aplikasi tanpa persetujuan tertulis kami.
 - Deskriptor gaya visual yang digunakan untuk pembuatan stiker bersifat proprietary dan tidak diungkapkan kepada pengguna.
 
@@ -318,7 +329,7 @@ KAMI TIDAK MENJAMIN BAHWA:
 
 ### 12. Batasan Tanggung Jawab
 
-SEJAUH DIIZINKAN OLEH HUKUM YANG BERLAKU, [LEGAL_ENTITY_NAME] TIDAK BERTANGGUNG JAWAB ATAS KERUGIAN LANGSUNG, TIDAK LANGSung, INSIDENSAL, KHUSUS, KONSEKUENSIAL, ATAU HUKUMAN, TERMASUK NAMUN TIDAK TERBATAS PADA KEHILANGAN DATA, KEHILANGAN KEUNTUNGAN, ATAU GANGGUAN BISNIS, YANG TIMBUL DARI PENGGUNAAN APLIKASI ANDA.
+SEJAUH DIIZINKAN OLEH HUKUM YANG BERLAKU, [TO_BE_FILLED_BY_LEGAL] TIDAK BERTANGGUNG JAWAB ATAS KERUGIAN LANGSUNG, TIDAK LANGSUNG, INSIDENSIAL, KHUSUS, KONSEKUENSIAL, ATAU HUKUMAN, TERMASUK NAMUN TIDAK TERBATAS PADA KEHILANGAN DATA, KEHILANGAN KEUNTUNGAN, ATAU GANGGUAN BISNIS, YANG TIMBUL DARI PENGGUNAAN APLIKASI ANDA.
 
 TANGGUNG JAWAB TOTAL KAMI TIDAK MELEBIHI JUMLAH YANG ANDA BAYARKAN KEPADA KAMI DALAM 12 BULAN SEBELUM KLAIM, ATAU $100 USD, MANA YANG LEBIH BESAR.
 
@@ -326,7 +337,8 @@ TANGGUNG JAWAB TOTAL KAMI TIDAK MELEBIHI JUMLAH YANG ANDA BAYARKAN KEPADA KAMI D
 
 - Anda dapat mengakhiri akun Anda kapan saja dengan menghubungi kami atau melalui pengaturan akun di Aplikasi.
 - Kami dapat menangguhkan atau mengakhiri akun Anda jika Anda melanggar Ketentuan ini, terlibat dalam perilaku penyalahgunaan, atau jika diwajibkan oleh hukum.
-- Setelah pengakhiran, hak Anda untuk menggunakan Aplikasi berhenti. Kami mungkin mempertahankan data Anda sebagaimana dijelaskan dalam Kebijakan Privasi kami.
+- Setelah pengakhiran, hak Anda untuk menggunakan Aplikasi berhenti. Data akun di-soft-delete segera dan di-hard-delete oleh job terjadwal kami setelah masa tenggang 30 hari. Kami dapat mempertahankan catatan tertentu sebagaimana dijelaskan dalam Kebijakan Privasi kami.
+- Email pemasaran hanya dikirim jika Anda opt-in melalui toggle Email Marketing di Profile. Anda dapat opt-out kapan saja; penarikan tidak mempengaruhi pemrosesan sebelumnya.
 
 ### 14. Perubahan pada Ketentuan Ini
 
@@ -337,7 +349,7 @@ TANGGUNG JAWAB TOTAL KAMI TIDAK MELEBIHI JUMLAH YANG ANDA BAYARKAN KEPADA KAMI D
 
 ### 15. Hukum yang Berlaku
 
-Ketentuan ini tunduk pada hukum [JURISDICTION], tanpa memperhatikan prinsip konflik hukum. Setiap sengketa yang timbul dari Ketentuan ini akan diselesaikan di pengadilan [JURISDICTION], kecuali jika diwajibkan lain oleh hukum perlindungan konsumen yang berlaku.
+Ketentuan ini tunduk pada hukum Republik Indonesia, tanpa memperhatikan prinsip konflik hukum. Setiap sengketa yang timbul dari Ketentuan ini akan diselesaikan di pengadilan Republik Indonesia, kecuali jika diwajibkan lain oleh hukum perlindungan konsumen yang berlaku.
 
 ### 16. Keterpisahan
 
@@ -345,11 +357,11 @@ Jika ketentuan mana pun dalam Ketentuan ini ditemukan tidak dapat diberlakukan a
 
 ### 17. Perjanjian Seluruh
 
-Ketentuan ini, bersama dengan Kebijakan Privasi kami, merupakan seluruh perjanjian antara Anda dan [LEGAL_ENTITY_NAME] mengenai penggunaan Aplikasi.
+Ketentuan ini, bersama dengan Kebijakan Privasi kami, merupakan seluruh perjanjian antara Anda dan [TO_BE_FILLED_BY_LEGAL] mengenai penggunaan Aplikasi.
 
 ### 18. Hubungi Kami
 
 Jika Anda memiliki pertanyaan tentang Ketentuan ini, hubungi kami di:
 
-**Email:** [SUPPORT_EMAIL]
-**Alamat:** [LEGAL_ADDRESS]
+**Email:** support@bikinstiker.example
+**Alamat:** [TO_BE_FILLED_BY_LEGAL]

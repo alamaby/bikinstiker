@@ -7,6 +7,7 @@ abstract class CreditTransactionRepository {
     String userId, {
     int limit = 50,
     CreditTxType? type,
+    Set<CreditTxType>? types,
   });
 
   Stream<List<CreditTransaction>> watchTransactions(String userId);
@@ -48,6 +49,7 @@ class SupabaseCreditTransactionRepository
     String userId, {
     int limit = 50,
     CreditTxType? type,
+    Set<CreditTxType>? types,
   }) async {
     // Build filter chain first (PostgrestFilterBuilder).
     PostgrestFilterBuilder<PostgrestList> filtered = _client
@@ -56,7 +58,9 @@ class SupabaseCreditTransactionRepository
         .eq('user_id', userId)
         .not('type', 'is', null);
 
-    if (type != null) {
+    if (types != null && types.isNotEmpty) {
+      filtered = filtered.inFilter('type', types.map(_txTypeToDb).toList());
+    } else if (type != null) {
       filtered = filtered.eq('type', _txTypeToDb(type));
     }
 

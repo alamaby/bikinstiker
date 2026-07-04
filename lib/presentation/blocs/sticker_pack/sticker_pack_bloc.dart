@@ -193,7 +193,28 @@ class StickerPackBloc extends Bloc<StickerPackEvent, StickerPackState> {
     emit(state.copyWith(status: StickerPackStatus.loading));
     try {
       final packs = await _repo.fetchUserPacks();
-      emit(state.copyWith(status: StickerPackStatus.loaded, packs: packs));
+      final packsWithThumbnails = await Future.wait(
+        packs.map((pack) async {
+          if (pack.stickerCount <= 0) return pack;
+          try {
+            final detail = await _repo.getPackDetail(pack.id);
+            final sortedItems = [...detail.items]
+              ..sort((a, b) => a.position.compareTo(b.position));
+            if (sortedItems.isEmpty) return pack;
+            return pack.copyWith(
+              firstStickerSignedUrl: sortedItems.first.stickerSignedUrl,
+            );
+          } catch (_) {
+            return pack;
+          }
+        }),
+      );
+      emit(
+        state.copyWith(
+          status: StickerPackStatus.loaded,
+          packs: packsWithThumbnails,
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(
@@ -314,7 +335,10 @@ class StickerPackBloc extends Bloc<StickerPackEvent, StickerPackState> {
           final trayPath = detail.pack.trayIconPath;
           final trayUrl = await _repo.signedUrlForTrayIcon(trayPath);
           if (trayUrl != null) {
-            await _repo.cacheTrayIconLocally(detail.pack.packIdentifier, trayUrl);
+            await _repo.cacheTrayIconLocally(
+              detail.pack.packIdentifier,
+              trayUrl,
+            );
           }
         }
       }

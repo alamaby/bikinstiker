@@ -34,6 +34,7 @@ class SupabaseWalletRepository implements WalletRepository {
             return Wallet(
               userId: userId,
               balance: 0,
+              tierNow: 'free',
               updatedAt: DateTime.now(),
             );
           }

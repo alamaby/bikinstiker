@@ -14,6 +14,7 @@ class StickerPack extends Equatable {
   final DateTime? lockedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? firstStickerSignedUrl;
 
   const StickerPack({
     required this.id,
@@ -27,6 +28,7 @@ class StickerPack extends Equatable {
     this.lockedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.firstStickerSignedUrl,
   });
 
   /// Whether this pack can accept more stickers (not locked, active, and < 30 stickers)
@@ -58,6 +60,22 @@ class StickerPack extends Equatable {
         : null,
     createdAt: DateTime.parse(json['created_at'] as String),
     updatedAt: DateTime.parse(json['updated_at'] as String),
+    firstStickerSignedUrl: json['first_sticker_signed_url'] as String?,
+  );
+
+  StickerPack copyWith({String? firstStickerSignedUrl}) => StickerPack(
+    id: id,
+    userId: userId,
+    name: name,
+    packIdentifier: packIdentifier,
+    trayIconPath: trayIconPath,
+    stickerCount: stickerCount,
+    isActive: isActive,
+    isLocked: isLocked,
+    lockedAt: lockedAt,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    firstStickerSignedUrl: firstStickerSignedUrl ?? this.firstStickerSignedUrl,
   );
 
   Map<String, dynamic> toJson() => {
@@ -72,6 +90,7 @@ class StickerPack extends Equatable {
     'locked_at': lockedAt?.toIso8601String(),
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
+    'first_sticker_signed_url': firstStickerSignedUrl,
   };
 
   @override
@@ -87,6 +106,7 @@ class StickerPack extends Equatable {
     lockedAt,
     createdAt,
     updatedAt,
+    firstStickerSignedUrl,
   ];
 }
 

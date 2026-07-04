@@ -24,11 +24,13 @@ class CreditTransactionsRefreshed extends CreditTransactionsEvent {
   const CreditTransactionsRefreshed();
 }
 
-class CreditTransactionsTypeFilterChanged extends CreditTransactionsEvent {
-  final CreditTxType? type;
-  const CreditTransactionsTypeFilterChanged(this.type);
+enum CreditTransactionsFilter { all, earnings, spent, rewards }
+
+class CreditTransactionsFilterChanged extends CreditTransactionsEvent {
+  final CreditTransactionsFilter filter;
+  const CreditTransactionsFilterChanged(this.filter);
   @override
-  List<Object?> get props => [type];
+  List<Object?> get props => [filter];
 }
 
 class CreditTransactionsViewAllRequested extends CreditTransactionsEvent {
@@ -42,14 +44,14 @@ enum CreditTransactionsStatus { initial, loading, loaded, error }
 class CreditTransactionsState extends Equatable {
   final CreditTransactionsStatus status;
   final List<CreditTransaction> transactions;
-  final CreditTxType? filterType;
+  final CreditTransactionsFilter filter;
   final String? error;
   final String? userId;
 
   const CreditTransactionsState({
     this.status = CreditTransactionsStatus.initial,
     this.transactions = const [],
-    this.filterType,
+    this.filter = CreditTransactionsFilter.all,
     this.error,
     this.userId,
   });
@@ -57,21 +59,21 @@ class CreditTransactionsState extends Equatable {
   CreditTransactionsState copyWith({
     CreditTransactionsStatus? status,
     List<CreditTransaction>? transactions,
-    CreditTxType? filterType,
+    CreditTransactionsFilter? filter,
     String? error,
     String? userId,
   }) {
     return CreditTransactionsState(
       status: status ?? this.status,
       transactions: transactions ?? this.transactions,
-      filterType: filterType ?? this.filterType,
+      filter: filter ?? this.filter,
       error: error,
       userId: userId ?? this.userId,
     );
   }
 
   @override
-  List<Object?> get props => [status, transactions, filterType, error, userId];
+  List<Object?> get props => [status, transactions, filter, error, userId];
 }
 
 // --- Bloc ---
@@ -83,7 +85,7 @@ class CreditTransactionsBloc
   CreditTransactionsBloc(this._repo) : super(const CreditTransactionsState()) {
     on<CreditTransactionsStarted>(_onStarted);
     on<CreditTransactionsRefreshed>(_onRefreshed);
-    on<CreditTransactionsTypeFilterChanged>(_onFilterChanged);
+    on<CreditTransactionsFilterChanged>(_onFilterChanged);
     on<CreditTransactionsViewAllRequested>(_onViewAll);
   }
 
@@ -109,13 +111,13 @@ class CreditTransactionsBloc
   }
 
   Future<void> _onFilterChanged(
-    CreditTransactionsTypeFilterChanged event,
+    CreditTransactionsFilterChanged event,
     Emitter<CreditTransactionsState> emit,
   ) async {
     emit(
       state.copyWith(
         status: CreditTransactionsStatus.loading,
-        filterType: event.type,
+        filter: event.filter,
       ),
     );
     await _fetch(emit);
@@ -137,7 +139,11 @@ class CreditTransactionsBloc
     }
     emit(state.copyWith(status: CreditTransactionsStatus.loading));
     try {
-      final txs = await _repo.fetchTransactions(userId, type: null, limit: 0);
+      final txs = await _repo.fetchTransactions(
+        userId,
+        types: _typesForFilter(state.filter),
+        limit: 0,
+      );
       emit(
         state.copyWith(
           status: CreditTransactionsStatus.loaded,
@@ -166,7 +172,10 @@ class CreditTransactionsBloc
       return;
     }
     try {
-      final txs = await _repo.fetchTransactions(userId, type: state.filterType);
+      final txs = await _repo.fetchTransactions(
+        userId,
+        types: _typesForFilter(state.filter),
+      );
       emit(
         state.copyWith(
           status: CreditTransactionsStatus.loaded,
@@ -180,6 +189,30 @@ class CreditTransactionsBloc
           error: e is Failure ? e.message : e.toString(),
         ),
       );
+    }
+  }
+
+  Set<CreditTxType>? _typesForFilter(CreditTransactionsFilter filter) {
+    switch (filter) {
+      case CreditTransactionsFilter.all:
+        return null;
+      case CreditTransactionsFilter.earnings:
+        return const {
+          CreditTxType.topup,
+          CreditTxType.dailyReward,
+          CreditTxType.refund,
+          CreditTxType.subscriptionGrant,
+          CreditTxType.missionReward,
+          CreditTxType.adminGrant,
+        };
+      case CreditTransactionsFilter.spent:
+        return const {CreditTxType.generateSticker};
+      case CreditTransactionsFilter.rewards:
+        return const {
+          CreditTxType.dailyReward,
+          CreditTxType.missionReward,
+          CreditTxType.subscriptionGrant,
+        };
     }
   }
 }

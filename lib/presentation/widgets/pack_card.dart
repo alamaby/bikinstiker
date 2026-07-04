@@ -20,30 +20,16 @@ class PackCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Tray icon placeholder area (96x96 ideal)
-            AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                color: AppColors.surface,
-                child: Center(
-                  child: Icon(
-                    Icons.collections_bookmark,
-                    size: 48,
-                    color: pack.isLocked
-                        ? AppColors.outline
-                        : AppColors.primary,
-                  ),
-                ),
-              ),
-            ),
+            AspectRatio(aspectRatio: 1, child: _PackThumbnail(pack: pack)),
             // Pack name and count
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(
@@ -74,6 +60,38 @@ class PackCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PackThumbnail extends StatelessWidget {
+  final StickerPack pack;
+
+  const _PackThumbnail({required this.pack});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = pack.firstStickerSignedUrl;
+    if (url != null && url.isNotEmpty) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _placeholder(),
+      );
+    }
+    return _placeholder();
+  }
+
+  Widget _placeholder() {
+    return Container(
+      color: AppColors.surface,
+      child: Center(
+        child: Icon(
+          Icons.collections_bookmark,
+          size: 48,
+          color: pack.isLocked ? AppColors.outline : AppColors.primary,
         ),
       ),
     );

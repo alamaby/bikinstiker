@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -17,12 +19,14 @@ const _dayMarkers = [
 class DailyCheckinCard extends StatelessWidget {
   final Mission mission;
   final DailyCheckinStreak? streak;
+  final int? justClaimedDay;
   final VoidCallback? onClaim;
 
   const DailyCheckinCard({
     super.key,
     required this.mission,
     this.streak,
+    this.justClaimedDay,
     this.onClaim,
   });
 
@@ -83,6 +87,7 @@ class DailyCheckinCard extends StatelessWidget {
                   currentCycleDay: s.currentCycleDay,
                   cycleCompleted: s.cycleCompleted,
                   checkedInToday: s.checkedInToday,
+                  highlightBounce: justClaimedDay == day,
                 );
               }),
             ),
@@ -139,67 +144,116 @@ class DailyCheckinCard extends StatelessWidget {
   }
 }
 
-class _DayBox extends StatelessWidget {
+class _DayBox extends StatefulWidget {
   final int dayNumber;
   final int currentCycleDay;
   final bool cycleCompleted;
   final bool checkedInToday;
+  final bool highlightBounce;
 
   const _DayBox({
     required this.dayNumber,
     required this.currentCycleDay,
     required this.cycleCompleted,
     required this.checkedInToday,
+    required this.highlightBounce,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final completed = !cycleCompleted && dayNumber < currentCycleDay;
-    final isToday =
-        !cycleCompleted && dayNumber == currentCycleDay && !checkedInToday;
-    final wasCheckedToday =
-        !cycleCompleted && dayNumber == currentCycleDay && checkedInToday;
-    final locked =
-        cycleCompleted || (dayNumber > currentCycleDay && !wasCheckedToday);
+  State<_DayBox> createState() => _DayBoxState();
+}
 
-    final marker = _dayMarkers[dayNumber - 1];
+class _DayBoxState extends State<_DayBox> {
+  Timer? _timer;
+  bool _scaled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.highlightBounce) _triggerBounce();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DayBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.highlightBounce && widget.highlightBounce) {
+      _triggerBounce();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _triggerBounce() {
+    _timer?.cancel();
+    setState(() => _scaled = true);
+    _timer = Timer(const Duration(milliseconds: 420), () {
+      if (mounted) setState(() => _scaled = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final completed =
+        !widget.cycleCompleted && widget.dayNumber < widget.currentCycleDay;
+    final isToday =
+        !widget.cycleCompleted &&
+        widget.dayNumber == widget.currentCycleDay &&
+        !widget.checkedInToday;
+    final wasCheckedToday =
+        !widget.cycleCompleted &&
+        widget.dayNumber == widget.currentCycleDay &&
+        widget.checkedInToday;
+    final locked =
+        widget.cycleCompleted ||
+        (widget.dayNumber > widget.currentCycleDay && !wasCheckedToday);
+
+    final marker = _dayMarkers[widget.dayNumber - 1];
 
     return Expanded(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
+      child: AnimatedScale(
+        scale: _scaled ? 1.18 : 1,
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutBack,
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          color: completed
-              ? AppColors.success.withValues(alpha: 0.18)
-              : (isToday
-                    ? AppColors.primary.withValues(alpha: 0.12)
-                    : AppColors.surface),
-          border: Border.all(
-            color: isToday
-                ? AppColors.primary
-                : (completed ? AppColors.success : AppColors.outline),
-            width: isToday ? 2.5 : 1,
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(marker.themed, style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 2),
-            Text(
-              '$dayNumber',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: locked
-                    ? AppColors.outline
-                    : (completed ? AppColors.success : AppColors.onSurface),
-              ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutBack,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: completed
+                ? AppColors.success.withValues(alpha: 0.18)
+                : (isToday
+                      ? AppColors.primary.withValues(alpha: 0.12)
+                      : AppColors.surface),
+            border: Border.all(
+              color: isToday
+                  ? AppColors.primary
+                  : (completed ? AppColors.success : AppColors.outline),
+              width: isToday ? 2.5 : 1,
             ),
-          ],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(marker.themed, style: const TextStyle(fontSize: 18)),
+              const SizedBox(height: 2),
+              Text(
+                '${widget.dayNumber}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: locked
+                      ? AppColors.outline
+                      : (completed ? AppColors.success : AppColors.onSurface),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

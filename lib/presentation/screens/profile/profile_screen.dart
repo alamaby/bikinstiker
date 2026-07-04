@@ -201,6 +201,12 @@ class _ProfileView extends StatelessWidget {
     final auth = context.watch<AuthBloc>().state;
     final subState = context.watch<SubscriptionBloc>().state;
     final walletState = context.watch<WalletBloc>().state;
+    final nextGrantText = _nextMonthlyCreditText(
+      walletState.wallet?.lastGrantAt,
+      subState.subscription?.startedAt,
+      walletState.wallet?.updatedAt,
+      subState.isPlus,
+    );
 
     return Card(
       child: Padding(
@@ -217,24 +223,36 @@ class _ProfileView extends StatelessWidget {
               children: [
                 const Icon(Icons.workspace_premium, color: AppColors.primary),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      subState.isPlus ? 'Plus Member' : 'Free Tier',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    if (subState.subscription != null)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Valid until ${_formatDate(subState.subscription!.expiresAt)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                        ),
+                        subState.isPlus ? 'Plus Member' : 'Free Tier',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
-                  ],
+                      if (subState.subscription != null)
+                        Text(
+                          'Valid until ${_formatDate(subState.subscription!.expiresAt)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      if (nextGrantText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            nextGrantText,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
                 if (!subState.isPlus && !auth.isGuest)
                   Container(
                     decoration: BoxDecoration(
@@ -327,24 +345,22 @@ class _ProfileView extends StatelessWidget {
                     ),
                   );
                 }
-                if (state.transactions.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        'No transactions yet',
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    ),
-                  );
-                }
                 return Column(
                   children: [
                     _buildFilterChips(context, state),
                     const SizedBox(height: 12),
-                    ...state.transactions
-                        .take(10)
-                        .map((tx) => _buildTransactionTile(tx)),
+                    if (state.transactions.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'No transactions yet',
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      )
+                    else
+                      ...state.transactions
+                          .take(10)
+                          .map((tx) => _buildTransactionTile(tx)),
                     if (state.transactions.length > 10)
                       TextButton(
                         onPressed: () {
@@ -375,21 +391,23 @@ class _ProfileView extends StatelessWidget {
         children: [
           FilterChip(
             label: const Text('All'),
-            selected: state.filterType == null,
+            selected: state.filter == CreditTransactionsFilter.all,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
-                const CreditTransactionsTypeFilterChanged(null),
+                const CreditTransactionsFilterChanged(
+                  CreditTransactionsFilter.all,
+                ),
               );
             },
           ),
           const SizedBox(width: 8),
           FilterChip(
             label: const Text('Earnings'),
-            selected: state.filterType == CreditTxType.dailyReward,
+            selected: state.filter == CreditTransactionsFilter.earnings,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
-                const CreditTransactionsTypeFilterChanged(
-                  CreditTxType.dailyReward,
+                const CreditTransactionsFilterChanged(
+                  CreditTransactionsFilter.earnings,
                 ),
               );
             },
@@ -397,11 +415,11 @@ class _ProfileView extends StatelessWidget {
           const SizedBox(width: 8),
           FilterChip(
             label: const Text('Spent'),
-            selected: state.filterType == CreditTxType.generateSticker,
+            selected: state.filter == CreditTransactionsFilter.spent,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
-                const CreditTransactionsTypeFilterChanged(
-                  CreditTxType.generateSticker,
+                const CreditTransactionsFilterChanged(
+                  CreditTransactionsFilter.spent,
                 ),
               );
             },
@@ -409,11 +427,11 @@ class _ProfileView extends StatelessWidget {
           const SizedBox(width: 8),
           FilterChip(
             label: const Text('Rewards'),
-            selected: state.filterType == CreditTxType.missionReward,
+            selected: state.filter == CreditTransactionsFilter.rewards,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
-                const CreditTransactionsTypeFilterChanged(
-                  CreditTxType.missionReward,
+                const CreditTransactionsFilterChanged(
+                  CreditTransactionsFilter.rewards,
                 ),
               );
             },
@@ -775,5 +793,34 @@ class _ProfileView extends StatelessWidget {
 
   String _formatDateTime(DateTime dt) {
     return '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  String? _nextMonthlyCreditText(
+    DateTime? lastGrantAt,
+    DateTime? startedAt,
+    DateTime? walletUpdatedAt,
+    bool isPlus,
+  ) {
+    final base = lastGrantAt ?? startedAt ?? walletUpdatedAt;
+    if (base == null) return null;
+
+    final now = DateTime.now();
+    var nextGrant = _addOneMonth(base.toLocal());
+    while (!nextGrant.isAfter(now)) {
+      nextGrant = _addOneMonth(nextGrant);
+    }
+
+    final amount = isPlus ? 50 : 5;
+    return 'Next monthly credits (+$amount) on ${_formatDateTime(nextGrant)}';
+  }
+
+  DateTime _addOneMonth(DateTime value) {
+    return DateTime(
+      value.year,
+      value.month + 1,
+      value.day,
+      value.hour,
+      value.minute,
+    );
   }
 }

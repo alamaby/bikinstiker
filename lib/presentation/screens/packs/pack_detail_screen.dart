@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/di.dart';
 import '../../../core/theme/app_theme.dart';
@@ -149,6 +152,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
                   );
                   return _StickerItemTile(
                     item: item,
+                    packIdentifier: pack.packIdentifier,
                     isPending: isPending,
                     onRemove: pack.canRemoveStickers
                         ? () => _showRemoveStickerDialog(
@@ -442,16 +446,52 @@ class _PackHeader extends StatelessWidget {
   }
 }
 
-class _StickerItemTile extends StatelessWidget {
+class _StickerItemTile extends StatefulWidget {
   final StickerPackItem item;
+  final String packIdentifier;
   final bool isPending;
   final VoidCallback? onRemove;
 
   const _StickerItemTile({
     required this.item,
+    required this.packIdentifier,
     required this.isPending,
     this.onRemove,
   });
+
+  @override
+  State<_StickerItemTile> createState() => _StickerItemTileState();
+}
+
+class _StickerItemTileState extends State<_StickerItemTile> {
+  File? _cachedFile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedFile();
+  }
+
+  @override
+  void didUpdateWidget(covariant _StickerItemTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.stickerGenerationId != widget.item.stickerGenerationId ||
+        oldWidget.packIdentifier != widget.packIdentifier) {
+      _cachedFile = null;
+      _loadCachedFile();
+    }
+  }
+
+  Future<void> _loadCachedFile() async {
+    final dir = await getApplicationSupportDirectory();
+    final file = File(
+      '${dir.path}/pack_stickers/${widget.packIdentifier}/${widget.item.stickerGenerationId}.webp',
+    );
+    if (!mounted) return;
+    setState(() {
+      _cachedFile = file.existsSync() ? file : null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -466,9 +506,18 @@ class _StickerItemTile extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: item.stickerSignedUrl != null
+              child: _cachedFile != null
+                  ? Image.file(
+                      _cachedFile!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _placeholder(context),
+                    )
+                  : widget.item.stickerSignedUrl != null
                   ? Image.network(
-                      item.stickerSignedUrl!,
+                      widget.item.stickerSignedUrl!,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -479,7 +528,7 @@ class _StickerItemTile extends StatelessWidget {
             ),
           ),
         ),
-        if (isPending)
+        if (widget.isPending)
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -498,7 +547,7 @@ class _StickerItemTile extends StatelessWidget {
               ),
             ),
           ),
-        if (onRemove != null && !isPending)
+        if (widget.onRemove != null && !widget.isPending)
           Positioned(
             top: 2,
             right: 2,
@@ -507,7 +556,7 @@ class _StickerItemTile extends StatelessWidget {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
               icon: const Icon(Icons.close, size: 16),
-              onPressed: onRemove,
+              onPressed: widget.onRemove,
               style: IconButton.styleFrom(
                 backgroundColor: Colors.black54,
                 foregroundColor: Colors.white,
@@ -515,7 +564,7 @@ class _StickerItemTile extends StatelessWidget {
             ),
           ),
         // Emoji badge bottom-left
-        if (item.emojis.isNotEmpty)
+        if (widget.item.emojis.isNotEmpty)
           Positioned(
             bottom: 2,
             left: 2,
@@ -526,7 +575,7 @@ class _StickerItemTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                item.emojis.join(' '),
+                widget.item.emojis.join(' '),
                 style: const TextStyle(fontSize: 10),
               ),
             ),
@@ -542,7 +591,7 @@ class _StickerItemTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              '#${item.position}',
+              '#${widget.item.position}',
               style: const TextStyle(fontSize: 9, color: Colors.white),
             ),
           ),
@@ -557,12 +606,12 @@ class _StickerItemTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            item.emojis.isNotEmpty ? item.emojis.join(' ') : '🎨',
+            widget.item.emojis.isNotEmpty ? widget.item.emojis.join(' ') : '🎨',
             style: const TextStyle(fontSize: 28),
           ),
           const SizedBox(height: 4),
           Text(
-            '#${item.position}',
+            '#${widget.item.position}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

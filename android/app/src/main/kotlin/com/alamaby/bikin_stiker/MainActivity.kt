@@ -35,11 +35,23 @@ class MainActivity : FlutterFragmentActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "isWhatsAppInstalled" -> {
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            data = android.net.Uri.parse("whatsapp://")
+                        // Use getPackageInfo instead of resolveActivity to avoid
+                        // Android 11+ package visibility restrictions on custom URI
+                        // schemes. <queries><package> in AndroidManifest already
+                        // grants visibility for getPackageInfo.
+                        val pm = packageManager
+                        val installed = try {
+                            pm.getPackageInfo("com.whatsapp", 0)
+                            true
+                        } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
+                            try {
+                                pm.getPackageInfo("com.whatsapp.w4b", 0)
+                                true
+                            } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
+                                false
+                            }
                         }
-                        val resolved = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-                        result.success(resolved != null)
+                        result.success(installed)
                     }
                     "launchWhatsAppStickerActivity" -> {
                         val packId = call.argument<String>("sticker_pack_id") ?: ""

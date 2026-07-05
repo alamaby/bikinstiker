@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
+import '../../widgets/ads_banner_widget.dart';
 import '../../widgets/pack_capacity_indicator.dart';
 import '../../widgets/pack_card.dart';
 import 'pack_create_screen.dart';
@@ -67,9 +68,15 @@ class PacksListScreen extends StatelessWidget {
                   SliverPadding(
                     padding: const EdgeInsets.all(16),
                     sliver: SliverToBoxAdapter(
-                      child: PackCapacityIndicator(
-                        activeCount: state.activeCount,
-                        slotCap: state.slotCap,
+                      child: Column(
+                        children: [
+                          PackCapacityIndicator(
+                            activeCount: state.activeCount,
+                            slotCap: state.slotCap,
+                          ),
+                          const SizedBox(height: 12),
+                          const AdsBannerWidget(location: AdBannerLocation.packs),
+                        ],
                       ),
                     ),
                   ),

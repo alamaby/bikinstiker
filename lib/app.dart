@@ -12,6 +12,7 @@ import 'data/repositories/mission_repository.dart';
 import 'data/repositories/preset_repository.dart';
 import 'data/repositories/profile_repository.dart';
 import 'data/repositories/rewarded_ad_repository.dart';
+import 'data/repositories/sticker_feedback_repository.dart';
 import 'data/repositories/sticker_pack_repository.dart';
 import 'data/repositories/sticker_repository.dart';
 import 'data/repositories/subscription_repository.dart';
@@ -47,6 +48,9 @@ class BikinStikerApp extends StatelessWidget {
         ),
         RepositoryProvider<StickerRepository>.value(
           value: getIt<StickerRepository>(),
+        ),
+        RepositoryProvider<StickerFeedbackRepository>.value(
+          value: getIt<StickerFeedbackRepository>(),
         ),
         RepositoryProvider<PresetRepository>.value(
           value: getIt<PresetRepository>(),

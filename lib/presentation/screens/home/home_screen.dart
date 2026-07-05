@@ -23,6 +23,7 @@ import '../../widgets/ads_banner_placeholder.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/loading_lottie.dart';
 import '../../widgets/prompt_suggestion_chip.dart';
+import '../../widgets/sticker_feedback_buttons.dart';
 import '../../widgets/surprise_me_button.dart';
 import '../../widgets/tier_badge.dart';
 import '../auth/auth_screen.dart';
@@ -905,6 +906,12 @@ class _ResultPanel extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
+                        if (!isGuest && genState.stickerId != null) ...[
+                          StickerFeedbackButtons(
+                            stickerGenerationId: genState.stickerId!,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         if (!isGuest) ...[
                           Row(
                             children: [

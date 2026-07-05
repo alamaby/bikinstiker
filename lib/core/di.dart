@@ -9,11 +9,13 @@ import '../data/repositories/mission_repository.dart';
 import '../data/repositories/preset_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/rewarded_ad_repository.dart';
+import '../data/repositories/sticker_feedback_repository.dart';
 import '../data/repositories/sticker_pack_repository.dart';
 import '../data/repositories/sticker_repository.dart';
 import '../data/repositories/subscription_repository.dart';
 import '../data/repositories/wallet_repository.dart';
 import 'image_cache.dart';
+import 'services/ad_config_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -33,6 +35,9 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<ImageCacheService>(() => ImageCacheService());
   getIt.registerLazySingleton<StickerRepository>(
     () => SupabaseStickerRepository(client, getIt<ImageCacheService>()),
+  );
+  getIt.registerLazySingleton<StickerFeedbackRepository>(
+    () => SupabaseStickerFeedbackRepository(client),
   );
   getIt.registerLazySingleton<PresetRepository>(
     () => SupabasePresetRepository(client),
@@ -55,4 +60,5 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<CreditTransactionRepository>(
     () => SupabaseCreditTransactionRepository(client),
   );
+  getIt.registerLazySingleton<AdConfigService>(() => AdConfigService());
 }

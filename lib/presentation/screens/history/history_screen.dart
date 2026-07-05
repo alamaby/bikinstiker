@@ -15,6 +15,7 @@ import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../widgets/add_to_pack_sheet.dart';
+import '../../widgets/ads_banner_widget.dart';
 import '../../widgets/status_indicator.dart';
 import 'widgets/history_filter_chips.dart';
 import 'widgets/history_search_field.dart';
@@ -89,6 +90,8 @@ class _HistoryView extends StatelessWidget {
           return Column(
             children: [
               _FilterBar(state: state),
+              const SizedBox(height: 8),
+              const AdsBannerWidget(location: AdBannerLocation.history),
               const SizedBox(height: 8),
               Expanded(
                 child: state.items.isEmpty

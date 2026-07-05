@@ -10,6 +10,7 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/mission/mission_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
+import '../../widgets/ads_banner_widget.dart';
 import '../../widgets/tier_badge.dart';
 import 'widgets/daily_checkin_card.dart';
 import 'widgets/mission_section_header.dart';
@@ -143,6 +144,17 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                 icon: Icons.local_fire_department,
                                 title: 'Daily Rewards',
                                 count: dailyLogin.length,
+                              ),
+                            ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Column(
+                                  children: [
+                                    const AdsBannerWidget(location: AdBannerLocation.missions),
+                                    const SizedBox(height: 12),
+                                  ],
+                                ),
                               ),
                             ),
                             SliverList(

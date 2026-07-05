@@ -16,6 +16,7 @@ import '../../blocs/credit_transactions/credit_transactions_bloc.dart';
 import '../../blocs/profile/profile_cubit.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
+import '../../widgets/ads_banner_widget.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -103,6 +104,8 @@ class _ProfileView extends StatelessWidget {
                 _buildHeader(context, profile),
                 const SizedBox(height: 24),
                 _buildEntitlementsSection(context),
+                const SizedBox(height: 16),
+                const AdsBannerWidget(location: AdBannerLocation.profile),
                 const SizedBox(height: 24),
                 _buildTransactionsSection(context),
                 const SizedBox(height: 24),

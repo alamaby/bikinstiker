@@ -78,7 +78,7 @@ class _PackThumbnail extends StatelessWidget {
       return Image.network(
         url,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _placeholder(),
+        errorBuilder: (context, error, stackTrace) => _placeholder(),
       );
     }
     return _placeholder();

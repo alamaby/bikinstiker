@@ -16,6 +16,7 @@ import '../data/repositories/subscription_repository.dart';
 import '../data/repositories/wallet_repository.dart';
 import 'image_cache.dart';
 import 'services/ad_config_service.dart';
+import 'services/share_mission_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -61,4 +62,5 @@ Future<void> configureDependencies() async {
     () => SupabaseCreditTransactionRepository(client),
   );
   getIt.registerLazySingleton<AdConfigService>(() => AdConfigService());
+  getIt.registerLazySingleton<ShareMissionService>(() => ShareMissionService());
 }

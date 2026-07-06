@@ -1,7 +1,7 @@
 name: bikin_stiker
 description: "BikinStiker - AI-powered WhatsApp sticker generator."
 publish_to: 'none'
-version: 0.13.0+50
+version: 0.14.0+51
 
 environment:
   sdk: ^3.11.5
@@ -37,6 +37,9 @@ dependencies:
   flutter_image_compress: ^2.4.0
   image_picker: ^1.0.0
   google_sign_in: ^6.2.2
+
+  # Deep links (share mission landing)
+  app_links: ^7.0.0
 
   # Ads
   google_mobile_ads: ^5.1.0

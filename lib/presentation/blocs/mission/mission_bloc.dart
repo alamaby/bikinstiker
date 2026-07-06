@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/services/share_mission_service.dart';
 import '../../../data/models/daily_checkin_streak.dart';
 import '../../../data/models/mission.dart';
 import '../../../data/models/mission_progress.dart';
@@ -40,11 +43,59 @@ class MissionDailyCheckinClaimRequested extends MissionEvent {
   const MissionDailyCheckinClaimRequested();
 }
 
+class MissionShareRequested extends MissionEvent {
+  final String userId;
+  final String missionId;
+  const MissionShareRequested(this.userId, this.missionId);
+  @override
+  List<Object?> get props => [userId, missionId];
+}
+
+/// Emitted by the share mission bloc handler when a deep-link claim has been
+/// processed server-side. [missionId] is the mission the reward belongs to;
+/// [creditsAwarded] is the number of credits granted (0 on error).
+class MissionShareClaimReceived extends MissionEvent {
+  final String missionId;
+  final int creditsAwarded;
+  final bool success;
+  final String? errorCode;
+  const MissionShareClaimReceived({
+    required this.missionId,
+    required this.creditsAwarded,
+    required this.success,
+    this.errorCode,
+  });
+  @override
+  List<Object?> get props => [missionId, creditsAwarded, success, errorCode];
+}
+
+class MissionSharePromptDismissed extends MissionEvent {
+  final String missionId;
+  const MissionSharePromptDismissed(this.missionId);
+  @override
+  List<Object?> get props => [missionId];
+}
+
 class MissionErrorCleared extends MissionEvent {
   const MissionErrorCleared();
 }
 
 enum MissionStatus { initial, loading, loaded, error }
+
+/// Identifies a share mission waiting for the deep-link round-trip so the
+/// UI can show the user the right CTA and dismiss appropriately.
+class SharePrompt extends Equatable {
+  final String missionId;
+  final String shareUrl;
+  final DateTime expiresAt;
+  const SharePrompt({
+    required this.missionId,
+    required this.shareUrl,
+    required this.expiresAt,
+  });
+  @override
+  List<Object?> get props => [missionId, shareUrl, expiresAt];
+}
 
 class MissionState extends Equatable {
   final MissionStatus status;
@@ -55,6 +106,7 @@ class MissionState extends Equatable {
   final String? successMessage;
   final Set<String> pendingMissionIds;
   final Map<String, DateTime> lastClaimAt;
+  final SharePrompt? sharePrompt;
 
   const MissionState({
     this.status = MissionStatus.initial,
@@ -65,6 +117,7 @@ class MissionState extends Equatable {
     this.successMessage,
     this.pendingMissionIds = const {},
     this.lastClaimAt = const {},
+    this.sharePrompt,
   });
 
   int completionsFor(String missionId) {
@@ -131,6 +184,9 @@ class MissionState extends Equatable {
     String? successMessage,
     Set<String>? pendingMissionIds,
     Map<String, DateTime>? lastClaimAt,
+    SharePrompt? sharePrompt,
+    bool clearSharePrompt = false,
+    bool clearSuccess = false,
   }) {
     return MissionState(
       status: status ?? this.status,
@@ -140,11 +196,14 @@ class MissionState extends Equatable {
       errorMessage: identical(errorMessage, _undefined)
           ? this.errorMessage
           : errorMessage,
-      successMessage: identical(successMessage, _undefined)
-          ? this.successMessage
-          : successMessage,
+      successMessage: clearSuccess
+          ? null
+          : (identical(successMessage, _undefined)
+                ? this.successMessage
+                : successMessage),
       pendingMissionIds: pendingMissionIds ?? this.pendingMissionIds,
       lastClaimAt: lastClaimAt ?? this.lastClaimAt,
+      sharePrompt: clearSharePrompt ? null : (sharePrompt ?? this.sharePrompt),
     );
   }
 
@@ -158,19 +217,39 @@ class MissionState extends Equatable {
     successMessage,
     pendingMissionIds,
     lastClaimAt,
+    sharePrompt,
   ];
 }
 
 class MissionBloc extends Bloc<MissionEvent, MissionState> {
   final MissionRepository _repo;
   final RewardedAdRepository _adRepo;
+  final ShareMissionService _shareService;
 
-  MissionBloc(this._repo, this._adRepo) : super(const MissionState()) {
+  StreamSubscription<ShareClaimResult>? _claimSub;
+
+  MissionBloc(this._repo, this._adRepo, {ShareMissionService? shareService})
+    : _shareService = shareService ?? ShareMissionService(),
+      super(const MissionState()) {
     on<MissionLoadRequested>(_onLoad);
     on<MissionCompleteRequested>(_onComplete);
     on<MissionWatchAdRequested>(_onWatchAd);
     on<MissionDailyCheckinClaimRequested>(_onDailyCheckinClaim);
+    on<MissionShareRequested>(_onShareRequested);
+    on<MissionShareClaimReceived>(_onShareClaimReceived);
+    on<MissionSharePromptDismissed>(_onSharePromptDismissed);
     on<MissionErrorCleared>(_onErrorCleared);
+
+    _claimSub = _shareService.claimStream.listen((claim) {
+      add(
+        MissionShareClaimReceived(
+          missionId: claim.missionId,
+          creditsAwarded: claim.creditsAwarded,
+          success: claim.success,
+          errorCode: claim.errorCode,
+        ),
+      );
+    });
   }
 
   Future<void> _onLoad(
@@ -288,11 +367,92 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
     }
   }
 
+  Future<void> _onShareRequested(
+    MissionShareRequested e,
+    Emitter<MissionState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        pendingMissionIds: {...state.pendingMissionIds, e.missionId},
+        lastClaimAt: {...state.lastClaimAt, e.missionId: DateTime.now()},
+      ),
+    );
+    try {
+      final token = await _repo.requestShareToken(e.missionId);
+      await _shareService.openShareSheet(shareUrl: token.shareUrl);
+      final pending = {...state.pendingMissionIds}..remove(e.missionId);
+      emit(
+        state.copyWith(
+          pendingMissionIds: pending,
+          sharePrompt: SharePrompt(
+            missionId: e.missionId,
+            shareUrl: token.shareUrl,
+            expiresAt: token.expiresAt,
+          ),
+        ),
+      );
+    } catch (err) {
+      final pending = {...state.pendingMissionIds}..remove(e.missionId);
+      emit(
+        state.copyWith(
+          errorMessage: 'Failed to prepare share: $err',
+          pendingMissionIds: pending,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onShareClaimReceived(
+    MissionShareClaimReceived e,
+    Emitter<MissionState> emit,
+  ) async {
+    // Only handle claims that match a pending share prompt; ignore stale or
+    // mismatched deep links so we don't double-fire.
+    final prompt = state.sharePrompt;
+    if (prompt == null || prompt.missionId != e.missionId) return;
+
+    emit(state.copyWith(clearSharePrompt: true));
+    if (!e.success) {
+      emit(state.copyWith(errorMessage: _shareErrorMessage(e.errorCode)));
+      return;
+    }
+
+    emit(
+      state.copyWith(successMessage: 'share_claim_success:${e.creditsAwarded}'),
+    );
+  }
+
+  String _shareErrorMessage(String? code) {
+    switch (code) {
+      case 'expired':
+        return 'Your share link expired before it was opened. Please try sharing again.';
+      case 'consumed':
+        return 'This share link was already used.';
+      case 'not_found':
+        return 'This share link is invalid.';
+      case 'cooldown':
+        return 'You can only earn the share reward once every 24 hours.';
+      case 'daily_limit':
+        return 'Daily limit reached. Try again tomorrow.';
+      default:
+        return 'Share verification failed. Please try again.';
+    }
+  }
+
+  Future<void> _onSharePromptDismissed(
+    MissionSharePromptDismissed e,
+    Emitter<MissionState> emit,
+  ) async {
+    if (state.sharePrompt?.missionId == e.missionId) {
+      emit(state.copyWith(clearSharePrompt: true));
+    }
+  }
+
   Future<void> _onDailyCheckinClaim(
     MissionDailyCheckinClaimRequested e,
     Emitter<MissionState> emit,
   ) async {
-    emit(state.copyWith(successMessage: null));
+    emit(state.copyWith(successMessage: null, clearSuccess: true));
     try {
       final result = await _repo.claimDailyCheckin();
       // Refresh streak after claim
@@ -313,5 +473,11 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
     Emitter<MissionState> emit,
   ) async {
     emit(state.copyWith(errorMessage: null));
+  }
+
+  @override
+  Future<void> close() async {
+    await _claimSub?.cancel();
+    return super.close();
   }
 }

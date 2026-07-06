@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/mission.dart';
 import '../../../data/models/user_subscription.dart';
+import '../../../main.dart' show pendingColdStartShareClaim;
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/mission/mission_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
@@ -28,6 +30,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
   bool _showCheckinCelebration = false;
   int? _pendingCheckinDay;
   int? _justClaimedDay;
+  bool _coldStartClaimDrained = false;
 
   @override
   void initState() {
@@ -89,6 +92,11 @@ class _MissionsScreenState extends State<MissionsScreen> {
               } else if (msg.startsWith('mission_success:')) {
                 final credits = msg.split(':').last;
                 _showSuccessSnackBar(context, 'Mission completed!', credits);
+              } else if (msg.startsWith('share_claim_success:')) {
+                final credits = msg.split(':').last;
+                _showSuccessSnackBar(context, 'Share reward claimed!', credits);
+                // Force a reload so the new user_mission_progress row shows.
+                context.read<MissionBloc>().add(MissionLoadRequested(userId));
               }
 
               Future.delayed(const Duration(seconds: 3), () {
@@ -120,6 +128,28 @@ class _MissionsScreenState extends State<MissionsScreen> {
                       return Center(child: Text(state.errorMessage ?? 'Error'));
                     }
 
+                    // Drain the cold-start share claim once we have loaded
+                    // missions (so we know the mission id exists) and the
+                    // MissionBloc has been mounted.
+                    if (!_coldStartClaimDrained) {
+                      _coldStartClaimDrained = true;
+                      final pending = pendingColdStartShareClaim;
+                      if (pending != null) {
+                        pendingColdStartShareClaim = null;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!context.mounted) return;
+                          context.read<MissionBloc>().add(
+                            MissionShareClaimReceived(
+                              missionId: pending.missionId,
+                              creditsAwarded: pending.creditsAwarded,
+                              success: pending.success,
+                              errorCode: pending.errorCode,
+                            ),
+                          );
+                        });
+                      }
+                    }
+
                     final userTier =
                         subState.subscription?.tier ?? SubscriptionTier.free;
 
@@ -148,10 +178,14 @@ class _MissionsScreenState extends State<MissionsScreen> {
                             ),
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 child: Column(
                                   children: [
-                                    const AdsBannerWidget(location: AdBannerLocation.missions),
+                                    const AdsBannerWidget(
+                                      location: AdBannerLocation.missions,
+                                    ),
                                     const SizedBox(height: 12),
                                   ],
                                 ),
@@ -182,6 +216,20 @@ class _MissionsScreenState extends State<MissionsScreen> {
                             ),
                           ],
 
+                          // Active share prompt (Quick Rewards banner)
+                          if (state.sharePrompt != null)
+                            SliverToBoxAdapter(
+                              child: _SharePromptBanner(
+                                prompt: state.sharePrompt!,
+                                onDismiss: () =>
+                                    context.read<MissionBloc>().add(
+                                      MissionSharePromptDismissed(
+                                        state.sharePrompt!.missionId,
+                                      ),
+                                    ),
+                              ),
+                            ),
+
                           // Quick Rewards section
                           if (quickRewards.isNotEmpty) ...[
                             SliverToBoxAdapter(
@@ -197,6 +245,9 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                 index,
                               ) {
                                 final mission = quickRewards[index];
+                                final isAwaitingShareClaim =
+                                    mission.code == 'share_app_daily' &&
+                                    state.sharePrompt?.missionId == mission.id;
                                 return _MissionTile(
                                   mission: mission,
                                   completions: state.completionsFor(mission.id),
@@ -215,8 +266,17 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                     mission.id,
                                     mission,
                                   ),
+                                  awaitingShareClaim: isAwaitingShareClaim,
                                   onComplete: () {
-                                    if (mission.code == 'watch_video_ad') {
+                                    if (mission.code == 'share_app_daily') {
+                                      context.read<MissionBloc>().add(
+                                        MissionShareRequested(
+                                          userId,
+                                          mission.id,
+                                        ),
+                                      );
+                                    } else if (mission.code ==
+                                        'watch_video_ad') {
                                       context.read<MissionBloc>().add(
                                         MissionWatchAdRequested(
                                           userId,
@@ -395,6 +455,82 @@ class _MissionsScreenState extends State<MissionsScreen> {
   }
 }
 
+/// Banner shown above the Quick Rewards section while a share mission is
+/// waiting for the recipient to open the shared link.
+class _SharePromptBanner extends StatelessWidget {
+  final SharePrompt prompt;
+  final VoidCallback onDismiss;
+
+  const _SharePromptBanner({required this.prompt, required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = prompt.shareUrl;
+    final expiresAt = prompt.expiresAt;
+    final minutesLeft = expiresAt.difference(DateTime.now()).inMinutes;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Material(
+        color: AppColors.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.link, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Waiting for your share to be opened',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Open the link you shared from WhatsApp / IG / etc to claim your 5 credits. '
+                      'Link expires in ~${minutesLeft.clamp(0, 10)} min.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy, size: 20),
+                tooltip: 'Copy link',
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: url));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Link copied'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                tooltip: 'Dismiss',
+                onPressed: onDismiss,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _MissionTile extends StatelessWidget {
   final Mission mission;
   final int completions;
@@ -404,6 +540,7 @@ class _MissionTile extends StatelessWidget {
   final Duration? cooldownRemaining;
   final bool isDailyLimitReached;
   final bool isCompleted;
+  final bool awaitingShareClaim;
   final VoidCallback onComplete;
 
   const _MissionTile({
@@ -415,6 +552,7 @@ class _MissionTile extends StatelessWidget {
     this.cooldownRemaining,
     this.isDailyLimitReached = false,
     this.isCompleted = false,
+    this.awaitingShareClaim = false,
     required this.onComplete,
   });
 
@@ -425,7 +563,8 @@ class _MissionTile extends StatelessWidget {
         !isCompleted &&
         !isPending &&
         !isDebounced &&
-        !isDailyLimitReached;
+        !isDailyLimitReached &&
+        !awaitingShareClaim;
 
     String buttonLabel = 'Claim';
     if (mission.code == 'watch_video_ad') {
@@ -498,6 +637,15 @@ class _MissionTile extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   )
+                else if (awaitingShareClaim)
+                  const Text(
+                    'Awaiting link click',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
                 else if (isDailyLimitReached)
                   const Text(
                     'Daily limit reached',
@@ -551,3 +699,6 @@ class _MissionTile extends StatelessWidget {
     return '${minutes}m ${seconds}s';
   }
 }
+
+final dynamic _unused;
+final dynamic _unused;

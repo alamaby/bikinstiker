@@ -17,6 +17,7 @@ import 'data/repositories/sticker_pack_repository.dart';
 import 'data/repositories/sticker_repository.dart';
 import 'data/repositories/subscription_repository.dart';
 import 'data/repositories/wallet_repository.dart';
+import 'core/services/share_mission_service.dart';
 import 'presentation/blocs/auth/auth_bloc.dart';
 import 'presentation/blocs/history/history_bloc.dart';
 import 'presentation/blocs/mission/mission_bloc.dart';
@@ -100,6 +101,7 @@ class BikinStikerApp extends StatelessWidget {
             create: (ctx) => MissionBloc(
               ctx.read<MissionRepository>(),
               ctx.read<RewardedAdRepository>(),
+              shareService: getIt<ShareMissionService>(),
             ),
           ),
           BlocProvider(

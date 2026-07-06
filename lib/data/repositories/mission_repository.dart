@@ -4,6 +4,8 @@ import '../models/daily_checkin_streak.dart';
 import '../models/mission.dart';
 import '../models/mission_progress.dart';
 
+import '../models/share_token.dart';
+
 abstract class MissionRepository {
   Future<List<Mission>> fetchMissions();
   Future<List<MissionProgress>> fetchUserProgress(String userId);
@@ -13,6 +15,7 @@ abstract class MissionRepository {
   });
   Future<DailyCheckinStreak> fetchDailyCheckinStreak();
   Future<DailyCheckinClaimResult> claimDailyCheckin();
+  Future<ShareTokenInfo> requestShareToken(String missionId);
 }
 
 class SupabaseMissionRepository implements MissionRepository {
@@ -81,5 +84,17 @@ class SupabaseMissionRepository implements MissionRepository {
       throw Exception('No response from server');
     }
     return DailyCheckinClaimResult.fromJson(rows.first);
+  }
+
+  @override
+  Future<ShareTokenInfo> requestShareToken(String missionId) async {
+    final List<Map<String, dynamic>> rows = await _client.rpc(
+      'request_share_token',
+      params: {'p_mission_id': missionId},
+    );
+    if (rows.isEmpty) {
+      throw Exception('No share token returned by server');
+    }
+    return ShareTokenInfo.fromJson(rows.first);
   }
 }

@@ -7,6 +7,7 @@ import '../../../core/services/share_mission_service.dart';
 import '../../../data/models/daily_checkin_streak.dart';
 import '../../../data/models/mission.dart';
 import '../../../data/models/mission_progress.dart';
+import '../../../data/models/share_token.dart';
 import '../../../data/repositories/mission_repository.dart';
 import '../../../data/repositories/rewarded_ad_repository.dart';
 

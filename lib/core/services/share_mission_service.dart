@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
 import 'package:share_plus/share_plus.dart';
@@ -66,12 +67,11 @@ class ShareMissionService {
     Rect? sharePositionOrigin,
   }) async {
     final text = message != null ? '$message\n$shareUrl' : shareUrl;
-    final params = ShareParams(
-      text: text,
+    final result = await Share.share(
+      text,
       subject: 'BikinStiker - share to earn',
       sharePositionOrigin: sharePositionOrigin,
     );
-    final result = await SharePlus.instance.share(params);
     return result.status == ShareResultStatus.success ||
         result.status == ShareResultStatus.dismissed;
   }

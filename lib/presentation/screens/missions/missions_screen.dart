@@ -699,6 +699,3 @@ class _MissionTile extends StatelessWidget {
     return '${minutes}m ${seconds}s';
   }
 }
-
-final dynamic _unused;
-final dynamic _unused;

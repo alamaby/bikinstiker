@@ -1,0 +1,36 @@
+name: Ping Supabase
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping sticker_presets
+        run: |
+          curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/sticker_presets?select=count&limit=0" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+      - name: Ping user_profiles
+        run: |
+          curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/user_profiles?select=count&limit=0" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+      - name: Ping user_wallets
+        run: |
+          curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/user_wallets?select=count&limit=0" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+      - name: Ping sticker_generations
+        run: |
+          curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/sticker_generations?select=count&limit=0" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+      - name: Ping credit_transactions
+        run: |
+          curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/credit_transactions?select=count&limit=0" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"

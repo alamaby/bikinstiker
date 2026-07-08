@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/models/daily_checkin_streak.dart';
 import '../../../../data/models/mission.dart';
+import '../../../../data/models/user_subscription.dart';
 
 const _dayMarkers = [
   (themed: '\u{1F305}', numeric: '\u{1F51F}'), // Day 1: sunrise + 1
@@ -18,6 +19,7 @@ const _dayMarkers = [
 
 class DailyCheckinCard extends StatelessWidget {
   final Mission mission;
+  final SubscriptionTier userTier;
   final DailyCheckinStreak? streak;
   final int? justClaimedDay;
   final VoidCallback? onClaim;
@@ -25,6 +27,7 @@ class DailyCheckinCard extends StatelessWidget {
   const DailyCheckinCard({
     super.key,
     required this.mission,
+    required this.userTier,
     this.streak,
     this.justClaimedDay,
     this.onClaim,
@@ -98,7 +101,7 @@ class DailyCheckinCard extends StatelessWidget {
                 Icon(Icons.bolt, size: 16, color: AppColors.secondary),
                 const SizedBox(width: 4),
                 Text(
-                  '+${mission.rewardCredits} credit${mission.rewardCredits == 1 ? '' : 's'}/day',
+                  '+${mission.rewardForTier(userTier)} credit${mission.rewardForTier(userTier) == 1 ? '' : 's'}/day',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,

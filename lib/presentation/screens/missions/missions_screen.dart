@@ -199,6 +199,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                 final m = dailyLogin[index];
                                 return DailyCheckinCard(
                                   mission: m,
+                                  userTier: userTier,
                                   streak: state.streak,
                                   justClaimedDay: _justClaimedDay,
                                   onClaim: () {
@@ -250,6 +251,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                     state.sharePrompt?.missionId == mission.id;
                                 return _MissionTile(
                                   mission: mission,
+                                  userTier: userTier,
                                   completions: state.completionsFor(mission.id),
                                   canAccess: mission.canAccess(userTier),
                                   isPending: state.isMissionPending(mission.id),
@@ -314,6 +316,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                 final mission = achievements[index];
                                 return _MissionTile(
                                   mission: mission,
+                                  userTier: userTier,
                                   completions: state.completionsFor(mission.id),
                                   canAccess: mission.canAccess(userTier),
                                   isPending: state.isMissionPending(mission.id),
@@ -533,6 +536,7 @@ class _SharePromptBanner extends StatelessWidget {
 
 class _MissionTile extends StatelessWidget {
   final Mission mission;
+  final SubscriptionTier userTier;
   final int completions;
   final bool canAccess;
   final bool isPending;
@@ -545,6 +549,7 @@ class _MissionTile extends StatelessWidget {
 
   const _MissionTile({
     required this.mission,
+    required this.userTier,
     required this.completions,
     required this.canAccess,
     required this.isPending,
@@ -612,7 +617,7 @@ class _MissionTile extends StatelessWidget {
                 Icon(Icons.bolt, size: 16, color: AppColors.secondary),
                 const SizedBox(width: 4),
                 Text(
-                  '+${mission.rewardCredits} credit${mission.rewardCredits == 1 ? '' : 's'}',
+                  '+${mission.rewardForTier(userTier)} credit${mission.rewardForTier(userTier) == 1 ? '' : 's'}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,

@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// Falls back to test IDs when env vars are absent (dev mode).
 class AdConfigService {
   static const _testAdUnitIds = {
-    'android': 'ca-app-pub-3940256099942544/5224354917',
+    'android': 'ca-app-pub-3940256099942544/6300978111',
     'ios': 'ca-app-pub-3940256099942544/2934735716',
   };
 
@@ -28,7 +28,32 @@ class AdConfigService {
     return value;
   }
 
-  /// Whether a real production ad unit is configured for this location.
+  /// Rewarded ad unit ID from env, falling back to test IDs.
+  String rewardedAdUnitId() {
+    final key = Platform.isIOS
+        ? 'ADMOB_REWARDED_IOS'
+        : 'ADMOB_REWARDED_ANDROID';
+    final value = dotenv.env[key] ?? '';
+    if (value.isEmpty || value.contains('XXXXXXX')) {
+      if (Platform.isIOS) {
+        return 'ca-app-pub-3940256099942544/1712485313';
+      }
+      return 'ca-app-pub-3940256099942544/5224354917';
+    }
+    return value;
+  }
+
+  /// Whether a real production rewarded ad unit is configured.
+  bool get hasProductionRewardedId {
+    final key = Platform.isIOS
+        ? 'ADMOB_REWARDED_IOS'
+        : 'ADMOB_REWARDED_ANDROID';
+    final value = dotenv.env[key] ?? '';
+    return value.isNotEmpty &&
+        !value.contains('XXXXXXX') &&
+        value.contains('/');
+  }
+
   bool hasProductionBannerId(AdBannerLocation location) {
     final value = dotenv.env[_bannerEnvKey(location)] ?? '';
     return value.isNotEmpty &&
@@ -58,10 +83,4 @@ class AdConfigService {
 }
 
 /// Enum matching the 5 banner ad placement locations.
-enum AdBannerLocation {
-  home,
-  history,
-  missions,
-  profile,
-  packs,
-}
+enum AdBannerLocation { home, history, missions, profile, packs }

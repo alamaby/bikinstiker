@@ -3,12 +3,17 @@ import 'dart:io' show Platform;
 
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../../core/di.dart';
+import '../../core/services/ad_config_service.dart';
+
 /// Repository for handling rewarded video ads via Google Mobile Ads (AdMob).
 class RewardedAdRepository {
   RewardedAd? _rewardedAd;
   bool _isLoading = false;
   bool _adLoaded = false;
   String? lastErrorMessage;
+
+  final AdConfigService _adConfig = getIt<AdConfigService>();
 
   /// Initialize the Mobile Ads SDK. Call once at app startup.
   static Future<void> initialize() async {
@@ -37,7 +42,7 @@ class RewardedAdRepository {
     final completer = Completer<bool>();
 
     RewardedAd.load(
-      adUnitId: _testAdUnitId(),
+      adUnitId: _adConfig.rewardedAdUnitId(),
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -130,16 +135,6 @@ class RewardedAdRepository {
   String _formatFullScreenError(String stage, AdError error) {
     return 'Failed to $stage ad: code=${error.code}, '
         'domain=${error.domain}, message=${error.message}';
-  }
-
-  String _testAdUnitId() {
-    // Test ad unit IDs from Google:
-    // Android: ca-app-pub-3940256099942544/5224354917
-    // iOS:     ca-app-pub-3940256099942544/1712485313
-    if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712485313';
-    }
-    return 'ca-app-pub-3940256099942544/5224354917';
   }
 
   void dispose() {

@@ -26,7 +26,10 @@ class SupabaseMissionRepository implements MissionRepository {
   Future<List<Mission>> fetchMissions() async {
     final rows = await _client
         .from('missions')
-        .select()
+        .select('''
+          *,
+          mission_rewards!left (*)
+        ''')
         .eq('is_active', true)
         .order('sort_order', ascending: true);
     return (rows as List)

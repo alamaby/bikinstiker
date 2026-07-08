@@ -1,3 +1,4 @@
+import 'mission_reward.dart';
 import 'user_subscription.dart';
 
 class Mission {
@@ -12,6 +13,7 @@ class Mission {
   final int? maxCompletionsPerDay;
   final String validationType;
   final int sortOrder;
+  final List<MissionReward> rewards;
 
   const Mission({
     required this.id,
@@ -25,6 +27,7 @@ class Mission {
     this.maxCompletionsPerDay,
     this.validationType = 'manual',
     required this.sortOrder,
+    this.rewards = const [],
   });
 
   bool canAccess(SubscriptionTier userTier) {
@@ -32,7 +35,32 @@ class Mission {
     return userTier == SubscriptionTier.plus;
   }
 
+  int rewardForTier(SubscriptionTier userTier) {
+    final tierStr = userTier == SubscriptionTier.plus ? 'plus' : 'free';
+    MissionReward? best;
+    for (final r in rewards) {
+      if (!r.isEffective) continue;
+      if (!r.appliesToTier(tierStr)) continue;
+      if (r.tier == tierStr) {
+        best = r;
+        break;
+      }
+      best ??= r;
+    }
+    return best?.rewardCredits ?? rewardCredits;
+  }
+
   factory Mission.fromJson(Map<String, dynamic> json) {
+    List<MissionReward> parsedRewards = const [];
+    if (json['mission_rewards'] != null) {
+      final raw = json['mission_rewards'];
+      if (raw is List) {
+        parsedRewards = raw
+            .map((r) => MissionReward.fromJson(r as Map<String, dynamic>))
+            .toList();
+      }
+    }
+
     return Mission(
       id: json['id'] as String,
       code: json['code'] as String,
@@ -47,6 +75,7 @@ class Mission {
       maxCompletionsPerDay: json['max_completions_per_day'] as int?,
       validationType: json['validation_type'] as String? ?? 'manual',
       sortOrder: json['sort_order'] as int? ?? 100,
+      rewards: parsedRewards,
     );
   }
 }

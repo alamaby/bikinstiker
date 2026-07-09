@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -105,10 +106,24 @@ class RewardedAdRepository {
     return completer.future;
   }
 
-  /// Load and show in one call. Returns true if reward earned.
-  Future<bool> loadAndShow() async {
+  /// Load and show in one call, tagging the impression with [userId] and
+  /// [missionId] so the AdMob Server-Side Verification (SSV) callback can
+  /// grant the mission reward without trusting the client's local
+  /// `onUserEarnedReward` callback (see `supabase/functions/admob-ssv`).
+  /// Returns true if the SDK reports the reward as earned locally; the
+  /// actual credit grant happens server-side once Google's SSV callback
+  /// arrives, which may lag a few seconds behind this call returning.
+  Future<bool> loadAndShow({
+    required String userId,
+    required String missionId,
+  }) async {
     final loaded = await loadAd();
     if (!loaded) return false;
+    await _rewardedAd?.setServerSideOptions(
+      ServerSideVerificationOptions(
+        customData: jsonEncode({'userId': userId, 'missionId': missionId}),
+      ),
+    );
     return showAd();
   }
 

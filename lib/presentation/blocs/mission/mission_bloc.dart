@@ -326,8 +326,15 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
       ),
     );
 
-    // Show rewarded ad
-    final rewardEarned = await _adRepo.loadAndShow();
+    // Show rewarded ad, tagged with server-side verification (SSV) options so
+    // the credit is granted by the admob-ssv Edge Function once Google
+    // confirms the impression — never by this client directly (see C2 in
+    // the 2026-07-08 code review: complete_mission no longer accepts
+    // client-claimed ad_reward completions).
+    final rewardEarned = await _adRepo.loadAndShow(
+      userId: e.userId,
+      missionId: e.missionId,
+    );
     if (!rewardEarned) {
       final detail = _adRepo.lastErrorMessage;
       emit(
@@ -341,28 +348,43 @@ class MissionBloc extends Bloc<MissionEvent, MissionState> {
       return;
     }
 
-    // Reward earned, complete mission
-    try {
-      final newProgress = await _repo.completeMission(
-        userId: e.userId,
-        missionId: e.missionId,
-      );
-      final pending = {...state.pendingMissionIds}..remove(e.missionId);
+    // The SSV callback lands asynchronously (typically within a few
+    // seconds). Poll briefly for the new progress row rather than trusting
+    // the local onUserEarnedReward callback to grant credit.
+    final previousCount = state.completionsFor(e.missionId);
+    MissionProgress? granted;
+    for (var attempt = 0; attempt < 5 && granted == null; attempt++) {
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final progress = await _repo.fetchUserProgress(e.userId);
+        final matching =
+            progress.where((p) => p.missionId == e.missionId).toList()
+              ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+        if (matching.length > previousCount) {
+          granted = matching.first;
+          emit(state.copyWith(progress: progress));
+        }
+      } catch (_) {
+        // Transient fetch failure; keep polling until attempts are exhausted.
+      }
+    }
+
+    final pending = {...state.pendingMissionIds}..remove(e.missionId);
+    if (granted != null) {
       emit(
         state.copyWith(
           status: MissionStatus.loaded,
-          progress: [...state.progress, newProgress],
           pendingMissionIds: pending,
-          successMessage: 'mission_success:${newProgress.creditsAwarded}',
+          successMessage: 'mission_success:${granted.creditsAwarded}',
         ),
       );
-    } catch (err) {
-      final pending = {...state.pendingMissionIds}..remove(e.missionId);
+    } else {
       emit(
         state.copyWith(
           status: MissionStatus.loaded,
-          errorMessage: err.toString(),
           pendingMissionIds: pending,
+          errorMessage:
+              'Reward is still being verified. Check back in a moment.',
         ),
       );
     }

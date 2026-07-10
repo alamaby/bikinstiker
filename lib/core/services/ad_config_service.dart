@@ -62,17 +62,18 @@ class AdConfigService {
   }
 
   String _bannerEnvKey(AdBannerLocation location) {
+    final platform = Platform.isIOS ? 'IOS' : 'ANDROID';
     switch (location) {
       case AdBannerLocation.home:
-        return 'ADMOB_BANNER_HOME';
+        return 'ADMOB_BANNER_HOME_$platform';
       case AdBannerLocation.history:
-        return 'ADMOB_BANNER_HISTORY';
+        return 'ADMOB_BANNER_HISTORY_$platform';
       case AdBannerLocation.missions:
-        return 'ADMOB_BANNER_MISSIONS';
+        return 'ADMOB_BANNER_MISSIONS_$platform';
       case AdBannerLocation.profile:
-        return 'ADMOB_BANNER_PROFILE';
+        return 'ADMOB_BANNER_PROFILE_$platform';
       case AdBannerLocation.packs:
-        return 'ADMOB_BANNER_PACKS';
+        return 'ADMOB_BANNER_PACKS_$platform';
     }
   }
 

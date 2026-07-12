@@ -783,8 +783,6 @@ class _ProfileView extends StatelessWidget {
         return 'Expired';
       case CreditTxType.locked:
         return 'Locked';
-      case CreditTxType.adminGrant:
-        return 'Admin Grant';
       case CreditTxType.unknown:
         return 'Unknown';
     }

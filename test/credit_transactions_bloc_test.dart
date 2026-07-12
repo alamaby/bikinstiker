@@ -63,7 +63,6 @@ void main() {
       expect(capturedTypes, contains(CreditTxType.dailyReward));
       expect(capturedTypes, contains(CreditTxType.subscriptionGrant));
       expect(capturedTypes, contains(CreditTxType.missionReward));
-      expect(capturedTypes, contains(CreditTxType.adminGrant));
       expect(capturedTypes, contains(CreditTxType.refund));
       // Spent type should NOT be in earnings
       expect(capturedTypes!.contains(CreditTxType.generateSticker), isFalse);

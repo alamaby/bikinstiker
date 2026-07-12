@@ -37,8 +37,6 @@ class SupabaseCreditTransactionRepository
         return 'expired';
       case CreditTxType.locked:
         return 'locked';
-      case CreditTxType.adminGrant:
-        return 'admin_grant';
       default:
         return 'unknown';
     }

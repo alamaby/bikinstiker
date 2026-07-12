@@ -9,7 +9,6 @@ enum CreditTxType {
   missionReward,
   expired,
   locked,
-  adminGrant,
   unknown,
 }
 
@@ -31,8 +30,6 @@ CreditTxType _typeFrom(String raw) {
       return CreditTxType.expired;
     case 'locked':
       return CreditTxType.locked;
-    case 'admin_grant':
-      return CreditTxType.adminGrant;
     default:
       return CreditTxType.unknown;
   }

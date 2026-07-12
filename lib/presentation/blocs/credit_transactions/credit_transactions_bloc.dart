@@ -203,7 +203,6 @@ class CreditTransactionsBloc
           CreditTxType.refund,
           CreditTxType.subscriptionGrant,
           CreditTxType.missionReward,
-          CreditTxType.adminGrant,
         };
       case CreditTransactionsFilter.spent:
         return const {CreditTxType.generateSticker};

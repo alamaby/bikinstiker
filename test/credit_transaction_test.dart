@@ -14,7 +14,6 @@ void main() {
         ('mission_reward', CreditTxType.missionReward),
         ('expired', CreditTxType.expired),
         ('locked', CreditTxType.locked),
-        ('admin_grant', CreditTxType.adminGrant),
       ];
 
       for (final (raw, expected) in mappings) {

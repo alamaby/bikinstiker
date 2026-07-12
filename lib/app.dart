@@ -10,6 +10,7 @@ import 'data/repositories/credit_transaction_repository.dart';
 import 'data/repositories/legal_consent_repository.dart';
 import 'data/repositories/mission_repository.dart';
 import 'data/repositories/preset_repository.dart';
+import 'data/repositories/onboarding_repository.dart';
 import 'data/repositories/profile_repository.dart';
 import 'data/repositories/rewarded_ad_repository.dart';
 import 'data/repositories/sticker_feedback_repository.dart';
@@ -30,6 +31,7 @@ import 'presentation/blocs/wallet/wallet_bloc.dart';
 import 'presentation/screens/auth/auth_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/legal/legal_consent_screen.dart';
+import 'presentation/screens/onboarding/onboarding_screen.dart';
 
 class BikinStikerApp extends StatelessWidget {
   const BikinStikerApp({super.key});
@@ -227,8 +229,15 @@ class _AuthGateState extends State<_AuthGate> {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );
-            case AuthStatus.authenticated:
+            case AuthStatus.authenticated: {
+              final onboarding = getIt<OnboardingRepository>();
+              if (!onboarding.hasCompletedCoreFlow) {
+                return OnboardingScreen(
+                  onFinished: () => setState(() {}),
+                );
+              }
               return const HomeScreen();
+            }
             case AuthStatus.unauthenticated:
               if (!_anonymousRequested) {
                 _anonymousRequested = true;
@@ -253,8 +262,15 @@ class _AuthGateState extends State<_AuthGate> {
                   ),
                 ),
               );
-            case AuthStatus.guest:
+            case AuthStatus.guest: {
+              final onboarding = getIt<OnboardingRepository>();
+              if (!onboarding.hasCompletedCoreFlow) {
+                return OnboardingScreen(
+                  onFinished: () => setState(() {}),
+                );
+              }
               return const HomeScreen();
+            }
             case AuthStatus.submitting:
               if (_startingGuestSession) {
                 return const Scaffold(

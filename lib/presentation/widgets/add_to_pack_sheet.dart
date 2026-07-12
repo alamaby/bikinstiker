@@ -342,9 +342,13 @@ class _AddToPackSheetState extends State<AddToPackSheet>
         );
 
     Navigator.of(context).pop();
+    final newCount = pack.stickerCount + 1;
+    final msg = newCount >= 3
+        ? '"${pack.name}" is ready to export to WhatsApp.'
+        : 'Added to "${pack.name}". Add ${3 - newCount} more sticker${3 - newCount == 1 ? '' : 's'} to export.';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Added to "${pack.name}"'),
+        content: Text(msg),
         backgroundColor: AppColors.success,
       ),
     );

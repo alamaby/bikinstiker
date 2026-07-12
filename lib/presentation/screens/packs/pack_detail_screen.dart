@@ -440,6 +440,34 @@ class _PackHeader extends StatelessWidget {
               ],
             ),
           ),
+        ] else if (itemCount >= 3) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Your pack is ready. Export it to WhatsApp.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ],
     );

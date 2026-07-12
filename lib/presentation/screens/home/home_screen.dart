@@ -913,6 +913,36 @@ class _ResultPanel extends StatelessWidget {
                           const SizedBox(height: 12),
                         ],
                         if (!isGuest) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.lightbulb_outline,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Next: add this sticker to a pack',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(

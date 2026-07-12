@@ -12,6 +12,7 @@ import '../data/repositories/rewarded_ad_repository.dart';
 import '../data/repositories/sticker_feedback_repository.dart';
 import '../data/repositories/sticker_pack_repository.dart';
 import '../data/repositories/sticker_repository.dart';
+import '../data/repositories/onboarding_repository.dart';
 import '../data/repositories/subscription_repository.dart';
 import '../data/repositories/wallet_repository.dart';
 import 'image_cache.dart';
@@ -63,4 +64,7 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<AdConfigService>(() => AdConfigService());
   getIt.registerLazySingleton<ShareMissionService>(() => ShareMissionService());
+  getIt.registerLazySingleton<OnboardingRepository>(
+    () => SharedPrefsOnboardingRepository(prefs),
+  );
 }

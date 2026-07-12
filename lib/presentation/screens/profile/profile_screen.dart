@@ -17,6 +17,7 @@ import '../../blocs/profile/profile_cubit.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../widgets/ads_banner_widget.dart';
+import '../onboarding/onboarding_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -110,6 +111,8 @@ class _ProfileView extends StatelessWidget {
                 _buildTransactionsSection(context),
                 const SizedBox(height: 24),
                 _buildSettingsSection(context, profile),
+                const SizedBox(height: 24),
+                _buildHelpSection(context),
                 const SizedBox(height: 24),
                 _buildDangerZone(context),
                 const SizedBox(height: 32),
@@ -497,6 +500,30 @@ class _ProfileView extends StatelessWidget {
               onTap: () => _showChangePasswordDialog(context),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpSection(BuildContext context) {
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.help_outline, color: AppColors.primary),
+            title: const Text('How It Works'),
+            subtitle: const Text(
+              'Generate stickers, build a pack, then add it to WhatsApp',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const OnboardingScreen(replay: true),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

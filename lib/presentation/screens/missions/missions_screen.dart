@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../data/models/daily_checkin_streak.dart';
 import '../../../data/models/mission.dart';
 import '../../../data/models/user_subscription.dart';
 import '../../../main.dart' show pendingColdStartShareClaim;
@@ -26,9 +27,8 @@ class MissionsScreen extends StatefulWidget {
 
 class _MissionsScreenState extends State<MissionsScreen> {
   Timer? _ticker;
-  Timer? _celebrationTimer;
-  bool _showCheckinCelebration = false;
-  int? _pendingCheckinDay;
+  Timer? _animTimer;
+  CheckinAnimationType? _activeCheckinAnim;
   int? _justClaimedDay;
   bool _coldStartClaimDrained = false;
 
@@ -43,7 +43,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
-    _celebrationTimer?.cancel();
+    _animTimer?.cancel();
     super.dispose();
   }
 
@@ -87,7 +87,13 @@ class _MissionsScreenState extends State<MissionsScreen> {
 
               if (msg.startsWith('checkin_success:')) {
                 final credits = msg.split(':').last;
-                _showCheckinAnimation();
+                final streak = state.streak;
+                if (streak != null) {
+                  _showCheckinAnimation(
+                    checkinAnimationFor(streak),
+                    streak.currentCycleDay,
+                  );
+                }
                 _showSuccessSnackBar(context, 'Check-in successful!', credits);
               } else if (msg.startsWith('mission_success:')) {
                 final credits = msg.split(':').last;
@@ -203,11 +209,6 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                   streak: state.streak,
                                   justClaimedDay: _justClaimedDay,
                                   onClaim: () {
-                                    final cycleDay =
-                                        state.streak?.currentCycleDay ?? 1;
-                                    _pendingCheckinDay = cycleDay <= 0
-                                        ? 1
-                                        : cycleDay;
                                     context.read<MissionBloc>().add(
                                       const MissionDailyCheckinClaimRequested(),
                                     );
@@ -355,7 +356,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                 );
               },
             ),
-            if (_showCheckinCelebration)
+            if (_activeCheckinAnim == CheckinAnimationType.celebration)
               Positioned.fill(
                 child: IgnorePointer(
                   child: Container(
@@ -370,25 +371,45 @@ class _MissionsScreenState extends State<MissionsScreen> {
                   ),
                 ),
               ),
+            if (_activeCheckinAnim == CheckinAnimationType.flame)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    alignment: Alignment.center,
+                    color: Colors.black.withValues(alpha: 0.04),
+                    child: Lottie.asset(
+                      'assets/animations/fire-flame.json',
+                      width: 200,
+                      height: 200,
+                      repeat: false,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  void _showCheckinAnimation() {
+  void _showCheckinAnimation(
+    CheckinAnimationType type,
+    int claimedDay,
+  ) {
     if (!mounted) return;
-    _celebrationTimer?.cancel();
+    _animTimer?.cancel();
+    final duration = type == CheckinAnimationType.celebration
+        ? const Duration(milliseconds: 1600)
+        : const Duration(milliseconds: 1000);
     setState(() {
-      _showCheckinCelebration = true;
-      _justClaimedDay = _pendingCheckinDay;
+      _activeCheckinAnim = type;
+      _justClaimedDay = claimedDay;
     });
-    _celebrationTimer = Timer(const Duration(milliseconds: 1600), () {
+    _animTimer = Timer(duration, () {
       if (!mounted) return;
       setState(() {
-        _showCheckinCelebration = false;
+        _activeCheckinAnim = null;
         _justClaimedDay = null;
-        _pendingCheckinDay = null;
       });
     });
   }

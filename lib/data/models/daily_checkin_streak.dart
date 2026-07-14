@@ -1,9 +1,19 @@
+enum CheckinAnimationType { flame, celebration }
+
+CheckinAnimationType checkinAnimationFor(DailyCheckinStreak streak) {
+  return streak.cycleCompleted
+      ? CheckinAnimationType.celebration
+      : CheckinAnimationType.flame;
+}
+
 class DailyCheckinStreak {
   final int currentStreak;
   final int currentCycleDay;
   final DateTime? lastCheckedOn;
   final DateTime? cycleCompletedAt;
   final bool checkedInToday;
+  final bool cycleCooldownFinished;
+  final int cooldownRemainingSeconds;
 
   const DailyCheckinStreak({
     required this.currentStreak,
@@ -11,12 +21,17 @@ class DailyCheckinStreak {
     this.lastCheckedOn,
     this.cycleCompletedAt,
     required this.checkedInToday,
+    this.cycleCooldownFinished = true,
+    this.cooldownRemainingSeconds = 0,
   });
 
   bool get cycleCompleted => cycleCompletedAt != null;
 
-  /// Whether the user can claim today (not yet checked in and not in cooldown).
-  bool get canClaim => !checkedInToday;
+  bool get canClaim {
+    if (checkedInToday) return false;
+    if (cycleCompleted) return cycleCooldownFinished;
+    return true;
+  }
 
   factory DailyCheckinStreak.fromJson(Map<String, dynamic> json) {
     return DailyCheckinStreak(
@@ -29,10 +44,11 @@ class DailyCheckinStreak {
           ? DateTime.parse(json['cycle_completed_at'] as String)
           : null,
       checkedInToday: json['checked_in_today'] as bool? ?? false,
+      cycleCooldownFinished: json['cycle_cooldown_finished'] as bool? ?? true,
+      cooldownRemainingSeconds: json['cooldown_remaining_seconds'] as int? ?? 0,
     );
   }
 
-  /// No streak yet (first visit).
   factory DailyCheckinStreak.empty() => const DailyCheckinStreak(
     currentStreak: 0,
     currentCycleDay: 0,

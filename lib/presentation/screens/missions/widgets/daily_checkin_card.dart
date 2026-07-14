@@ -89,6 +89,7 @@ class DailyCheckinCard extends StatelessWidget {
                   dayNumber: day,
                   currentCycleDay: s.currentCycleDay,
                   cycleCompleted: s.cycleCompleted,
+                  cycleCooldownFinished: s.cycleCooldownFinished,
                   checkedInToday: s.checkedInToday,
                   highlightBounce: justClaimedDay == day,
                 );
@@ -108,13 +109,37 @@ class DailyCheckinCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                if (s.cycleCompleted)
-                  const Text(
-                    'Cycle complete!',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w600,
+                if (s.cycleCompleted && !s.cycleCooldownFinished)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'Cycle complete!',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Next in ${_formatCooldown(s.cooldownRemainingSeconds)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black45,
+                        ),
+                      ),
+                    ],
+                  )
+                else if (s.cycleCompleted && s.cycleCooldownFinished)
+                  FilledButton(
+                    onPressed: onClaim,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                    ),
+                    child: const Text(
+                      'Start new cycle',
+                      style: TextStyle(fontSize: 13),
                     ),
                   )
                 else if (!canClaim)
@@ -151,6 +176,7 @@ class _DayBox extends StatefulWidget {
   final int dayNumber;
   final int currentCycleDay;
   final bool cycleCompleted;
+  final bool cycleCooldownFinished;
   final bool checkedInToday;
   final bool highlightBounce;
 
@@ -158,6 +184,7 @@ class _DayBox extends StatefulWidget {
     required this.dayNumber,
     required this.currentCycleDay,
     required this.cycleCompleted,
+    required this.cycleCooldownFinished,
     required this.checkedInToday,
     required this.highlightBounce,
   });
@@ -200,19 +227,22 @@ class _DayBoxState extends State<_DayBox> {
 
   @override
   Widget build(BuildContext context) {
-    final completed =
-        !widget.cycleCompleted && widget.dayNumber < widget.currentCycleDay;
-    final isToday =
-        !widget.cycleCompleted &&
-        widget.dayNumber == widget.currentCycleDay &&
-        !widget.checkedInToday;
-    final wasCheckedToday =
-        !widget.cycleCompleted &&
+    final isFreshStart =
+        widget.cycleCompleted && widget.cycleCooldownFinished;
+    final isCompletedToday = !widget.cycleCompleted &&
         widget.dayNumber == widget.currentCycleDay &&
         widget.checkedInToday;
-    final locked =
-        widget.cycleCompleted ||
-        (widget.dayNumber > widget.currentCycleDay && !wasCheckedToday);
+    final isCompleted =
+        isCompletedToday ||
+        (!widget.cycleCompleted && widget.dayNumber < widget.currentCycleDay);
+    final isToday = isFreshStart
+        ? widget.dayNumber == 1
+        : (!widget.cycleCompleted &&
+            widget.dayNumber == widget.currentCycleDay &&
+            !widget.checkedInToday);
+    final locked = isFreshStart
+        ? widget.dayNumber > 1
+        : (widget.cycleCompleted || widget.dayNumber > widget.currentCycleDay);
 
     final marker = _dayMarkers[widget.dayNumber - 1];
 
@@ -226,7 +256,7 @@ class _DayBoxState extends State<_DayBox> {
           curve: Curves.easeOutBack,
           margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
-            color: completed
+            color: isCompleted
                 ? AppColors.success.withValues(alpha: 0.18)
                 : (isToday
                       ? AppColors.primary.withValues(alpha: 0.12)
@@ -234,7 +264,7 @@ class _DayBoxState extends State<_DayBox> {
             border: Border.all(
               color: isToday
                   ? AppColors.primary
-                  : (completed ? AppColors.success : AppColors.outline),
+                  : (isCompleted ? AppColors.success : AppColors.outline),
               width: isToday ? 2.5 : 1,
             ),
             borderRadius: BorderRadius.circular(10),
@@ -243,7 +273,8 @@ class _DayBoxState extends State<_DayBox> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(marker.themed, style: const TextStyle(fontSize: 18)),
+              Text(isCompletedToday ? '\u{2705}' : marker.themed,
+                style: const TextStyle(fontSize: 18)),
               const SizedBox(height: 2),
               Text(
                 '${widget.dayNumber}',
@@ -252,7 +283,7 @@ class _DayBoxState extends State<_DayBox> {
                   fontWeight: FontWeight.w700,
                   color: locked
                       ? AppColors.outline
-                      : (completed ? AppColors.success : AppColors.onSurface),
+                      : (isCompleted ? AppColors.success : AppColors.onSurface),
                 ),
               ),
             ],
@@ -261,4 +292,11 @@ class _DayBoxState extends State<_DayBox> {
       ),
     );
   }
+}
+
+String _formatCooldown(int seconds) {
+  final h = seconds ~/ 3600;
+  final m = (seconds % 3600) ~/ 60;
+  if (h > 0) return '${h}h ${m}m';
+  return '${m}m';
 }

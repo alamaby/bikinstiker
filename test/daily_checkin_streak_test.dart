@@ -10,6 +10,8 @@ void main() {
         'last_checked_on': '2026-07-04T10:00:00Z',
         'cycle_completed_at': '2026-07-03T10:00:00Z',
         'checked_in_today': true,
+        'cycle_cooldown_finished': false,
+        'cooldown_remaining_seconds': 28800,
       };
       final streak = DailyCheckinStreak.fromJson(json);
 
@@ -19,6 +21,8 @@ void main() {
       expect(streak.lastCheckedOn!.day, 4);
       expect(streak.cycleCompletedAt, isNotNull);
       expect(streak.checkedInToday, isTrue);
+      expect(streak.cycleCooldownFinished, isFalse);
+      expect(streak.cooldownRemainingSeconds, 28800);
     });
 
     test('defaults to zeros when fields are null', () {
@@ -28,6 +32,8 @@ void main() {
         'last_checked_on': null,
         'cycle_completed_at': null,
         'checked_in_today': null,
+        'cycle_cooldown_finished': null,
+        'cooldown_remaining_seconds': null,
       };
       final streak = DailyCheckinStreak.fromJson(json);
 
@@ -36,6 +42,8 @@ void main() {
       expect(streak.lastCheckedOn, isNull);
       expect(streak.cycleCompletedAt, isNull);
       expect(streak.checkedInToday, isFalse);
+      expect(streak.cycleCooldownFinished, isTrue);
+      expect(streak.cooldownRemainingSeconds, 0);
     });
   });
 
@@ -76,7 +84,7 @@ void main() {
   });
 
   group('DailyCheckinStreak.canClaim', () {
-    test('true when checkedInToday is false', () {
+    test('true when checkedInToday is false and no cycle completion', () {
       final streak = DailyCheckinStreak.fromJson({
         'current_streak': 3,
         'current_cycle_day': 4,
@@ -94,6 +102,32 @@ void main() {
         'last_checked_on': '2026-07-04T10:00:00Z',
         'cycle_completed_at': null,
         'checked_in_today': true,
+      });
+      expect(streak.canClaim, isFalse);
+    });
+
+    test('true when cycle completed but cooldown finished', () {
+      final streak = DailyCheckinStreak.fromJson({
+        'current_streak': 7,
+        'current_cycle_day': 7,
+        'last_checked_on': '2026-07-12T10:00:00Z',
+        'cycle_completed_at': '2026-07-12T10:00:00Z',
+        'checked_in_today': false,
+        'cycle_cooldown_finished': true,
+        'cooldown_remaining_seconds': 0,
+      });
+      expect(streak.canClaim, isTrue);
+    });
+
+    test('false when cycle completed and cooldown not finished', () {
+      final streak = DailyCheckinStreak.fromJson({
+        'current_streak': 7,
+        'current_cycle_day': 7,
+        'last_checked_on': '2026-07-12T10:00:00Z',
+        'cycle_completed_at': '2026-07-12T10:00:00Z',
+        'checked_in_today': false,
+        'cycle_cooldown_finished': false,
+        'cooldown_remaining_seconds': 28800,
       });
       expect(streak.canClaim, isFalse);
     });
@@ -129,6 +163,43 @@ void main() {
 
       expect(result.cycleCompleted, isTrue);
       expect(result.creditsAwarded, 5);
+    });
+  });
+
+  group('checkinAnimationFor', () {
+    test('returns flame when cycle not completed', () {
+      final streak = DailyCheckinStreak.fromJson({
+        'current_streak': 3,
+        'current_cycle_day': 3,
+        'last_checked_on': '2026-07-14T10:00:00Z',
+        'cycle_completed_at': null,
+        'checked_in_today': true,
+      });
+      expect(checkinAnimationFor(streak), CheckinAnimationType.flame);
+    });
+
+    test('returns celebration when cycle completed', () {
+      final streak = DailyCheckinStreak.fromJson({
+        'current_streak': 7,
+        'current_cycle_day': 7,
+        'last_checked_on': '2026-07-14T10:00:00Z',
+        'cycle_completed_at': '2026-07-14T10:00:00Z',
+        'checked_in_today': true,
+        'cycle_cooldown_finished': false,
+        'cooldown_remaining_seconds': 5000,
+      });
+      expect(checkinAnimationFor(streak), CheckinAnimationType.celebration);
+    });
+
+    test('returns flame on day 1 after starting new cycle', () {
+      final streak = DailyCheckinStreak.fromJson({
+        'current_streak': 1,
+        'current_cycle_day': 1,
+        'last_checked_on': '2026-07-14T10:00:00Z',
+        'cycle_completed_at': null,
+        'checked_in_today': true,
+      });
+      expect(checkinAnimationFor(streak), CheckinAnimationType.flame);
     });
   });
 }

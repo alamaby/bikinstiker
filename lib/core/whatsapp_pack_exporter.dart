@@ -81,7 +81,7 @@ class WhatsAppPackExporter {
     final appDir = await getApplicationSupportDirectory();
 
     final trayFile = File(
-      '${appDir.path}/tray_icons/${pack.packIdentifier}.png',
+      '${appDir.path}/tray_icons_v2/${pack.packIdentifier}.png',
     );
     final trayExists = await trayFile.exists();
     if (!trayExists) {
@@ -92,7 +92,7 @@ class WhatsAppPackExporter {
 
     for (final item in items) {
       final stickerFile = File(
-        '${appDir.path}/pack_stickers/${pack.packIdentifier}/${item.stickerGenerationId}.webp',
+        '${appDir.path}/pack_stickers_v2/${pack.packIdentifier}/${item.stickerGenerationId}.webp',
       );
       if (!await stickerFile.exists()) {
         return const WhatsAppExportError(
@@ -136,7 +136,7 @@ class WhatsAppPackExporter {
         'sticker_pack_publisher_website': '',
         'sticker_pack_privacy_policy_website': '',
         'sticker_pack_license_agreement_website': '',
-        'image_data_version': '1',
+        'image_data_version': '2',
         'whatsapp_will_not_cache_stickers': false,
         'animated_sticker_pack': false,
         'sticker_count': items.length,

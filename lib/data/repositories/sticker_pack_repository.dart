@@ -260,7 +260,7 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     List<({String stickerId, String signedUrl})> stickers,
   ) async {
     final appDir = await getApplicationSupportDirectory();
-    final packDir = Directory('${appDir.path}/pack_stickers/$packIdentifier');
+    final packDir = Directory('${appDir.path}/pack_stickers_v2/$packIdentifier');
     if (!await packDir.exists()) {
       await packDir.create(recursive: true);
     }
@@ -333,7 +333,7 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     String signedTrayUrl,
   ) async {
     final appDir = await getApplicationSupportDirectory();
-    final trayDir = Directory('${appDir.path}/tray_icons');
+    final trayDir = Directory('${appDir.path}/tray_icons_v2');
     if (!await trayDir.exists()) {
       await trayDir.create(recursive: true);
     }
@@ -409,7 +409,7 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
 
     // 2. Check if tray icon is cached locally
     final appDir = await getApplicationSupportDirectory();
-    final trayFile = File('${appDir.path}/tray_icons/$packIdentifier.png');
+    final trayFile = File('${appDir.path}/tray_icons_v2/$packIdentifier.png');
     if (!await trayFile.exists()) {
       // 3. Derive tray icon from first sticker
       if (items.isEmpty) {
@@ -466,6 +466,11 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
       // Check chunk type: VP8X (extended/alpha) or VP8L (lossless)
       final chunk = String.fromCharCodes(header.sublist(12, 16));
       if (chunk != 'VP8X' && chunk != 'VP8L') return false;
+
+      // Require an alpha channel: VP8L is always alpha-capable; VP8X stores an
+      // alpha flag (0x10) in its flags byte. Opaque WebP caches (e.g. the old
+      // white-background stickers) must not be reused.
+      if (chunk == 'VP8X' && (header[20] & 0x10) == 0) return false;
 
       // Verify dimensions are 512x512
       final dims = _parseWebPDims(header, chunk);

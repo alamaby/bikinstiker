@@ -513,7 +513,7 @@ class _StickerItemTileState extends State<_StickerItemTile> {
   Future<void> _loadCachedFile() async {
     final dir = await getApplicationSupportDirectory();
     final file = File(
-      '${dir.path}/pack_stickers/${widget.packIdentifier}/${widget.item.stickerGenerationId}.webp',
+      '${dir.path}/pack_stickers_v2/${widget.packIdentifier}/${widget.item.stickerGenerationId}.webp',
     );
     if (!mounted) return;
     setState(() {

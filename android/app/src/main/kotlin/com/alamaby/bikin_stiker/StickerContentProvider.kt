@@ -200,14 +200,14 @@ class StickerContentProvider : ContentProvider() {
             pack.optString("sticker_pack_publisher_website", ""),
             pack.optString("sticker_pack_privacy_policy_website", ""),
             pack.optString("sticker_pack_license_agreement_website", ""),
-            pack.optString("image_data_version", "1"),
+            pack.optString("image_data_version", "2"),
             if (pack.optBoolean("whatsapp_will_not_cache_stickers", false)) 1 else 0,
             if (pack.optBoolean("animated_sticker_pack", false)) 1 else 0,
         ))
     }
 
     private fun resolveAsset(packId: String, fileName: String): AssetInfo {
-        val trayFile = File(filesDir, "tray_icons/$packId.png")
+        val trayFile = File(filesDir, "tray_icons_v2/$packId.png")
         if (trayFile.exists() && fileName == "$packId.png") {
             return AssetInfo(
                 pfd = ParcelFileDescriptor.open(trayFile, ParcelFileDescriptor.MODE_READ_ONLY),
@@ -216,7 +216,7 @@ class StickerContentProvider : ContentProvider() {
             )
         }
 
-        val stickerFile = File(filesDir, "pack_stickers/$packId/$fileName")
+        val stickerFile = File(filesDir, "pack_stickers_v2/$packId/$fileName")
         if (!stickerFile.exists()) {
             throw FileNotFoundException("File not cached: $fileName (packId=$packId)")
         }

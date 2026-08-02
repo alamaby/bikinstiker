@@ -5,11 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/di.dart';
+import '../../../core/localization/preset_localizations.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
 import '../../../data/models/sticker_preset.dart';
 import '../../../data/repositories/sticker_repository.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/history/history_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
@@ -45,9 +47,10 @@ class _HistoryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your stickers'),
+        title: Text(l10n.yourStickers),
         actions: [
           BlocBuilder<HistoryBloc, HistoryBlocState>(
             builder: (context, state) {
@@ -56,7 +59,7 @@ class _HistoryView extends StatelessWidget {
                 onPressed: () {
                   context.read<HistoryBloc>().add(const HistoryFiltersCleared());
                 },
-                child: const Text('Clear'),
+                child: Text(l10n.clear),
               );
             },
           ),
@@ -78,7 +81,7 @@ class _HistoryView extends StatelessWidget {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        state.errorMessage ?? 'Failed to load',
+                        state.errorMessage ?? l10n.failedToLoad,
                         style: const TextStyle(color: AppColors.error),
                       ),
                     ),
@@ -128,6 +131,7 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isPlus = context.read<SubscriptionBloc>().state.isPlus;
     final presets = context.watch<PresetBloc>().state.presets;
 
@@ -138,32 +142,32 @@ class _FilterBar extends StatelessWidget {
           Row(
             children: [
               FilterChipDropdown<HistoryStatusFilter>(
-                label: 'Status',
-                value: state.statusFilter.label,
-                items: buildStatusFilterItems(),
+                label: l10n.status,
+                value: statusFilterLabel(l10n, state.statusFilter),
+                items: buildStatusFilterItems(l10n),
                 onSelected: (f) => context
                     .read<HistoryBloc>()
                     .add(HistoryStatusFilterChanged(f)),
               ),
               const SizedBox(width: 8),
               FilterChipDropdown<String>(
-                label: 'Preset',
-                value: _presetLabel(state.presetFilter, presets),
-                items: buildPresetFilterItems(presets: presets),
+                label: l10n.preset,
+                value: _presetLabel(context, state.presetFilter, presets),
+                items: buildPresetFilterItems(presets: presets, l10n: l10n),
                 onSelected: (id) => context.read<HistoryBloc>().add(
                       HistoryPresetFilterChanged(id.isEmpty ? null : id),
                     ),
               ),
               const SizedBox(width: 8),
               FilterChipDropdown<HistoryDateFilter>(
-                label: 'Date',
-                value: state.dateFilter.label,
-                items: buildDateFilterItems(),
+                label: l10n.date,
+                value: dateFilterLabel(l10n, state.dateFilter),
+                items: buildDateFilterItems(l10n),
                 onSelected: isPlus
                     ? (f) => context
                         .read<HistoryBloc>()
                         .add(HistoryDateFilterChanged(f))
-                    : (_) => _showPlusOnlySnackBar(context, 'Date filter'),
+                    : (_) => _showPlusOnlySnackBar(context, l10n.dateFilter),
                 locked: !isPlus,
               ),
               const Spacer(),
@@ -174,12 +178,12 @@ class _FilterBar extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                itemBuilder: (_) => buildSortItems(),
+                itemBuilder: (_) => buildSortItems(l10n),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      state.sort.label,
+                      sortLabel(l10n, state.sort),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -203,10 +207,16 @@ class _FilterBar extends StatelessWidget {
     );
   }
 
-  String _presetLabel(String? presetId, List<StickerPreset> presets) {
-    if (presetId == null || presetId.isEmpty) return 'All';
+  String _presetLabel(
+    BuildContext context,
+    String? presetId,
+    List<StickerPreset> presets,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    if (presetId == null || presetId.isEmpty) return l10n.all;
     try {
-      return presets.firstWhere((p) => p.id == presetId).label;
+      final preset = presets.firstWhere((p) => p.id == presetId);
+      return localizedPresetLabel(l10n, preset);
     } catch (_) {
       return presetId;
     }
@@ -223,6 +233,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (hasActiveFilters) {
       return Center(
         child: Padding(
@@ -236,9 +247,9 @@ class _EmptyState extends StatelessWidget {
                 color: Colors.black38,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'No stickers match your filters',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              Text(
+                l10n.noMatchFilters,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               FilledButton.tonal(
@@ -247,17 +258,17 @@ class _EmptyState extends StatelessWidget {
                       .read<HistoryBloc>()
                       .add(const HistoryFiltersCleared());
                 },
-                child: const Text('Clear filters'),
+                child: Text(l10n.clearFilters),
               ),
             ],
           ),
         ),
       );
     }
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text('No stickers yet — generate your first one!'),
+        padding: const EdgeInsets.all(24),
+        child: Text(l10n.historyNoStickersYet),
       ),
     );
   }
@@ -271,16 +282,16 @@ class _HistoryTile extends StatelessWidget {
   final StickerGeneration item;
   const _HistoryTile({required this.item});
 
-  Widget _statusFor() {
+  Widget _statusFor(AppLocalizations l10n) {
     switch (item.status) {
       case StickerStatus.success:
-        return StatusIndicator.success('Success');
+        return StatusIndicator.success(l10n.success);
       case StickerStatus.pending:
-        return StatusIndicator.pending('Pending');
+        return StatusIndicator.pending(l10n.pending);
       case StickerStatus.failed:
-        return StatusIndicator.error('Failed');
+        return StatusIndicator.error(l10n.failed);
       case StickerStatus.unknown:
-        return StatusIndicator.pending('Unknown');
+        return StatusIndicator.pending(l10n.unknown);
     }
   }
 
@@ -302,6 +313,7 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final df = DateFormat.yMMMd().add_jm();
     final tile = Card(
       child: Padding(
@@ -334,7 +346,7 @@ class _HistoryTile extends StatelessWidget {
                     style: const TextStyle(color: Colors.black54, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
-                  _statusFor(),
+                  _statusFor(l10n),
                 ],
               ),
             ),
@@ -352,6 +364,7 @@ class _HistoryTile extends StatelessWidget {
   }
 
   void _showContextMenu(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isPlus = context.read<SubscriptionBloc>().state.isPlus;
     showModalBottomSheet(
       context: context,
@@ -368,7 +381,7 @@ class _HistoryTile extends StatelessWidget {
                 color: isPlus ? AppColors.primary : Colors.black38,
               ),
               title: Text(
-                'Regenerate with same prompt',
+                l10n.regenerateSamePrompt,
                 style: TextStyle(
                   color: isPlus ? null : Colors.black54,
                   fontWeight: isPlus ? FontWeight.w600 : FontWeight.w400,
@@ -376,8 +389,8 @@ class _HistoryTile extends StatelessWidget {
               ),
               subtitle: isPlus
                   ? null
-                  : const Text('Plus only',
-                      style: TextStyle(fontSize: 12)),
+                  : Text(l10n.plusOnly,
+                      style: const TextStyle(fontSize: 12)),
               trailing: isPlus
                   ? null
                   : const Icon(Icons.lock_outline,
@@ -390,8 +403,8 @@ class _HistoryTile extends StatelessWidget {
                   : () {
                       Navigator.of(sheetCtx).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Regenerate is a Plus feature'),
+                        SnackBar(
+                          content: Text(l10n.regeneratePlusFeature),
                         ),
                       );
                     },
@@ -471,6 +484,7 @@ class _StickerPreviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final df = DateFormat.yMMMd().add_jm();
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -534,7 +548,7 @@ class _StickerPreviewSheet extends StatelessWidget {
                       SnackBar(
                         backgroundColor: AppColors.error,
                         content: Text(
-                          'Failed to share sticker: $e',
+                          l10n.failedToShare(e),
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -542,7 +556,7 @@ class _StickerPreviewSheet extends StatelessWidget {
                   }
                 },
                 icon: const Icon(Icons.share),
-                label: const Text('Share'),
+                label: Text(l10n.share),
               ),
               const SizedBox(height: 8),
               FilledButton.tonalIcon(
@@ -551,7 +565,7 @@ class _StickerPreviewSheet extends StatelessWidget {
                   AddToPackSheet.show(context, item.id);
                 },
                 icon: const Icon(Icons.collections_bookmark),
-                label: const Text('Add to Pack'),
+                label: Text(l10n.addToPack),
               ),
             ],
           ),
@@ -566,7 +580,12 @@ class _StickerPreviewSheet extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 void _showPlusOnlySnackBar(BuildContext context, String feature) {
+  final l10n = AppLocalizations.of(context);
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('$feature is a Plus feature')),
+    SnackBar(
+      content: Text(
+        l10n == null ? '$feature is a Plus feature' : l10n.featurePlusOnly(feature),
+      ),
+    ),
   );
 }

@@ -90,6 +90,13 @@ class WhatsAppPackExporter {
       );
     }
 
+    // Validate tray icon PNG
+    if (!await _validatePngFile(trayFile, 96, 96)) {
+      return const WhatsAppExportError(
+        'Tray icon is invalid. Please try again.',
+      );
+    }
+
     for (final item in items) {
       final stickerFile = File(
         '${appDir.path}/pack_stickers_v2/${pack.packIdentifier}/${item.stickerGenerationId}.webp',
@@ -99,8 +106,103 @@ class WhatsAppPackExporter {
           'Some stickers are not cached. Please pull to refresh.',
         );
       }
+
+      // Full validation of WebP file
+      if (!await _validateWebpFile(stickerFile)) {
+        return const WhatsAppExportError(
+          'Some stickers are invalid. Please pull to refresh.',
+        );
+      }
     }
 
+    return null;
+  }
+
+  /// Validates a PNG file has correct dimensions and is a valid PNG.
+  Future<bool> _validatePngFile(File file, int expectedWidth, int expectedHeight) async {
+    if (!await file.exists()) return false;
+    try {
+      final bytes = await file.readAsBytes();
+      if (bytes.length < 24) return false;
+      // PNG signature
+      if (!(bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47)) {
+        return false;
+      }
+      // IHDR chunk at offset 8, dimensions at offset 16-23
+      final width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+      final height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+      return width == expectedWidth && height == expectedHeight;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Validates a WebP file: RIFF/WEBP signature, VP8X/VP8L, 512x512, <=100KB, actual alpha.
+  Future<bool> _validateWebpFile(File file) async {
+    if (!await file.exists()) return false;
+    try {
+      final size = await file.length();
+      if (size <= 0 || size > 100 * 1024) return false;
+
+      final raf = await file.open();
+      final header = Uint8List(30);
+      final read = await raf.readInto(header);
+      await raf.close();
+      if (read < 30) return false;
+
+      // RIFF....WEBP signature
+      if (header[0] != 0x52 ||
+          header[1] != 0x49 ||
+          header[2] != 0x46 ||
+          header[3] != 0x46) {
+        return false;
+      }
+      if (header[8] != 0x57 ||
+          header[9] != 0x45 ||
+          header[10] != 0x42 ||
+          header[11] != 0x50) {
+        return false;
+      }
+
+      // Check chunk type: VP8X (extended/alpha) or VP8L (lossless)
+      final chunk = String.fromCharCodes(header.sublist(12, 16));
+      if (chunk != 'VP8X' && chunk != 'VP8L') return false;
+
+      // Require an alpha channel: VP8L is always alpha-capable; VP8X stores an
+      // alpha flag (0x10) in its flags byte. Opaque WebP caches must not be reused.
+      if (chunk == 'VP8X' && (header[20] & 0x10) == 0) return false;
+
+      // Verify dimensions are 512x512
+      final dims = _parseWebPDims(header, chunk);
+      return dims == const (512, 512);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Parse WebP dimensions from header bytes.
+  static (int, int)? _parseWebPDims(Uint8List header, String chunk) {
+    if (chunk == 'VP8X') {
+      final w =
+          (header[24] & 0xff) |
+          ((header[25] & 0xff) << 8) |
+          ((header[26] & 0xff) << 16);
+      final h =
+          (header[27] & 0xff) |
+          ((header[28] & 0xff) << 8) |
+          ((header[29] & 0xff) << 16);
+      return (w + 1, h + 1);
+    } else if (chunk == 'VP8L') {
+      final w =
+          (header[21] & 0xff) |
+          ((header[22] & 0xff) << 8) |
+          ((header[23] & 0x3f) << 16);
+      final h =
+          (header[24] & 0xff) |
+          ((header[25] & 0xff) << 8) |
+          ((header[26] & 0x3f) << 16);
+      return (w + 1, h + 1);
+    }
     return null;
   }
 

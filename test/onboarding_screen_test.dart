@@ -1,12 +1,24 @@
 import 'package:bikin_stiker/core/di.dart';
 import 'package:bikin_stiker/data/repositories/onboarding_repository.dart';
+import 'package:bikin_stiker/l10n/app_localizations.dart';
 import 'package:bikin_stiker/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _buildTestApp(Widget screen) {
-  return MaterialApp(home: screen);
+  return MaterialApp(
+    localizationsDelegates: [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
+    locale: const Locale('en'),
+    home: screen,
+  );
 }
 
 Future<OnboardingRepository> _initRepo() async {

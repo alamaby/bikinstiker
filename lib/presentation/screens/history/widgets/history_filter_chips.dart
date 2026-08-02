@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/preset_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/models/sticker_preset.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../blocs/history/history_bloc.dart';
 
 class FilterChipDropdown<T> extends StatelessWidget {
@@ -85,9 +87,10 @@ class _LockedChip extends StatelessWidget {
 
 List<PopupMenuEntry<String>> buildPresetFilterItems({
   required List<StickerPreset> presets,
+  required AppLocalizations l10n,
 }) {
   final items = <PopupMenuEntry<String>>[
-    const PopupMenuItem(value: '', child: Text('All')),
+    PopupMenuItem(value: '', child: Text(l10n.all)),
   ];
   for (final p in presets) {
     items.add(
@@ -99,7 +102,7 @@ List<PopupMenuEntry<String>> buildPresetFilterItems({
               Text(p.emoji!, style: const TextStyle(fontSize: 16)),
               const SizedBox(width: 8),
             ],
-            Text(p.label),
+            Text(localizedPresetLabel(l10n, p)),
           ],
         ),
       ),
@@ -108,20 +111,61 @@ List<PopupMenuEntry<String>> buildPresetFilterItems({
   return items;
 }
 
-List<PopupMenuEntry<HistorySort>> buildSortItems() {
+List<PopupMenuEntry<HistorySort>> buildSortItems(AppLocalizations l10n) {
   return HistorySort.values
-      .map((s) => PopupMenuItem(value: s, child: Text(s.label)))
+      .map((s) => PopupMenuItem(value: s, child: Text(sortLabel(l10n, s))))
       .toList();
 }
 
-List<PopupMenuEntry<HistoryStatusFilter>> buildStatusFilterItems() {
+List<PopupMenuEntry<HistoryStatusFilter>> buildStatusFilterItems(
+  AppLocalizations l10n,
+) {
   return HistoryStatusFilter.values
-      .map((f) => PopupMenuItem(value: f, child: Text(f.label)))
+      .map((f) => PopupMenuItem(value: f, child: Text(statusFilterLabel(l10n, f))))
       .toList();
 }
 
-List<PopupMenuEntry<HistoryDateFilter>> buildDateFilterItems() {
+List<PopupMenuEntry<HistoryDateFilter>> buildDateFilterItems(
+  AppLocalizations l10n,
+) {
   return HistoryDateFilter.values
-      .map((f) => PopupMenuItem(value: f, child: Text(f.label)))
+      .map((f) => PopupMenuItem(value: f, child: Text(dateFilterLabel(l10n, f))))
       .toList();
+}
+
+String sortLabel(AppLocalizations l10n, HistorySort sort) {
+  switch (sort) {
+    case HistorySort.newest:
+      return l10n.sortNewest;
+    case HistorySort.oldest:
+      return l10n.sortOldest;
+    case HistorySort.presetAZ:
+      return l10n.sortPresetAZ;
+  }
+}
+
+String statusFilterLabel(AppLocalizations l10n, HistoryStatusFilter filter) {
+  switch (filter) {
+    case HistoryStatusFilter.all:
+      return l10n.all;
+    case HistoryStatusFilter.success:
+      return l10n.success;
+    case HistoryStatusFilter.pending:
+      return l10n.pending;
+    case HistoryStatusFilter.failed:
+      return l10n.failed;
+  }
+}
+
+String dateFilterLabel(AppLocalizations l10n, HistoryDateFilter filter) {
+  switch (filter) {
+    case HistoryDateFilter.all:
+      return l10n.allTime;
+    case HistoryDateFilter.last7d:
+      return l10n.last7d;
+    case HistoryDateFilter.last30d:
+      return l10n.last30d;
+    case HistoryDateFilter.last90d:
+      return l10n.last90d;
+  }
 }

@@ -11,8 +11,10 @@ import '../../../data/models/credit_transaction.dart';
 import '../../../data/models/user_profile.dart';
 import '../../../data/repositories/credit_transaction_repository.dart';
 import '../../../data/repositories/profile_repository.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/credit_transactions/credit_transactions_bloc.dart';
+import '../../blocs/locale/locale_cubit.dart';
 import '../../blocs/profile/profile_cubit.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
@@ -48,8 +50,9 @@ class _ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(l10n.profile)),
       body: BlocConsumer<ProfileCubit, ProfileState>(
         listenWhen: (p, n) => n is ProfileActionSuccess || n is ProfileError,
         listener: (context, state) {
@@ -125,6 +128,7 @@ class _ProfileView extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, dynamic profile) {
+    final l10n = AppLocalizations.of(context)!;
     final user = context.read<AuthBloc>().state.user;
     return Center(
       child: Column(
@@ -132,7 +136,7 @@ class _ProfileView extends StatelessWidget {
           _buildAvatar(context, profile),
           const SizedBox(height: 16),
           Text(
-            profile.hasDisplayName ? profile.displayName! : 'Anonymous User',
+            profile.hasDisplayName ? profile.displayName! : l10n.anonymousUser,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           if (user?.email != null)
@@ -145,13 +149,13 @@ class _ProfileView extends StatelessWidget {
             ),
           const SizedBox(height: 4),
           Text(
-            _providerLabel(profile.provider),
+            _providerLabel(context, profile.provider),
             style: const TextStyle(color: Colors.black54),
           ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => _showEditDisplayNameDialog(context, profile),
-            child: const Text('Edit display name'),
+            child: Text(l10n.editDisplayName),
           ),
         ],
       ),
@@ -204,6 +208,7 @@ class _ProfileView extends StatelessWidget {
   }
 
   Widget _buildEntitlementsSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final auth = context.watch<AuthBloc>().state;
     final subState = context.watch<SubscriptionBloc>().state;
     final walletState = context.watch<WalletBloc>().state;
@@ -212,6 +217,7 @@ class _ProfileView extends StatelessWidget {
       subState.subscription?.startedAt,
       walletState.wallet?.updatedAt,
       subState.isPlus,
+      l10n,
     );
 
     return Card(
@@ -220,9 +226,9 @@ class _ProfileView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Subscription',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              l10n.subscription,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
@@ -234,12 +240,14 @@ class _ProfileView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        subState.isPlus ? 'Plus Member' : 'Free Tier',
+                        subState.isPlus ? l10n.plusMember : l10n.freeTier,
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       if (subState.subscription != null)
                         Text(
-                          'Valid until ${_formatDate(subState.subscription!.expiresAt)}',
+                          l10n.validUntil(
+                            _formatDate(subState.subscription!.expiresAt),
+                          ),
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.black54,
@@ -272,14 +280,14 @@ class _ProfileView extends StatelessWidget {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
                         onTap: () => _showComingSoonDialog(context),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           child: Text(
-                            'Upgrade',
-                            style: TextStyle(
+                            l10n.upgrade,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -300,12 +308,12 @@ class _ProfileView extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Credits',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    Text(
+                      l10n.credits,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '${walletState.balance} remaining',
+                      l10n.creditsRemaining(walletState.balance),
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.black54,
@@ -322,15 +330,16 @@ class _ProfileView extends StatelessWidget {
   }
 
   Widget _buildTransactionsSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Credit History',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              l10n.creditHistory,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             BlocBuilder<CreditTransactionsBloc, CreditTransactionsState>(
@@ -346,7 +355,7 @@ class _ProfileView extends StatelessWidget {
                 if (state.status == CreditTransactionsStatus.error) {
                   return Center(
                     child: Text(
-                      state.error ?? 'Failed to load transactions',
+                      state.error ?? l10n.failedToLoadTransactions,
                       style: const TextStyle(color: AppColors.error),
                     ),
                   );
@@ -356,17 +365,17 @@ class _ProfileView extends StatelessWidget {
                     _buildFilterChips(context, state),
                     const SizedBox(height: 12),
                     if (state.transactions.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(16),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
                         child: Text(
-                          'No transactions yet',
-                          style: TextStyle(color: Colors.black54),
+                          l10n.noTransactionsYet,
+                          style: const TextStyle(color: Colors.black54),
                         ),
                       )
                     else
                       ...state.transactions
                           .take(10)
-                          .map((tx) => _buildTransactionTile(tx)),
+                          .map((tx) => _buildTransactionTile(context, tx)),
                     if (state.transactions.length > 10)
                       TextButton(
                         onPressed: () {
@@ -374,7 +383,7 @@ class _ProfileView extends StatelessWidget {
                             const CreditTransactionsViewAllRequested(),
                           );
                         },
-                        child: const Text('View all'),
+                        child: Text(l10n.viewAll),
                       ),
                   ],
                 );
@@ -390,13 +399,14 @@ class _ProfileView extends StatelessWidget {
     BuildContext context,
     CreditTransactionsState state,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       height: 36,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           FilterChip(
-            label: const Text('All'),
+            label: Text(l10n.all),
             selected: state.filter == CreditTransactionsFilter.all,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
@@ -408,7 +418,7 @@ class _ProfileView extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           FilterChip(
-            label: const Text('Earnings'),
+            label: Text(l10n.earnings),
             selected: state.filter == CreditTransactionsFilter.earnings,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
@@ -420,7 +430,7 @@ class _ProfileView extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           FilterChip(
-            label: const Text('Spent'),
+            label: Text(l10n.spent),
             selected: state.filter == CreditTransactionsFilter.spent,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
@@ -432,7 +442,7 @@ class _ProfileView extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           FilterChip(
-            label: const Text('Rewards'),
+            label: Text(l10n.rewards),
             selected: state.filter == CreditTransactionsFilter.rewards,
             onSelected: (_) {
               context.read<CreditTransactionsBloc>().add(
@@ -447,7 +457,8 @@ class _ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionTile(dynamic tx) {
+  Widget _buildTransactionTile(BuildContext context, dynamic tx) {
+    final l10n = AppLocalizations.of(context)!;
     final isCredit = tx.amount > 0;
     final color = isCredit ? AppColors.success : AppColors.error;
     final icon = isCredit
@@ -458,7 +469,10 @@ class _ProfileView extends StatelessWidget {
       dense: true,
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: color, size: 20),
-      title: Text(_txTypeLabel(tx.type), style: const TextStyle(fontSize: 14)),
+      title: Text(
+        _txTypeLabel(l10n, tx.type),
+        style: const TextStyle(fontSize: 14),
+      ),
       subtitle: Text(
         _formatDateTime(tx.createdAt),
         style: const TextStyle(fontSize: 11, color: Colors.black54),
@@ -471,6 +485,7 @@ class _ProfileView extends StatelessWidget {
   }
 
   Widget _buildSettingsSection(BuildContext context, dynamic profile) {
+    final l10n = AppLocalizations.of(context)!;
     final isGoogle = profile.provider == LoginProvider.google;
 
     return Card(
@@ -478,8 +493,8 @@ class _ProfileView extends StatelessWidget {
         children: [
           ListTile(
             leading: const Icon(Icons.email_outlined),
-            title: const Text('Email Marketing'),
-            subtitle: const Text('Receive tips and promotions'),
+            title: Text(l10n.emailMarketing),
+            subtitle: Text(l10n.receiveTips),
             trailing: Switch(
               value: profile.emailMarketingOptIn,
               onChanged: (value) {
@@ -494,27 +509,90 @@ class _ProfileView extends StatelessWidget {
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.lock_outline),
-              title: const Text('Change Password'),
-              subtitle: const Text('Update your account password'),
+              title: Text(l10n.changePassword),
+              subtitle: Text(l10n.updatePassword),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showChangePasswordDialog(context),
             ),
           ],
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(l10n.language),
+            trailing: Text(
+              context.watch<LocaleCubit>().state.locale.languageCode == 'id'
+                  ? l10n.bahasaIndonesia
+                  : l10n.english,
+              style: const TextStyle(color: Colors.black54),
+            ),
+            onTap: () => _showLanguageSheet(context),
+          ),
         ],
       ),
     );
   }
 
+  void _showLanguageSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cubit = context.read<LocaleCubit>();
+    final current = cubit.state.locale.languageCode;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                l10n.language,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.check, color: Colors.transparent),
+              title: Text(l10n.english),
+              trailing: current == 'en'
+                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                cubit.setLocale(const Locale('en'));
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.check, color: Colors.transparent),
+              title: Text(l10n.bahasaIndonesia),
+              trailing: current == 'id'
+                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                cubit.setLocale(const Locale('id'));
+                Navigator.pop(ctx);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHelpSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Column(
         children: [
           ListTile(
             leading: const Icon(Icons.help_outline, color: AppColors.primary),
-            title: const Text('How It Works'),
-            subtitle: const Text(
-              'Generate stickers, build a pack, then add it to WhatsApp',
-            ),
+            title: Text(l10n.howItWorks),
+            subtitle: Text(l10n.howItWorksSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.of(context).push(
@@ -530,19 +608,20 @@ class _ProfileView extends StatelessWidget {
   }
 
   Widget _buildDangerZone(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       color: AppColors.error.withValues(alpha: 0.05),
       child: Column(
         children: [
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.primary),
-            title: const Text(
-              'Logout',
-              style: TextStyle(color: AppColors.primary),
+            title: Text(
+              l10n.logout,
+              style: const TextStyle(color: AppColors.primary),
             ),
-            subtitle: const Text(
-              'Sign out of this device',
-              style: TextStyle(fontSize: 12),
+            subtitle: Text(
+              l10n.signOutDevice,
+              style: const TextStyle(fontSize: 12),
             ),
             onTap: () => _showLogoutDialog(context),
           ),
@@ -550,12 +629,12 @@ class _ProfileView extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.delete_forever, color: AppColors.error),
             title: Text(
-              'Delete Account',
+              l10n.deleteAccount,
               style: TextStyle(color: AppColors.error),
             ),
-            subtitle: const Text(
-              'Permanently delete your account and data',
-              style: TextStyle(fontSize: 12),
+            subtitle: Text(
+              l10n.deleteAccountSubtitle,
+              style: const TextStyle(fontSize: 12),
             ),
             onTap: () => _showDeleteAccountDialog(context),
           ),
@@ -565,23 +644,24 @@ class _ProfileView extends StatelessWidget {
   }
 
   void _showEditDisplayNameDialog(BuildContext context, dynamic profile) {
+    final l10n = AppLocalizations.of(context)!;
     final ctrl = TextEditingController(
       text: profile.hasDisplayName ? profile.displayName : '',
     );
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Display Name'),
+        title: Text(l10n.editDisplayName),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Enter your name'),
+          decoration: InputDecoration(hintText: l10n.editDisplayNameHint),
           textCapitalization: TextCapitalization.words,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -594,7 +674,7 @@ class _ProfileView extends StatelessWidget {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -602,6 +682,7 @@ class _ProfileView extends StatelessWidget {
   }
 
   void _showAvatarPicker(BuildContext context, dynamic profile) async {
+    final l10n = AppLocalizations.of(context)!;
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -611,12 +692,12 @@ class _ProfileView extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera),
-              title: const Text('Take a photo'),
+              title: Text(l10n.takePhoto),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
+              title: Text(l10n.chooseFromGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
@@ -642,6 +723,7 @@ class _ProfileView extends StatelessWidget {
   }
 
   void _showChangePasswordDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final currentCtrl = TextEditingController();
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
@@ -650,7 +732,7 @@ class _ProfileView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Change Password'),
+        title: Text(l10n.changePassword),
         content: Form(
           key: formKey,
           child: Column(
@@ -659,29 +741,29 @@ class _ProfileView extends StatelessWidget {
               TextFormField(
                 controller: currentCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Current Password',
+                decoration: InputDecoration(
+                  labelText: l10n.currentPassword,
                 ),
                 validator: (v) =>
-                    v == null || v.isEmpty ? 'Enter current password' : null,
+                    v == null || v.isEmpty ? l10n.enterCurrentPassword : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: newCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'New Password'),
+                decoration: InputDecoration(labelText: l10n.newPassword),
                 validator: (v) =>
-                    v == null || v.length < 6 ? 'Min 6 characters' : null,
+                    v == null || v.length < 6 ? l10n.passwordMin : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: confirmCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm New Password',
+                decoration: InputDecoration(
+                  labelText: l10n.confirmNewPassword,
                 ),
                 validator: (v) =>
-                    v != newCtrl.text ? 'Passwords do not match' : null,
+                    v != newCtrl.text ? l10n.passwordsDoNotMatch : null,
               ),
             ],
           ),
@@ -689,7 +771,7 @@ class _ProfileView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -700,7 +782,7 @@ class _ProfileView extends StatelessWidget {
               );
               Navigator.pop(ctx);
             },
-            child: const Text('Change'),
+            child: Text(l10n.change),
           ),
         ],
       ),
@@ -708,18 +790,16 @@ class _ProfileView extends StatelessWidget {
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account?'),
-        content: const Text(
-          'This action cannot be undone. Your account and all data will be '
-          'permanently deleted after 30 days.',
-        ),
+        title: Text(l10n.deleteAccount),
+        content: Text(l10n.deleteAccountWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
@@ -728,7 +808,7 @@ class _ProfileView extends StatelessWidget {
               context.read<ProfileCubit>().deleteAccount();
               context.read<AuthBloc>().add(const AuthSignOutRequested());
             },
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -736,18 +816,17 @@ class _ProfileView extends StatelessWidget {
   }
 
   void _showComingSoonDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.workspace_premium, size: 48),
-        title: const Text('Coming Soon'),
-        content: const Text(
-          'Plus subscription upgrade will be available soon!',
-        ),
+        title: Text(l10n.comingSoon),
+        content: Text(l10n.comingSoonBody),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
+            child: Text(l10n.ok),
           ),
         ],
       ),
@@ -755,63 +834,63 @@ class _ProfileView extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Logout?'),
-        content: const Text(
-          'You will need to sign in again to use the app on this device.',
-        ),
+        title: Text('${l10n.logout}?'),
+        content: Text(l10n.logoutConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthSignOutRequested());
             },
-            child: const Text('Logout'),
+            child: Text(l10n.logout),
           ),
         ],
       ),
     );
   }
 
-  String _providerLabel(LoginProvider provider) {
+  String _providerLabel(BuildContext context, LoginProvider provider) {
+    final l10n = AppLocalizations.of(context)!;
     switch (provider) {
       case LoginProvider.email:
-        return 'Email Account';
+        return l10n.emailAccount;
       case LoginProvider.google:
-        return 'Google Account';
+        return l10n.googleAccount;
       case LoginProvider.anonymous:
-        return 'Guest Account';
+        return l10n.guestAccount;
       case LoginProvider.other:
-        return 'External Account';
+        return l10n.externalAccount;
     }
   }
 
-  String _txTypeLabel(CreditTxType type) {
+  String _txTypeLabel(AppLocalizations l10n, CreditTxType type) {
     switch (type) {
       case CreditTxType.topup:
-        return 'Credit Top-up';
+        return l10n.creditTopup;
       case CreditTxType.dailyReward:
-        return 'Daily Reward';
+        return l10n.dailyReward;
       case CreditTxType.generateSticker:
-        return 'Sticker Generation';
+        return l10n.stickerGeneration;
       case CreditTxType.refund:
-        return 'Refund';
+        return l10n.refund;
       case CreditTxType.subscriptionGrant:
-        return 'Subscription Grant';
+        return l10n.subscriptionGrant;
       case CreditTxType.missionReward:
-        return 'Mission Reward';
+        return l10n.missionReward;
       case CreditTxType.expired:
-        return 'Expired';
+        return l10n.expired;
       case CreditTxType.locked:
-        return 'Locked';
+        return l10n.locked;
       case CreditTxType.unknown:
-        return 'Unknown';
+        return l10n.unknown;
     }
   }
 
@@ -828,6 +907,7 @@ class _ProfileView extends StatelessWidget {
     DateTime? startedAt,
     DateTime? walletUpdatedAt,
     bool isPlus,
+    AppLocalizations l10n,
   ) {
     final base = lastGrantAt ?? startedAt ?? walletUpdatedAt;
     if (base == null) return null;
@@ -839,7 +919,7 @@ class _ProfileView extends StatelessWidget {
     }
 
     final amount = isPlus ? 50 : 5;
-    return 'Next monthly credits (+$amount) on ${_formatDateTime(nextGrant)}';
+    return l10n.nextMonthlyCredits(amount, _formatDateTime(nextGrant));
   }
 
   DateTime _addOneMonth(DateTime value) {

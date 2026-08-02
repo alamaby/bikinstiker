@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
+import 'l10n/app_localizations.dart';
 import 'core/di.dart';
 import 'core/theme/app_theme.dart';
 import 'data/models/sticker_preset.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/credit_transaction_repository.dart';
 import 'data/repositories/legal_consent_repository.dart';
+import 'data/repositories/locale_repository.dart';
 import 'data/repositories/mission_repository.dart';
 import 'data/repositories/preset_repository.dart';
 import 'data/repositories/onboarding_repository.dart';
@@ -21,6 +23,8 @@ import 'data/repositories/wallet_repository.dart';
 import 'core/services/share_mission_service.dart';
 import 'presentation/blocs/auth/auth_bloc.dart';
 import 'presentation/blocs/history/history_bloc.dart';
+import 'presentation/blocs/locale/locale_cubit.dart';
+import 'presentation/blocs/locale/locale_state.dart';
 import 'presentation/blocs/mission/mission_bloc.dart';
 import 'presentation/blocs/preset/preset_bloc.dart';
 import 'presentation/blocs/sticker_pack/sticker_pack_bloc.dart';
@@ -31,6 +35,7 @@ import 'presentation/blocs/wallet/wallet_bloc.dart';
 import 'presentation/screens/auth/auth_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/legal/legal_consent_screen.dart';
+import 'presentation/screens/locale/language_selection_screen.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
 
 class BikinStikerApp extends StatelessWidget {
@@ -45,6 +50,9 @@ class BikinStikerApp extends StatelessWidget {
         ),
         RepositoryProvider<LegalConsentRepository>.value(
           value: getIt<LegalConsentRepository>(),
+        ),
+        RepositoryProvider<LocaleRepository>.value(
+          value: getIt<LocaleRepository>(),
         ),
         RepositoryProvider<WalletRepository>.value(
           value: getIt<WalletRepository>(),
@@ -110,12 +118,25 @@ class BikinStikerApp extends StatelessWidget {
             create: (ctx) => StickerPackBloc(ctx.read<StickerPackRepository>()),
           ),
           BlocProvider(create: (_) => HomePrefillCubit()),
+          BlocProvider(
+            create: (_) => LocaleCubit(
+              getIt<LocaleRepository>(),
+              platformLocale: WidgetsBinding.instance.platformDispatcher.locale,
+            ),
+          ),
         ],
-        child: MaterialApp(
-          title: 'BikinStiker',
-          theme: AppTheme.light(),
-          debugShowCheckedModeBanner: false,
-          home: const _AuthGate(),
+        child: BlocBuilder<LocaleCubit, LocaleState>(
+          builder: (context, localeState) {
+            return MaterialApp(
+              title: 'BikinStiker',
+              locale: localeState.locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              theme: AppTheme.light(),
+              debugShowCheckedModeBanner: false,
+              home: const _AuthGate(),
+            );
+          },
         ),
       ),
     );
@@ -216,6 +237,10 @@ class _AuthGateState extends State<_AuthGate> {
       ],
       child: BlocBuilder<AuthBloc, AuthBlocState>(
         builder: (context, state) {
+          final localeState = context.watch<LocaleCubit>().state;
+          if (!localeState.explicitlySelected) {
+            return const LanguageSelectionScreen();
+          }
           final hasAccepted = context
               .read<LegalConsentRepository>()
               .hasAcceptedCurrent;
@@ -250,14 +275,14 @@ class _AuthGateState extends State<_AuthGate> {
                   }
                 });
               }
-              return const Scaffold(
+              return Scaffold(
                 body: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 12),
-                      Text('Preparing your guest session...'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 12),
+                      Text(AppLocalizations.of(context)!.preparingGuestSession),
                     ],
                   ),
                 ),
@@ -273,14 +298,16 @@ class _AuthGateState extends State<_AuthGate> {
             }
             case AuthStatus.submitting:
               if (_startingGuestSession) {
-                return const Scaffold(
+                return Scaffold(
                   body: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 12),
-                        Text('Preparing your guest session...'),
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 12),
+                        Text(
+                          AppLocalizations.of(context)!.preparingGuestSession,
+                        ),
                       ],
                     ),
                   ),

@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/legal_consent_repository.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LegalConsentScreen extends StatefulWidget {
   final VoidCallback onAccepted;
@@ -22,11 +23,27 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
   bool _submitting = false;
   String _privacyMarkdown = '';
   String _termsMarkdown = '';
+  bool _loading = true;
+  String? _loadError;
+  int _loadGeneration = 0;
+  String? _loadedSuffix;
+
+  String get _docSuffix =>
+      Localizations.localeOf(context).languageCode == 'id' ? 'id' : 'en';
 
   @override
   void initState() {
     super.initState();
-    _loadDocuments();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final suffix = _docSuffix;
+    if (_loadedSuffix != suffix) {
+      _loadedSuffix = suffix;
+      _loadDocuments(suffix);
+    }
   }
 
   @override
@@ -35,16 +52,27 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
     super.dispose();
   }
 
-  Future<void> _loadDocuments() async {
-    final results = await Future.wait([
-      rootBundle.loadString('docs/privacy-policy.md'),
-      rootBundle.loadString('docs/terms-of-service.md'),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _privacyMarkdown = results[0];
-      _termsMarkdown = results[1];
-    });
+  Future<void> _loadDocuments(String suffix) async {
+    final generation = ++_loadGeneration;
+    try {
+      final results = await Future.wait([
+        rootBundle.loadString('docs/privacy-policy-$suffix.md'),
+        rootBundle.loadString('docs/terms-of-service-$suffix.md'),
+      ]);
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _privacyMarkdown = results[0];
+        _termsMarkdown = results[1];
+        _loading = false;
+        _loadError = null;
+      });
+    } catch (_) {
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _loading = false;
+        _loadError = 'Failed to load documents';
+      });
+    }
   }
 
   Future<void> _onContinue() async {
@@ -62,6 +90,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -95,7 +124,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
-                      'Terms of Service & Privacy Policy',
+                      l10n.legalTitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -109,20 +138,14 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                     labelColor: AppColors.primary,
                     unselectedLabelColor: Colors.black54,
                     dividerHeight: 0,
-                    tabs: const [
-                      Tab(text: 'Privacy Policy'),
-                      Tab(text: 'Terms of Service'),
+                    tabs: [
+                      Tab(text: l10n.privacyPolicy),
+                      Tab(text: l10n.termsOfService),
                     ],
                   ),
                   // Markdown content
                   Expanded(
-                    child: TabBarView(
-                      controller: _tab,
-                      children: [
-                        _MarkdownDoc(markdown: _privacyMarkdown),
-                        _MarkdownDoc(markdown: _termsMarkdown),
-                      ],
-                    ),
+                    child: _buildContent(l10n),
                   ),
                 ],
               ),
@@ -155,7 +178,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'I have read and accept the Terms of Service and Privacy Policy',
+                          l10n.legalConsentText,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -176,7 +199,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                             child:
                                 CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Continue'),
+                        : Text(l10n.continueLabel),
                   ),
                 ],
               ),
@@ -184,6 +207,44 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildContent(AppLocalizations l10n) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_loadError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 40, color: AppColors.error),
+              const SizedBox(height: 12),
+              Text(
+                _loadError!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.error),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => _loadDocuments(_docSuffix),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: Text(l10n.retry),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return TabBarView(
+      controller: _tab,
+      children: [
+        _MarkdownDoc(markdown: _privacyMarkdown),
+        _MarkdownDoc(markdown: _termsMarkdown),
+      ],
     );
   }
 }

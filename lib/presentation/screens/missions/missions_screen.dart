@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../../core/localization/mission_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/daily_checkin_streak.dart';
 import '../../../data/models/mission.dart';
 import '../../../data/models/user_subscription.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show pendingColdStartShareClaim;
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/mission/mission_bloc.dart';
@@ -49,13 +51,14 @@ class _MissionsScreenState extends State<MissionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final userId = context.read<AuthBloc>().state.user?.id;
     if (userId == null) {
-      return const Scaffold(body: Center(child: Text('Sign in required')));
+      return Scaffold(body: Center(child: Text(l10n.signInRequired)));
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Missions')),
+      appBar: AppBar(title: Text(l10n.missions)),
       body: MultiBlocListener(
         listeners: [
           BlocListener<MissionBloc, MissionState>(
@@ -64,7 +67,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
             listener: (context, state) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.errorMessage ?? 'Claim failed'),
+                  content: Text(state.errorMessage ?? l10n.claimFailed),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -94,13 +97,25 @@ class _MissionsScreenState extends State<MissionsScreen> {
                     streak.currentCycleDay,
                   );
                 }
-                _showSuccessSnackBar(context, 'Check-in successful!', credits);
+                _showSuccessSnackBar(
+                  context,
+                  l10n.checkInSuccessful,
+                  credits,
+                );
               } else if (msg.startsWith('mission_success:')) {
                 final credits = msg.split(':').last;
-                _showSuccessSnackBar(context, 'Mission completed!', credits);
+                _showSuccessSnackBar(
+                  context,
+                  l10n.missionCompleted,
+                  credits,
+                );
               } else if (msg.startsWith('share_claim_success:')) {
                 final credits = msg.split(':').last;
-                _showSuccessSnackBar(context, 'Share reward claimed!', credits);
+                _showSuccessSnackBar(
+                  context,
+                  l10n.shareRewardClaimed,
+                  credits,
+                );
                 // Force a reload so the new user_mission_progress row shows.
                 context.read<MissionBloc>().add(MissionLoadRequested(userId));
               }
@@ -131,7 +146,11 @@ class _MissionsScreenState extends State<MissionsScreen> {
                     }
                     if (state.status == MissionStatus.error &&
                         state.missions.isEmpty) {
-                      return Center(child: Text(state.errorMessage ?? 'Error'));
+                      return Center(
+                        child: Text(
+                          state.errorMessage ?? l10n.error,
+                        ),
+                      );
                     }
 
                     // Drain the cold-start share claim once we have loaded
@@ -178,7 +197,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                             SliverToBoxAdapter(
                               child: MissionSectionHeader(
                                 icon: Icons.local_fire_department,
-                                title: 'Daily Rewards',
+                                title: l10n.dailyRewards,
                                 count: dailyLogin.length,
                               ),
                             ),
@@ -237,7 +256,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                             SliverToBoxAdapter(
                               child: MissionSectionHeader(
                                 icon: Icons.flash_on,
-                                title: 'Quick Rewards',
+                                title: l10n.quickRewards,
                                 count: quickRewards.length,
                               ),
                             ),
@@ -305,7 +324,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                             SliverToBoxAdapter(
                               child: MissionSectionHeader(
                                 icon: Icons.emoji_events,
-                                title: 'Achievements',
+                                title: l10n.achievements,
                                 count: achievements.length,
                               ),
                             ),
@@ -489,6 +508,7 @@ class _SharePromptBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final url = prompt.shareUrl;
     final expiresAt = prompt.expiresAt;
     final minutesLeft = expiresAt.difference(DateTime.now()).inMinutes;
@@ -508,17 +528,16 @@ class _SharePromptBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Waiting for your share to be opened',
-                      style: TextStyle(
+                    Text(
+                      l10n.waitingShareOpened,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Open the link you shared from WhatsApp / IG / etc to claim your 5 credits. '
-                      'Link expires in ~${minutesLeft.clamp(0, 10)} min.',
+                      l10n.shareMissionDesc(minutesLeft.clamp(0, 10)),
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.black54,
@@ -529,14 +548,14 @@ class _SharePromptBanner extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.copy, size: 20),
-                tooltip: 'Copy link',
+                tooltip: l10n.copyLink,
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: url));
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Link copied'),
-                        duration: Duration(seconds: 2),
+                      SnackBar(
+                        content: Text(l10n.linkCopied),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   }
@@ -544,7 +563,7 @@ class _SharePromptBanner extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.close, size: 20),
-                tooltip: 'Dismiss',
+                tooltip: l10n.dismiss,
                 onPressed: onDismiss,
               ),
             ],
@@ -584,6 +603,7 @@ class _MissionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final canComplete =
         canAccess &&
         !isCompleted &&
@@ -592,11 +612,11 @@ class _MissionTile extends StatelessWidget {
         !isDailyLimitReached &&
         !awaitingShareClaim;
 
-    String buttonLabel = 'Claim';
+    String buttonLabel = l10n.claim;
     if (mission.code == 'watch_video_ad') {
-      buttonLabel = 'Watch Ad';
+      buttonLabel = l10n.watchAd;
     } else if (mission.code == 'share_app_daily') {
-      buttonLabel = 'Share';
+      buttonLabel = l10n.share;
     }
 
     return Card(
@@ -612,7 +632,7 @@ class _MissionTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        mission.label,
+                        localizedMissionLabel(l10n, mission),
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -620,7 +640,7 @@ class _MissionTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        mission.description,
+                        localizedMissionDescription(l10n, mission),
                         style: const TextStyle(
                           fontSize: 13,
                           color: Colors.black54,
@@ -638,7 +658,7 @@ class _MissionTile extends StatelessWidget {
                 Icon(Icons.bolt, size: 16, color: AppColors.secondary),
                 const SizedBox(width: 4),
                 Text(
-                  '+${mission.rewardForTier(userTier)} credit${mission.rewardForTier(userTier) == 1 ? '' : 's'}',
+                  l10n.missionRewardCredits(mission.rewardForTier(userTier)),
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -646,36 +666,36 @@ class _MissionTile extends StatelessWidget {
                 ),
                 const Spacer(),
                 if (isCompleted)
-                  const Text(
-                    'Completed',
-                    style: TextStyle(
+                  Text(
+                    l10n.completed,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.success,
                       fontWeight: FontWeight.w600,
                     ),
                   )
                 else if (!canAccess)
-                  const Text(
-                    'Requires Plus',
-                    style: TextStyle(
+                  Text(
+                    l10n.requiresPlus,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: Colors.black38,
                       fontWeight: FontWeight.w500,
                     ),
                   )
                 else if (awaitingShareClaim)
-                  const Text(
-                    'Awaiting link click',
-                    style: TextStyle(
+                  Text(
+                    l10n.awaitingLinkClick,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
                   )
                 else if (isDailyLimitReached)
-                  const Text(
-                    'Daily limit reached',
-                    style: TextStyle(
+                  Text(
+                    l10n.dailyLimitReached,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: Colors.black38,
                       fontWeight: FontWeight.w500,

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/datasources/supabase_client.dart';
 import '../data/repositories/auth_repository.dart';
+import '../data/repositories/locale_repository.dart';
 import '../data/repositories/credit_transaction_repository.dart';
 import '../data/repositories/legal_consent_repository.dart';
 import '../data/repositories/mission_repository.dart';
@@ -30,6 +31,9 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<LegalConsentRepository>(
     () => LegalConsentRepository(prefs),
+  );
+  getIt.registerLazySingleton<LocaleRepository>(
+    () => LocaleRepository(prefs),
   );
   getIt.registerLazySingleton<WalletRepository>(
     () => SupabaseWalletRepository(client),

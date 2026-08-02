@@ -4,6 +4,7 @@ import '../../core/di.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/sticker_feedback.dart';
 import '../../data/repositories/sticker_feedback_repository.dart';
+import '../../l10n/app_localizations.dart';
 
 class StickerFeedbackButtons extends StatefulWidget {
   final String stickerGenerationId;
@@ -72,7 +73,7 @@ class _StickerFeedbackButtonsState extends State<StickerFeedbackButtons> {
       if (!mounted) return;
       setState(() => _rating = feedback.rating);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thanks for the feedback')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.thanksForFeedback)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -93,6 +94,7 @@ class _StickerFeedbackButtonsState extends State<StickerFeedbackButtons> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) {
       return const SizedBox(
         height: 40,
@@ -108,7 +110,7 @@ class _StickerFeedbackButtonsState extends State<StickerFeedbackButtons> {
 
     final children = [
       _FeedbackButton(
-        label: widget.compact ? null : 'Good result',
+        label: widget.compact ? null : l10n.goodResult,
         icon: Icons.thumb_up_alt_outlined,
         selectedIcon: Icons.thumb_up_alt,
         selected: _rating == StickerFeedbackRating.up,
@@ -117,7 +119,7 @@ class _StickerFeedbackButtonsState extends State<StickerFeedbackButtons> {
       ),
       const SizedBox(width: 8),
       _FeedbackButton(
-        label: widget.compact ? null : 'Poor result',
+        label: widget.compact ? null : l10n.poorResult,
         icon: Icons.thumb_down_alt_outlined,
         selectedIcon: Icons.thumb_down_alt,
         selected: _rating == StickerFeedbackRating.down,
@@ -133,9 +135,9 @@ class _StickerFeedbackButtonsState extends State<StickerFeedbackButtons> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Rate this result',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        Text(
+          l10n.rateThisResult,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Row(children: children),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Shows the user's pack slot usage: "X of Y packs used".
@@ -18,6 +19,7 @@ class PackCapacityIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final progress = slotCap > 0
         ? (activeCount / slotCap).clamp(0.0, 1.0)
         : 0.0;
@@ -37,13 +39,13 @@ class PackCapacityIndicator extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Pack slots', style: Theme.of(context).textTheme.titleSmall),
+              Text(l10n.packSlots, style: Theme.of(context).textTheme.titleSmall),
               Text(
-                '$activeCount of $slotCap used',
+                l10n.packSlotsUsed(activeCount, slotCap),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: _isAtCapacity ? AppColors.error : null,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: _isAtCapacity ? AppColors.error : null,
+                    ),
               ),
             ],
           ),
@@ -58,7 +60,7 @@ class PackCapacityIndicator extends StatelessWidget {
           if (_isAtCapacity) ...[
             const SizedBox(height: 8),
             Text(
-              'You have reached your pack limit. Delete a pack to create a new one.',
+              l10n.packLimitReached,
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.error),

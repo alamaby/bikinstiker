@@ -267,62 +267,75 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
 
     for (final sticker in stickers) {
       final webpFile = File('${packDir.path}/${sticker.stickerId}.webp');
+      final tempWebpFile = File('${packDir.path}/${sticker.stickerId}.webp.tmp');
 
-      // Skip if cached WebP is valid (correct RIFF header, 512x512, < 100KB)
+      // Skip if cached WebP is valid (correct RIFF header, 512x512, < 100KB, actual alpha)
       if (await _isValidWebpCache(webpFile)) continue;
 
       // Invalid or missing: delete and re-encode
       if (await webpFile.exists()) await webpFile.delete();
 
-      final pngTempFile = File('${packDir.path}/${sticker.stickerId}_tmp.png');
+      final sourceFile = File('${packDir.path}/${sticker.stickerId}_src');
 
       try {
-        // Download PNG from storage
+        // Download source image from storage
         final response = await http.get(Uri.parse(sticker.signedUrl));
-        if (response.statusCode != 200) continue;
+        if (response.statusCode != 200) {
+          throw Exception('Failed to download source image: ${response.statusCode}');
+        }
 
-        await pngTempFile.writeAsBytes(response.bodyBytes, flush: true);
+        await sourceFile.writeAsBytes(response.bodyBytes, flush: true);
 
-        // Re-encode PNG → WebP via Android system encoder (preserves alpha)
+        // Validate source format (PNG or WebP)
+        final sourceBytes = response.bodyBytes;
+        if (!_isValidPng(sourceBytes) && !_isValidWebp(sourceBytes)) {
+          throw Exception('Source image is not valid PNG or WebP');
+        }
+
+        // Re-encode source → WebP via Android system encoder (preserves alpha)
         final qualityLevels = [75, 65, 55, 45, 35, 25];
         Uint8List? webpBytes;
 
         for (final q in qualityLevels) {
           final result = await FlutterImageCompress.compressWithFile(
-            pngTempFile.absolute.path,
+            sourceFile.absolute.path,
             minWidth: 512,
             minHeight: 512,
             quality: q,
             format: CompressFormat.webp,
           );
           if (result != null && result.length <= 100 * 1024) {
-            webpBytes = result;
-            break;
+            // Validate the encoded WebP
+            if (await _validateWebpBytes(result)) {
+              webpBytes = result;
+              break;
+            }
           }
         }
 
-        // Fallback: lowest quality even if > 100KB
+        // No fallback for >100KB - if all quality levels exceed limit, fail
         if (webpBytes == null) {
-          final result = await FlutterImageCompress.compressWithFile(
-            pngTempFile.absolute.path,
-            minWidth: 512,
-            minHeight: 512,
-            quality: 25,
-            format: CompressFormat.webp,
-          );
-          if (result != null) {
-            webpBytes = result;
-          }
+          throw Exception('Unable to encode WebP within 100 KB limit');
         }
 
-        if (webpBytes != null) {
-          await webpFile.writeAsBytes(webpBytes, flush: true);
+        // Atomic write: write to temp file, then rename
+        await tempWebpFile.writeAsBytes(webpBytes, flush: true);
+
+        // Final validation of written file
+        if (!await _isValidWebpCache(tempWebpFile)) {
+          throw Exception('Written WebP cache failed validation');
         }
+
+        // Atomic rename
+        await tempWebpFile.rename(webpFile.absolute.path);
       } catch (e) {
-        // Non-fatal
+        // Cleanup on error
+        if (await tempWebpFile.exists()) await tempWebpFile.delete();
+        if (await sourceFile.exists()) await sourceFile.delete();
+        rethrow; // Propagate error to caller
       } finally {
-        // Cleanup temp PNG
-        if (await pngTempFile.exists()) await pngTempFile.delete();
+        // Cleanup source file
+        if (await sourceFile.exists()) await sourceFile.delete();
       }
     }
   }
@@ -374,10 +387,13 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
     required String packIdentifier,
     required List<StickerPackItem> items,
   }) async {
-    // 1. Cache all stickers by downloading PNG + re-encoding to WebP
+    // 1. Cache all stickers by downloading canonical PNG + re-encoding to WebP
     final pngPairs = <({String stickerId, String signedUrl})>[];
     for (final item in items) {
-      final pngPath = item.stickerPath?.replaceFirst('.webp', '.png');
+      // Canonical asset is now PNG at {userId}/{stickerId}.png
+      final pngPath = item.stickerPath?.endsWith('.png') == true
+          ? item.stickerPath
+          : item.stickerPath?.replaceFirst('.webp', '.png');
       if (pngPath != null && pngPath.isNotEmpty) {
         try {
           final pngUrl = await _client.storage
@@ -388,7 +404,7 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
             signedUrl: pngUrl,
           ));
         } catch (_) {
-          // Fallback to WebP if PNG URL fails
+          // Fallback to main asset URL if PNG path fails
           if (item.stickerSignedUrl != null) {
             pngPairs.add((
               stickerId: item.stickerGenerationId,
@@ -505,5 +521,47 @@ class SupabaseStickerPackRepository implements StickerPackRepository {
       return (w + 1, h + 1);
     }
     return null;
+  }
+
+  /// Validate PNG magic bytes.
+  bool _isValidPng(Uint8List bytes) {
+    return bytes.length >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47;
+  }
+
+  /// Validate WebP magic bytes (RIFF....WEBP).
+  bool _isValidWebp(Uint8List bytes) {
+    return bytes.length >= 12 &&
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50;
+  }
+
+  /// Validate WebP bytes after encoding.
+  Future<bool> _validateWebpBytes(Uint8List bytes) async {
+    if (!_isValidWebp(bytes)) return false;
+    if (bytes.length > 100 * 1024) return false;
+
+    // Check chunk type: VP8X (extended/alpha) or VP8L (lossless)
+    if (bytes.length < 16) return false;
+    final chunk = String.fromCharCodes(bytes.sublist(12, 16));
+    if (chunk != 'VP8X' && chunk != 'VP8L') return false;
+
+    // Verify dimensions are 512x512
+    final dims = _parseWebPDims(bytes, chunk);
+    if (dims != const (512, 512)) return false;
+
+    // Require alpha channel
+    if (chunk == 'VP8X' && (bytes[20] & 0x10) == 0) return false;
+
+    return true;
   }
 }

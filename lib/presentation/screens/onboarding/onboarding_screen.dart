@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/di.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/onboarding_repository.dart';
+import '../../../l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final bool replay;
@@ -22,21 +23,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   late final PageController _pageCtrl;
   int _currentPage = 0;
 
-  static const _steps = [
+  List<_OnboardingStepData> _steps(AppLocalizations l10n) => [
     _OnboardingStepData(
       icon: Icons.auto_awesome,
-      title: 'Create your sticker',
-      description: 'Write a short idea, choose a style, then generate your sticker.',
+      title: l10n.onboardingCreateTitle,
+      description: l10n.onboardingCreateDesc,
     ),
     _OnboardingStepData(
       icon: Icons.collections_bookmark,
-      title: 'Add it to a pack',
-      description: 'Choose or create a pack, then add 1-3 emojis so the sticker is easy to find in WhatsApp.',
+      title: l10n.onboardingPackTitle,
+      description: l10n.onboardingPackDesc,
     ),
     _OnboardingStepData(
       icon: Icons.send,
-      title: 'Add your pack to WhatsApp',
-      description: 'Add at least 3 stickers to a pack, then tap Export to WhatsApp.',
+      title: l10n.onboardingWhatsAppTitle,
+      description: l10n.onboardingWhatsAppDesc,
     ),
   ];
 
@@ -52,10 +53,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  bool get _isLastPage => _currentPage == _steps.length - 1;
-  bool get _isFirstPage => _currentPage == 0;
-
-  Future<void> _finish() async {
+  static const int _stepCount = 3;
+  bool get _isLastPage => _currentPage == _stepCount - 1;
+  bool get _isFirstPage => _currentPage == 0;  Future<void> _finish() async {
     if (!widget.replay) {
       final repo = getIt<OnboardingRepository>();
       await repo.completeCoreFlow();
@@ -87,21 +87,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final steps = _steps(l10n);
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 16),
-            _buildTopBar(),
+            _buildTopBar(l10n),
             Expanded(
               child: PageView.builder(
                 controller: _pageCtrl,
                 onPageChanged: (i) => setState(() => _currentPage = i),
-                itemCount: _steps.length,
-                itemBuilder: (_, i) => _buildStepPage(_steps[i]),
+                itemCount: steps.length,
+                itemBuilder: (_, i) => _buildStepPage(steps[i]),
               ),
             ),
-            _buildBottomBar(),
+            _buildBottomBar(l10n),
             const SizedBox(height: 24),
           ],
         ),
@@ -109,19 +111,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
           TextButton(
             onPressed: _skip,
-            child: const Text('Skip'),
+            child: Text(l10n.skip),
           ),
           const Spacer(),
           Row(
             mainAxisSize: MainAxisSize.min,
-            children: List.generate(_steps.length, (i) {
+            children: List.generate(_stepCount, (i) {
               final isActive = i == _currentPage;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
@@ -176,7 +178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -187,7 +189,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: 52,
             child: FilledButton(
               onPressed: _next,
-              child: Text(_isLastPage ? 'Create My First Sticker' : 'Next'),
+              child: Text(
+                _isLastPage ? l10n.createMyFirstSticker : l10n.next,
+              ),
             ),
           ),
           if (!_isFirstPage) ...[
@@ -197,7 +201,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               height: 48,
               child: TextButton(
                 onPressed: _back,
-                child: const Text('Back'),
+                child: Text(l10n.back),
               ),
             ),
           ],

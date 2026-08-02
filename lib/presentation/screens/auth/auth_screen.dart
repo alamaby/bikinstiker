@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
 
@@ -73,6 +74,7 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final stickerGen = context.watch<StickerGenBloc>();
     final hasGuestResult = _isGuestWall && stickerGen.state.signedUrl != null;
 
@@ -161,9 +163,9 @@ class _AuthScreenState extends State<AuthScreen>
                           ],
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'AI-powered WhatsApp sticker generator',
-                          style: TextStyle(color: Colors.black54),
+                        Text(
+                          l10n.tagline,
+                          style: const TextStyle(color: Colors.black54),
                         ),
                         const SizedBox(height: 32),
                         if (_isGuestWall) ...[
@@ -178,9 +180,9 @@ class _AuthScreenState extends State<AuthScreen>
                             indicatorColor: AppColors.primary,
                             labelColor: AppColors.primary,
                             unselectedLabelColor: Colors.black54,
-                            tabs: const [
-                              Tab(text: 'Sign in'),
-                              Tab(text: 'Sign up'),
+                            tabs: [
+                              Tab(text: l10n.signIn),
+                              Tab(text: l10n.signUp),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -197,13 +199,15 @@ class _AuthScreenState extends State<AuthScreen>
                                   autocorrect: false,
                                   enableSuggestions: false,
                                   textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
-                                    prefixIcon: Icon(Icons.alternate_email),
+                                  decoration: InputDecoration(
+                                    labelText: l10n.email,
+                                    prefixIcon: const Icon(
+                                      Icons.alternate_email,
+                                    ),
                                   ),
                                   validator: (v) =>
                                       v == null || !v.contains('@')
-                                      ? 'Enter a valid email'
+                                      ? l10n.emailInvalid
                                       : null,
                                 ),
                                 const SizedBox(height: 16),
@@ -219,12 +223,12 @@ class _AuthScreenState extends State<AuthScreen>
                                   enableSuggestions: false,
                                   textInputAction: TextInputAction.done,
                                   onEditingComplete: _submit,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Password',
-                                    prefixIcon: Icon(Icons.lock_outline),
+                                  decoration: InputDecoration(
+                                    labelText: l10n.password,
+                                    prefixIcon: const Icon(Icons.lock_outline),
                                   ),
                                   validator: (v) => v == null || v.length < 6
-                                      ? 'Min 6 characters'
+                                      ? l10n.passwordMin
                                       : null,
                                 ),
                                 if (_isSignUp) ...[
@@ -237,9 +241,11 @@ class _AuthScreenState extends State<AuthScreen>
                                     autocorrect: false,
                                     enableSuggestions: false,
                                     textInputAction: TextInputAction.next,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Display Name (optional)',
-                                      prefixIcon: Icon(Icons.person_outline),
+                                    decoration: InputDecoration(
+                                      labelText: l10n.displayNameOptional,
+                                      prefixIcon: const Icon(
+                                        Icons.person_outline,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -253,10 +259,12 @@ class _AuthScreenState extends State<AuthScreen>
                                           );
                                         },
                                       ),
-                                      const Expanded(
+                                      Expanded(
                                         child: Text(
-                                          'Send me tips and promotions',
-                                          style: TextStyle(fontSize: 13),
+                                          l10n.sendTips,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -279,21 +287,27 @@ class _AuthScreenState extends State<AuthScreen>
                                 )
                               : const Icon(Icons.login),
                           label: Text(
-                            submitting ? 'Please wait...' : _submitButtonLabel,
+                            submitting
+                                ? l10n.pleaseWait
+                                : _submitButtonLabel(l10n),
                           ),
                         ),
                         const SizedBox(height: 16),
                         Row(
-                          children: const [
-                            Expanded(child: Divider()),
+                          children: [
+                            const Expanded(child: Divider()),
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: Text(
-                                'or',
-                                style: TextStyle(color: Colors.black54),
+                                l10n.or,
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                ),
                               ),
                             ),
-                            Expanded(child: Divider()),
+                            const Expanded(child: Divider()),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -302,8 +316,8 @@ class _AuthScreenState extends State<AuthScreen>
                           icon: const Icon(Icons.g_mobiledata, size: 24),
                           label: Text(
                             _isGuestWall
-                                ? 'Continue with Google and keep sticker'
-                                : 'Continue with Google',
+                                ? l10n.continueWithGoogleKeep
+                                : l10n.continueWithGoogle,
                           ),
                         ),
                         if (_isGuestWall && !submitting) ...[
@@ -315,8 +329,8 @@ class _AuthScreenState extends State<AuthScreen>
                               onPressed: () => _tab.index = _isSignUp ? 1 : 0,
                               child: Text(
                                 _isSignUp
-                                    ? 'Already have an account? Sign in'
-                                    : 'New here? Create account',
+                                    ? l10n.alreadyHaveAccount
+                                    : l10n.newHere,
                                 style: const TextStyle(
                                   color: AppColors.primary,
                                 ),
@@ -336,13 +350,13 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  String get _submitButtonLabel {
+  String _submitButtonLabel(AppLocalizations l10n) {
     if (_isGuestWall) {
       return _tab.index == 0
-          ? 'Create account and keep sticker'
-          : 'Sign in to existing account';
+          ? l10n.createAccountKeepSticker
+          : l10n.signInExistingAccount;
     }
-    return _tab.index == 0 ? 'Sign in' : 'Create account';
+    return _tab.index == 0 ? l10n.signIn : l10n.createAccount;
   }
 }
 
@@ -357,22 +371,25 @@ class _GuestAuthWallHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           isSignUp
-              ? (hasGuestResult ? 'Save your sticker' : 'Create an account')
-              : 'Sign in to existing account',
+              ? (hasGuestResult
+                    ? l10n.saveYourSticker
+                    : l10n.createAccount)
+              : l10n.signInExistingAccount,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
           isSignUp
               ? (hasGuestResult
-                    ? 'You\'ve generated a sticker as a guest. Create an account to save and share it.'
-                    : 'Create an account to save and share your stickers.')
-              : 'Sign in to your existing account to access your stickers.',
+                    ? l10n.guestSaveWarning
+                    : l10n.guestCreateAccountDesc)
+              : l10n.guestSignInDesc,
           style: const TextStyle(color: Colors.black54),
         ),
       ],
@@ -383,6 +400,7 @@ class _GuestAuthWallHeader extends StatelessWidget {
 class _GuestWallWarning extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -401,8 +419,7 @@ class _GuestWallWarning extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Guest stickers cannot be moved to an existing account. '
-              'If you continue signing in, this guest sticker will be discarded.',
+              l10n.guestWallWarning,
               style: const TextStyle(fontSize: 13, color: Colors.black87),
             ),
           ),

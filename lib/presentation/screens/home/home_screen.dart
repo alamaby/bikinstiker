@@ -7,11 +7,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/presets.dart';
 import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/localization/preset_localizations.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_preset.dart';
 import '../../../data/models/user_subscription.dart';
 import '../../../data/repositories/sticker_repository.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
@@ -89,27 +91,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onGenerate(List<StickerPreset> presets) {
+    final l10n = AppLocalizations.of(context)!;
     final input = _promptCtrl.text.trim();
     final captionRaw = _captionCtrl.text.trim().toUpperCase();
     final validPresetIds = presets.map((p) => p.id).toSet();
     if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Type a short prompt first')),
+        SnackBar(content: Text(l10n.typePromptFirst)),
       );
       return;
     }
     if (input.length > kMaxPromptChars) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Prompt must be $kMaxPromptChars characters or less'),
-        ),
+        SnackBar(content: Text(l10n.promptTooLong(kMaxPromptChars))),
       );
       return;
     }
     if (_presetId == null || !validPresetIds.contains(_presetId)) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Choose a valid style')));
+      ).showSnackBar(SnackBar(content: Text(l10n.chooseValidStyle)));
       return;
     }
     context.read<StickerGenBloc>().add(
@@ -162,6 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -174,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final isGuest = authState.isGuest;
               if (isGuest) {
                 return IconButton(
-                  tooltip: 'Create account',
+                  tooltip: l10n.createAccount,
                   icon: const Icon(Icons.person_add),
                   onPressed: _openAuthWall,
                 );
@@ -182,14 +184,14 @@ class _HomeScreenState extends State<HomeScreen> {
               return Row(
                 children: [
                   IconButton(
-                    tooltip: 'Missions',
+                    tooltip: l10n.missions,
                     icon: const Icon(Icons.emoji_events_outlined),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const MissionsScreen()),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'My Packs',
+                    tooltip: l10n.myPacks,
                     icon: const Icon(Icons.collections_bookmark_outlined),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
@@ -201,14 +203,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'History',
+                    tooltip: l10n.history,
                     icon: const Icon(Icons.history),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const HistoryScreen()),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Profile',
+                    tooltip: l10n.profile,
                     icon: const Icon(Icons.person_outline),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const ProfileScreen()),
@@ -276,16 +278,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 final isTextOnly = selectedPreset?.isTextOnly ?? false;
                 final inputMaxChars = isTextOnly ? 20 : kMaxPromptChars;
                 final inputHint = isTextOnly
-                    ? 'e.g. HELLO, YUM, WOW'
-                    : 'e.g. a smiling boba tea cup waving hello';
+                    ? l10n.inputHintTextOnly
+                    : l10n.inputHintSubject;
                 final inputLabel = isTextOnly
-                    ? 'Type your text'
-                    : 'Describe your sticker';
+                    ? l10n.typeYourText
+                    : l10n.describeYourSticker;
 
                 if (isError && presets.isEmpty) {
                   return _PresetErrorView(
                     message:
-                        presetState.errorMessage ?? 'Failed to load styles',
+                        presetState.errorMessage ?? l10n.failedToLoadStyles,
                     onRetry: _onRefresh,
                   );
                 }
@@ -328,9 +330,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'Choose a style',
-                              style: TextStyle(
+                            Text(
+                              l10n.chooseStyle,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,
                               ),
@@ -366,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ? null
                                         : _reuseLastPrompt,
                                     icon: const Icon(Icons.replay, size: 16),
-                                    label: const Text('Use last'),
+                                    label: Text(l10n.useLast),
                                   ),
                               ],
                             ),
@@ -410,10 +412,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (!isTextOnly) ...[
                               Row(
                                 children: [
-                                  const Expanded(
+                                  Expanded(
                                     child: Text(
-                                      'Caption (optional)',
-                                      style: TextStyle(
+                                      l10n.captionOptional,
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 16,
                                       ),
@@ -444,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   LengthLimitingTextInputFormatter(10),
                                 ],
                                 decoration: InputDecoration(
-                                  hintText: 'e.g. READY',
+                                  hintText: l10n.captionExample,
                                   counterText: '',
                                 ),
                                 onChanged: (_) => setState(() {}),
@@ -454,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      'Position',
+                                      l10n.position,
                                       style: TextStyle(
                                         color: Theme.of(
                                           context,
@@ -464,14 +466,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const Spacer(),
                                     SegmentedButton<String>(
-                                      segments: const [
+                                      segments: [
                                         ButtonSegment(
                                           value: 'top',
-                                          label: Text('Top'),
+                                          label: Text(l10n.top),
                                         ),
                                         ButtonSegment(
                                           value: 'bottom',
-                                          label: Text('Bottom'),
+                                          label: Text(l10n.bottom),
                                         ),
                                       ],
                                       selected: {_captionPosition},
@@ -512,6 +514,7 @@ class _HomeScreenState extends State<HomeScreen> {
 class _CreditsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<WalletBloc, WalletBlocState>(
       builder: (context, walletState) {
         return BlocBuilder<AuthBloc, AuthBlocState>(
@@ -522,10 +525,10 @@ class _CreditsCard extends StatelessWidget {
                 final balance = walletState.balance;
                 final low = !walletState.loading && balance < kStickerCost;
                 final label = isGuest
-                    ? 'Guest Credits'
+                    ? l10n.guestCredits
                     : subState.isPlus
-                    ? 'Credits (Plus)'
-                    : 'Credits';
+                    ? l10n.creditsPlus
+                    : l10n.credits;
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -568,9 +571,9 @@ class _CreditsCard extends StatelessWidget {
                                 ),
                               ),
                               if (isGuest)
-                                const Text(
-                                  'Create an account for 5 credits',
-                                  style: TextStyle(
+                                Text(
+                                  l10n.createAccountForCredits,
+                                  style: const TextStyle(
                                     fontSize: 11,
                                     color: Colors.black54,
                                   ),
@@ -579,18 +582,18 @@ class _CreditsCard extends StatelessWidget {
                           ),
                         ),
                         if (low)
-                          const Tooltip(
-                            message: 'Low balance',
+                          Tooltip(
+                            message: l10n.lowBalance,
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.warning_amber,
                                   color: AppColors.error,
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Low',
-                                  style: TextStyle(
+                                  l10n.low,
+                                  style: const TextStyle(
                                     color: AppColors.error,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -623,6 +626,7 @@ class _PresetSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final selected = presets.firstWhere(
       (p) => p.id == selectedId,
       orElse: () => presets.first,
@@ -648,12 +652,15 @@ class _PresetSelector extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    selected.label,
+                    localizedPresetLabel(l10n, selected),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   Text(
-                    selected.description,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    localizedPresetDescription(l10n, selected),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
                   ),
                 ],
               ),
@@ -698,6 +705,7 @@ class _PresetPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -715,9 +723,9 @@ class _PresetPickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Choose style',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          Text(
+            l10n.chooseStyleTitle,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           Flexible(
@@ -733,13 +741,13 @@ class _PresetPickerSheet extends StatelessWidget {
                     style: const TextStyle(fontSize: 24),
                   ),
                   title: Text(
-                    p.label,
+                    localizedPresetLabel(l10n, p),
                     style: TextStyle(
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   subtitle: Text(
-                    p.description,
+                    localizedPresetDescription(l10n, p),
                     style: const TextStyle(fontSize: 13),
                   ),
                   trailing: selected
@@ -765,6 +773,7 @@ class _GenerateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<WalletBloc, WalletBlocState>(
       builder: (context, walletState) {
         return BlocBuilder<StickerGenBloc, StickerGenBlocState>(
@@ -773,7 +782,7 @@ class _GenerateButton extends StatelessWidget {
             final hasCredits = walletState.balance >= kStickerCost;
             final enabled = !submitting && hasCredits;
             return Tooltip(
-              message: hasCredits ? '' : 'Not enough credits',
+              message: hasCredits ? '' : l10n.notEnoughCredits,
               child: FilledButton.icon(
                 onPressed: enabled ? onPressed : null,
                 icon: submitting
@@ -785,8 +794,8 @@ class _GenerateButton extends StatelessWidget {
                     : const Icon(Icons.auto_awesome),
                 label: Text(
                   submitting
-                      ? 'Generating…'
-                      : 'Generate Sticker  ($kStickerCost credit)',
+                      ? l10n.generating
+                      : l10n.generateSticker(kStickerCost),
                 ),
               ),
             );
@@ -798,6 +807,7 @@ class _GenerateButton extends StatelessWidget {
 }
 
 Future<void> _shareSticker(BuildContext context, String signedUrl) async {
+  final l10n = AppLocalizations.of(context);
   try {
     await shareStickerImage(signedUrl);
   } catch (e) {
@@ -806,7 +816,7 @@ Future<void> _shareSticker(BuildContext context, String signedUrl) async {
       SnackBar(
         backgroundColor: AppColors.error,
         content: Text(
-          'Failed to share sticker: $e',
+          l10n == null ? 'Failed to share sticker: $e' : l10n.failedToShare(e),
           style: const TextStyle(color: Colors.white),
         ),
       ),
@@ -819,6 +829,7 @@ class _ResultPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<StickerGenBloc, StickerGenBlocState>(
       builder: (context, genState) {
         return BlocBuilder<AuthBloc, AuthBlocState>(
@@ -828,16 +839,16 @@ class _ResultPanel extends StatelessWidget {
               case StickerGenStatus.idle:
                 return const SizedBox.shrink();
               case StickerGenStatus.submitting:
-                return const Card(
+                return Card(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        LoadingLottie(size: 120),
-                        SizedBox(height: 12),
+                        const LoadingLottie(size: 120),
+                        const SizedBox(height: 12),
                         Text(
-                          'Conjuring your sticker…',
-                          style: TextStyle(fontWeight: FontWeight.w500),
+                          l10n.conjuringSticker,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -851,12 +862,15 @@ class _ResultPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
-                            Icon(Icons.check_circle, color: AppColors.success),
-                            SizedBox(width: 6),
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: AppColors.success,
+                            ),
+                            const SizedBox(width: 6),
                             Text(
-                              'Done',
-                              style: TextStyle(
+                              l10n.done,
+                              style: const TextStyle(
                                 color: AppColors.success,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -922,18 +936,18 @@ class _ResultPanel extends StatelessWidget {
                               color: AppColors.primary.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.lightbulb_outline,
                                   size: 16,
                                   color: AppColors.primary,
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Next: add this sticker to a pack',
-                                  style: TextStyle(
+                                  l10n.nextAddToPack,
+                                  style: const TextStyle(
                                     fontSize: 13,
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w500,
@@ -952,7 +966,7 @@ class _ResultPanel extends StatelessWidget {
                                     genState.signedUrl!,
                                   ),
                                   icon: const Icon(Icons.share, size: 18),
-                                  label: const Text('Share'),
+                                  label: Text(l10n.share),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -970,7 +984,7 @@ class _ResultPanel extends StatelessWidget {
                                     Icons.collections_bookmark,
                                     size: 18,
                                   ),
-                                  label: const Text('Add to Pack'),
+                                  label: Text(l10n.addToPack),
                                 ),
                               ),
                             ],
@@ -998,8 +1012,8 @@ class _ResultPanel extends StatelessWidget {
                 }
 
                 final msg = failure is InsufficientCreditsFailure
-                    ? 'Not enough credits to generate.'
-                    : failure?.message ?? 'Generation failed';
+                    ? l10n.notEnoughCreditsToGenerate
+                    : failure?.message ?? l10n.generationFailed;
                 final icon = failure is InsufficientCreditsFailure
                     ? Icons.error_outline
                     : Icons.error_outline;
@@ -1034,6 +1048,7 @@ class _GuestResultCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1054,7 +1069,7 @@ class _GuestResultCta extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Create an account to save or share this sticker.',
+                  l10n.createAccountSaveShare,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -1073,7 +1088,7 @@ class _GuestResultCta extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.person_add),
-          label: const Text('Create account and keep sticker'),
+          label: Text(l10n.createAccountKeepSticker),
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
@@ -1084,11 +1099,11 @@ class _GuestResultCta extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.login),
-          label: const Text('Sign in to existing account'),
+          label: Text(l10n.signInExistingAccount),
         ),
         const SizedBox(height: 8),
         Text(
-          'If you sign in to an existing account, this guest sticker will be discarded.',
+          l10n.guestDiscardWarning,
           style: const TextStyle(fontSize: 11, color: Colors.black54),
           textAlign: TextAlign.center,
         ),
@@ -1141,9 +1156,10 @@ class _RateLimitedCardState extends State<_RateLimitedCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final msg = widget.retryAfterSeconds > 60
-        ? 'Too many requests. Please try again in a few minutes.'
-        : 'Too many requests. Please wait ${_remaining}s.';
+        ? l10n.tooManyRequests
+        : l10n.tooManyRequestsWait(_remaining);
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
@@ -1156,7 +1172,7 @@ class _RateLimitedCardState extends State<_RateLimitedCard> {
             ),
             IconButton(
               icon: const Icon(Icons.close, color: AppColors.error),
-              tooltip: 'Dismiss',
+              tooltip: l10n.dismiss,
               onPressed: () {
                 _timer?.cancel();
                 context.read<StickerGenBloc>().add(const StickerGenReset());
@@ -1213,9 +1229,10 @@ class _ParallelRequestCardState extends State<_ParallelRequestCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final msg = _remaining != null
-        ? 'A generation is already running. Please wait ${_remaining}s.'
-        : 'A sticker generation is already in progress.';
+        ? l10n.generationRunning(_remaining!)
+        : l10n.generationInProgress;
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
@@ -1228,7 +1245,7 @@ class _ParallelRequestCardState extends State<_ParallelRequestCard> {
             ),
             IconButton(
               icon: const Icon(Icons.close, color: AppColors.error),
-              tooltip: 'Dismiss',
+              tooltip: l10n.dismiss,
               onPressed: () {
                 _timer?.cancel();
                 context.read<StickerGenBloc>().add(const StickerGenReset());
@@ -1305,6 +1322,7 @@ class _EmptyPresetsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1317,13 +1335,13 @@ class _EmptyPresetsView extends StatelessWidget {
         children: [
           const Icon(Icons.style_outlined, size: 36, color: AppColors.outline),
           const SizedBox(height: 8),
-          const Text(
-            'No styles available right now',
-            style: TextStyle(fontWeight: FontWeight.w600),
+          Text(
+            l10n.noStylesAvailable,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
-            'Pull down to refresh',
+            l10n.pullToRefresh,
             style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
         ],
@@ -1339,6 +1357,7 @@ class _PresetErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1356,7 +1375,7 @@ class _PresetErrorView extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Retry'),
+              label: Text(l10n.retry),
             ),
           ],
         ),

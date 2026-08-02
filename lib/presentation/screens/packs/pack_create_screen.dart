@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 
 /// Screen for creating a new sticker pack.
@@ -36,6 +37,7 @@ class _PackCreateScreenState extends State<PackCreateScreen> {
     final bloc = context.read<StickerPackBloc>();
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
 
     try {
       bloc.add(StickerPackCreateRequested(name));
@@ -48,7 +50,9 @@ class _PackCreateScreenState extends State<PackCreateScreen> {
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text('Failed to create pack: $e'),
+            content: Text(
+              l10n == null ? 'Failed to create pack: $e' : l10n.failedCreatePack,
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -59,8 +63,9 @@ class _PackCreateScreenState extends State<PackCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('New Sticker Pack')),
+      appBar: AppBar(title: Text(l10n.newStickerPack)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -71,26 +76,25 @@ class _PackCreateScreenState extends State<PackCreateScreen> {
               TextFormField(
                 controller: _nameController,
                 maxLength: 128,
-                decoration: const InputDecoration(
-                  labelText: 'Pack name',
-                  hintText: 'e.g., My Cute Cats',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.packName,
+                  hintText: l10n.packNameHint,
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (value) {
                   final trimmed = value?.trim() ?? '';
                   if (trimmed.isEmpty) {
-                    return 'Please enter a name';
+                    return l10n.enterName;
                   }
                   if (trimmed.length > 128) {
-                    return 'Name must be 128 characters or less';
+                    return l10n.nameTooLong;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               Text(
-                'You can add stickers to this pack after creating it. '
-                'You need at least 3 stickers to import the pack to WhatsApp.',
+                l10n.packCreateGuidance,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 24),
@@ -109,7 +113,7 @@ class _PackCreateScreenState extends State<PackCreateScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Create Pack'),
+                    : Text(l10n.createPack),
               ),
             ],
           ),

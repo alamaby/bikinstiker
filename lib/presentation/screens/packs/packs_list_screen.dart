@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 import '../../widgets/ads_banner_widget.dart';
 import '../../widgets/pack_capacity_indicator.dart';
@@ -16,8 +17,9 @@ class PacksListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('My Sticker Packs')),
+      appBar: AppBar(title: Text(l10n.myStickerPacks)),
       body: MultiBlocListener(
         listeners: [
           BlocListener<StickerPackBloc, StickerPackState>(
@@ -26,7 +28,7 @@ class PacksListScreen extends StatelessWidget {
             listener: (context, state) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.errorMessage ?? 'An error occurred'),
+                  content: Text(state.errorMessage ?? l10n.errorOccurred),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -54,7 +56,7 @@ class PacksListScreen extends StatelessWidget {
             }
             if (state.status == StickerPackStatus.error &&
                 state.packs.isEmpty) {
-              return Center(child: Text(state.errorMessage ?? 'Error'));
+              return Center(child: Text(state.errorMessage ?? l10n.error));
             }
 
             return RefreshIndicator(
@@ -137,7 +139,7 @@ class PacksListScreen extends StatelessWidget {
                     );
                   },
             icon: const Icon(Icons.add),
-            label: const Text('New Pack'),
+            label: Text(l10n.newPack),
             backgroundColor: state.isAtCapacity()
                 ? AppColors.outline
                 : AppColors.secondary,
@@ -155,6 +157,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -168,12 +171,12 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No packs yet',
+              l10n.noPacksYet,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Create a pack to organize your stickers for WhatsApp import.\nYou need at least 3 stickers to import a pack.',
+              l10n.packOrgGuidance,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),

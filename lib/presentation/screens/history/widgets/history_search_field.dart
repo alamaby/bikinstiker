@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class HistorySearchField extends StatefulWidget {
   final ValueChanged<String> onChanged;
@@ -40,13 +41,15 @@ class _HistorySearchFieldState extends State<HistorySearchField> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.locked) {
       return _LockedSearchField(
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Text search is a Plus feature')),
+            SnackBar(content: Text(l10n.searchPlusFeature)),
           );
         },
+        hintText: l10n.searchStickers,
       );
     }
     return TextField(
@@ -55,7 +58,7 @@ class _HistorySearchFieldState extends State<HistorySearchField> {
       onChanged: _onChanged,
       textCapitalization: TextCapitalization.sentences,
       decoration: InputDecoration(
-        hintText: 'Search stickers...',
+        hintText: l10n.searchStickers,
         prefixIcon: const Icon(Icons.search, size: 20),
         suffixIcon: _controller.text.isNotEmpty
             ? IconButton(
@@ -91,7 +94,8 @@ class _HistorySearchFieldState extends State<HistorySearchField> {
 
 class _LockedSearchField extends StatelessWidget {
   final VoidCallback onTap;
-  const _LockedSearchField({required this.onTap});
+  final String hintText;
+  const _LockedSearchField({required this.onTap, required this.hintText});
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +104,7 @@ class _LockedSearchField extends StatelessWidget {
       child: TextField(
         enabled: false,
         decoration: InputDecoration(
-          hintText: 'Search stickers...',
+          hintText: hintText,
           prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Colors.black38),
           filled: true,
           fillColor: AppColors.surface,

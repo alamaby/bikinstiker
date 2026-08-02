@@ -10,6 +10,7 @@ import '../../../core/whatsapp_pack_exporter.dart';
 import '../../../data/models/sticker_pack.dart';
 import '../../../data/models/sticker_pack_item.dart';
 import '../../../data/repositories/sticker_pack_repository.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 
 /// Screen showing a single sticker pack's details.
@@ -40,24 +41,25 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
   Widget build(BuildContext context) {
     return BlocBuilder<StickerPackBloc, StickerPackState>(
       builder: (context, state) {
+        final l10n = AppLocalizations.of(context)!;
         final pack = state.selectedPack;
         final items = state.selectedPackItems;
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(pack?.name ?? 'Pack'),
+            title: Text(pack?.name ?? l10n.pack),
             actions: [
               if (pack != null && pack.canRename)
                 IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () => _showRenameDialog(context, pack),
-                  tooltip: 'Rename',
+                  tooltip: l10n.rename,
                 ),
               if (pack != null && pack.canDelete)
                 IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: () => _showDeleteDialog(context, pack),
-                  tooltip: 'Delete',
+                  tooltip: l10n.delete,
                 ),
             ],
           ),
@@ -69,7 +71,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
                 listener: (context, state) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(state.errorMessage ?? 'An error occurred'),
+                      content: Text(state.errorMessage ?? l10n.errorOccurred),
                       backgroundColor: AppColors.error,
                     ),
                   );
@@ -83,10 +85,10 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
                 },
               ),
             ],
-            child: _buildBody(context, pack, items, state),
+            child: _buildBody(context, pack, items, state, l10n),
           ),
           bottomNavigationBar: pack != null
-              ? _buildBottomBar(context, pack, items.length)
+              ? _buildBottomBar(context, pack, items.length, l10n)
               : null,
         );
       },
@@ -98,6 +100,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
     StickerPack? pack,
     List<StickerPackItem> items,
     StickerPackState state,
+    AppLocalizations l10n,
   ) {
     if (state.detailStatus == StickerPackStatus.initial ||
         state.detailStatus == StickerPackStatus.loading) {
@@ -105,15 +108,15 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
     }
 
     if (state.detailStatus == StickerPackStatus.error && pack == null) {
-      return Center(child: Text(state.errorMessage ?? 'Error loading pack'));
+      return Center(child: Text(state.errorMessage ?? l10n.errorLoadingPack));
     }
 
     if (pack == null) {
-      return const Center(child: Text('Pack not found'));
+      return Center(child: Text(l10n.packNotFound));
     }
 
-    if (pack.isLocked) {
-      return _LockedState(pack: pack);
+if (pack.isLocked) {
+      return _LockedState(pack: pack, l10n: l10n);
     }
 
     return RefreshIndicator(
@@ -130,10 +133,10 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
               child: _PackHeader(pack: pack, itemCount: items.length),
             ),
           ),
-          if (items.isEmpty)
+if (items.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: _EmptyItemsState(pack: pack),
+              child: _EmptyItemsState(pack: pack, l10n: l10n),
             )
           else
             SliverPadding(
@@ -175,6 +178,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
     BuildContext context,
     StickerPack pack,
     int itemCount,
+    AppLocalizations l10n,
   ) {
     final canExport = pack.canExport;
     return Container(
@@ -187,14 +191,14 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
         children: [
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: canExport
-                  ? () => _onExportToWhatsApp(context, pack)
-                  : null,
+onPressed: canExport
+                   ? () => _onExportToWhatsApp(context, pack, l10n)
+                   : null,
               icon: const Icon(Icons.send),
               label: Text(
                 canExport
-                    ? 'Export to WhatsApp'
-                    : 'Add ${3 - itemCount} more stickers',
+                    ? l10n.exportToWhatsApp
+                    : l10n.addMoreStickers(3 - itemCount),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: canExport
@@ -212,6 +216,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
   Future<void> _onExportToWhatsApp(
     BuildContext context,
     StickerPack pack,
+    AppLocalizations l10n,
   ) async {
     final items = context.read<StickerPackBloc>().state.selectedPackItems;
     final exporter = WhatsAppPackExporter();
@@ -245,24 +250,22 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
     switch (result) {
       case WhatsAppExportSuccess():
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Opening WhatsApp...'),
+          SnackBar(
+            content: Text(l10n.openingWhatsApp),
             backgroundColor: AppColors.success,
           ),
         );
       case WhatsAppExportNotInstalled():
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'WhatsApp is not installed. Please install WhatsApp first.',
-            ),
+          SnackBar(
+            content: Text(l10n.whatsAppNotInstalled),
             backgroundColor: AppColors.error,
           ),
         );
       case WhatsAppExportError(:final message):
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Export failed: $message'),
+            content: Text(l10n.exportFailed(message)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -270,25 +273,26 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
   }
 
   Future<void> _showRenameDialog(BuildContext context, StickerPack pack) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: pack.name);
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Rename Pack'),
+          title: Text(l10n.renamePack),
           content: TextField(
             controller: controller,
             maxLength: 128,
-            decoration: const InputDecoration(
-              labelText: 'Pack name',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.packName,
+              border: const OutlineInputBorder(),
             ),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -297,7 +301,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
                   Navigator.of(dialogContext).pop(newName);
                 }
               },
-              child: const Text('Save'),
+              child: Text(l10n.save),
             ),
           ],
         );
@@ -312,24 +316,25 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
   }
 
   Future<void> _showDeleteDialog(BuildContext context, StickerPack pack) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete Pack?'),
+          title: Text(l10n.deletePackQuestion),
           content: Text(
-            'Are you sure you want to delete "${pack.name}"? '
+            '${l10n.removeStickerQuestion} "${pack.name}"? '
             'The stickers themselves will remain in your history.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('Delete'),
+              child: Text(l10n.delete),
             ),
           ],
         );
@@ -349,24 +354,25 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
     StickerPack pack,
     String stickerGenerationId,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Remove Sticker?'),
+          title: Text(l10n.removeStickerQuestion),
           content: Text(
-            'Remove this sticker from "${pack.name}"? '
+            '${l10n.removeStickerQuestion} "${pack.name}"? '
             'The sticker will remain in your history.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('Remove'),
+              child: Text(l10n.remove),
             ),
           ],
         );
@@ -389,6 +395,7 @@ class _PackHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -410,7 +417,7 @@ class _PackHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$itemCount of 30 stickers',
+                    l10n.addMoreStickers((3 - itemCount).clamp(0, 3)),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
@@ -432,8 +439,7 @@ class _PackHeader extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'This pack is locked due to a tier change. '
-                    'Upgrade to Plus to unlock all packs.',
+                    l10n.packLockedMessage,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -458,11 +464,11 @@ class _PackHeader extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Your pack is ready. Export it to WhatsApp.',
+                    l10n.packReadyCallout,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w600,
-                    ),
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ],
@@ -650,8 +656,9 @@ class _StickerItemTileState extends State<_StickerItemTile> {
 
 class _EmptyItemsState extends StatelessWidget {
   final StickerPack pack;
+  final AppLocalizations l10n;
 
-  const _EmptyItemsState({required this.pack});
+  const _EmptyItemsState({required this.pack, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -664,7 +671,7 @@ class _EmptyItemsState extends StatelessWidget {
             Icon(Icons.image_outlined, size: 64, color: AppColors.outline),
             const SizedBox(height: 16),
             Text(
-              'No stickers yet',
+              l10n.packNoStickersYet,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -682,8 +689,9 @@ class _EmptyItemsState extends StatelessWidget {
 
 class _LockedState extends StatelessWidget {
   final StickerPack pack;
+  final AppLocalizations l10n;
 
-  const _LockedState({required this.pack});
+  const _LockedState({required this.pack, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -695,11 +703,10 @@ class _LockedState extends StatelessWidget {
           children: [
             Icon(Icons.lock, size: 64, color: AppColors.warning),
             const SizedBox(height: 16),
-            Text('Pack locked', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.packLockedMessage, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'This pack was locked because your tier changed. '
-              'Upgrade to Plus to unlock all your packs.',
+              l10n.packLockedMessage,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),

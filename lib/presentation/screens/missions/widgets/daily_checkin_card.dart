@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/mission_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/models/daily_checkin_streak.dart';
 import '../../../../data/models/mission.dart';
 import '../../../../data/models/user_subscription.dart';
+import '../../../../l10n/app_localizations.dart';
 
 const _dayMarkers = [
   (themed: '\u{1F305}', numeric: '\u{1F51F}'), // Day 1: sunrise + 1
@@ -35,6 +37,7 @@ class DailyCheckinCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final s = streak ?? DailyCheckinStreak.empty();
     final canClaim = s.canClaim;
 
@@ -47,7 +50,7 @@ class DailyCheckinCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  mission.label,
+                  localizedMissionLabel(l10n, mission),
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
@@ -77,7 +80,7 @@ class DailyCheckinCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              mission.description,
+              localizedMissionDescription(l10n, mission),
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
             const SizedBox(height: 12),
@@ -102,7 +105,7 @@ class DailyCheckinCard extends StatelessWidget {
                 Icon(Icons.bolt, size: 16, color: AppColors.secondary),
                 const SizedBox(width: 4),
                 Text(
-                  '+${mission.rewardForTier(userTier)} credit${mission.rewardForTier(userTier) == 1 ? '' : 's'}/day',
+                  l10n.missionRewardCredits(mission.rewardForTier(userTier)),
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -113,16 +116,18 @@ class DailyCheckinCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text(
-                        'Cycle complete!',
-                        style: TextStyle(
+                      Text(
+                        l10n.cycleComplete,
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.success,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        'Next in ${_formatCooldown(s.cooldownRemainingSeconds)}',
+                        l10n.nextIn(
+                          _formatCooldown(s.cooldownRemainingSeconds),
+                        ),
                         style: const TextStyle(
                           fontSize: 11,
                           color: Colors.black45,
@@ -137,15 +142,15 @@ class DailyCheckinCard extends StatelessWidget {
                       minimumSize: const Size(0, 32),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                     ),
-                    child: const Text(
-                      'Start new cycle',
-                      style: TextStyle(fontSize: 13),
+                    child: Text(
+                      l10n.startNewCycle,
+                      style: const TextStyle(fontSize: 13),
                     ),
                   )
                 else if (!canClaim)
-                  const Text(
-                    'Checked in',
-                    style: TextStyle(
+                  Text(
+                    l10n.checkedIn,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: Colors.black38,
                       fontWeight: FontWeight.w500,
@@ -158,9 +163,9 @@ class DailyCheckinCard extends StatelessWidget {
                       minimumSize: const Size(0, 32),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                     ),
-                    child: const Text(
-                      'Check-in',
-                      style: TextStyle(fontSize: 13),
+                    child: Text(
+                      l10n.checkIn,
+                      style: const TextStyle(fontSize: 13),
                     ),
                   ),
               ],

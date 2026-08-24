@@ -30,7 +30,7 @@ Future<void> configureDependencies() async {
     () => SupabaseAuthRepository(client),
   );
   getIt.registerLazySingleton<LegalConsentRepository>(
-    () => LegalConsentRepository(prefs),
+    () => LegalConsentRepository(client),
   );
   getIt.registerLazySingleton<LocaleRepository>(
     () => LocaleRepository(prefs),

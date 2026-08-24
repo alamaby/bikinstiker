@@ -1,16 +1,32 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/legal_consent_repository.dart';
 import '../../../l10n/app_localizations.dart';
 
+/// Renders Terms + Privacy and records acceptance server-side. The exact
+/// localized documents are loaded from assets, hashed, and compared against
+/// the current registry so the user only ever accepts what the registry
+/// actually contained.
 class LegalConsentScreen extends StatefulWidget {
-  final VoidCallback onAccepted;
+  final LegalConsentStatus status;
+  final bool submitting;
+  final Future<void> Function({
+    required String termsSha256,
+    required String privacySha256,
+  }) onAccept;
 
-  const LegalConsentScreen({super.key, required this.onAccepted});
+  const LegalConsentScreen({
+    super.key,
+    required this.status,
+    required this.submitting,
+    required this.onAccept,
+  });
 
   @override
   State<LegalConsentScreen> createState() => _LegalConsentScreenState();
@@ -20,7 +36,6 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tab = TabController(length: 2, vsync: this);
   bool _accepted = false;
-  bool _submitting = false;
   String _privacyMarkdown = '';
   String _termsMarkdown = '';
   bool _loading = true;
@@ -28,12 +43,9 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
   int _loadGeneration = 0;
   String? _loadedSuffix;
 
-  String get _docSuffix =>
-      Localizations.localeOf(context).languageCode == 'id' ? 'id' : 'en';
-
-  @override
-  void initState() {
-    super.initState();
+  String get _docSuffix {
+    final code = Localizations.localeOf(context).languageCode;
+    return code == 'id' ? 'id' : 'en';
   }
 
   @override
@@ -60,9 +72,15 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
         rootBundle.loadString('docs/terms-of-service-$suffix.md'),
       ]);
       if (!mounted || generation != _loadGeneration) return;
+      final privacySha = _sha256(results[0]);
+      final termsSha = _sha256(results[1]);
       setState(() {
         _privacyMarkdown = results[0];
         _termsMarkdown = results[1];
+        _privacyHash = privacySha;
+        _termsHash = termsSha;
+        _privacyMismatch = privacySha != widget.status.privacy.sha256;
+        _termsMismatch = termsSha != widget.status.terms.sha256;
         _loading = false;
         _loadError = null;
       });
@@ -70,22 +88,26 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
       if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _loading = false;
-        _loadError = 'Failed to load documents';
+        _loadError = 'load';
       });
     }
   }
 
+  String _sha256(String source) =>
+      sha256.convert(utf8.encode(source)).toString();
+
+  String _privacyHash = '';
+  String _termsHash = '';
+  bool _privacyMismatch = false;
+  bool _termsMismatch = false;
+
   Future<void> _onContinue() async {
-    if (!_accepted || _submitting) return;
-    setState(() => _submitting = true);
-    try {
-      await context.read<LegalConsentRepository>().acceptCurrent();
-      if (!mounted) return;
-      widget.onAccepted();
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _submitting = false);
-    }
+    if (!_accepted || widget.submitting) return;
+    if (_privacyMismatch || _termsMismatch) return;
+    await widget.onAccept(
+      termsSha256: _termsHash,
+      privacySha256: _privacyHash,
+    );
   }
 
   @override
@@ -100,27 +122,17 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.auto_awesome,
-                          size: 32,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'BikinStiker',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(24, 24, 24, 4),
+                    child: Text(
+                      'BikinStiker',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
@@ -131,7 +143,6 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Tab bar
                   TabBar(
                     controller: _tab,
                     indicatorColor: AppColors.primary,
@@ -143,14 +154,10 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                       Tab(text: l10n.termsOfService),
                     ],
                   ),
-                  // Markdown content
-                  Expanded(
-                    child: _buildContent(l10n),
-                  ),
+                  Expanded(child: _buildContent(l10n)),
                 ],
               ),
             ),
-            // Checkbox + Continue
             Container(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
               decoration: const BoxDecoration(
@@ -189,15 +196,16 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                   ),
                   const SizedBox(height: 8),
                   FilledButton(
-                    onPressed: _accepted && !_submitting
-                        ? _onContinue
-                        : null,
-                    child: _submitting
+                    onPressed:
+                        _accepted && !widget.submitting && !_privacyMismatch &&
+                                !_termsMismatch
+                            ? _onContinue
+                            : null,
+                    child: widget.submitting
                         ? const SizedBox(
                             height: 16,
                             width: 16,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(l10n.continueLabel),
                   ),
@@ -215,29 +223,10 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_loadError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 40, color: AppColors.error),
-              const SizedBox(height: 12),
-              Text(
-                _loadError!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.error),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () => _loadDocuments(_docSuffix),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text(l10n.retry),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _message(l10n, l10n.consentErrorBody, showRetry: true);
+    }
+    if (_privacyMismatch || _termsMismatch) {
+      return _message(l10n, l10n.consentDocsChanged, showRetry: true);
     }
     return TabBarView(
       controller: _tab,
@@ -247,9 +236,35 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
       ],
     );
   }
+
+  Widget _message(AppLocalizations l10n, String body, {required bool showRetry}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 40, color: AppColors.error),
+            const SizedBox(height: 12),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            if (showRetry)
+              FilledButton.icon(
+                onPressed: () => _loadDocuments(_docSuffix),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: Text(l10n.retry),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-/// Renders a markdown document in a scrollable container.
 class _MarkdownDoc extends StatelessWidget {
   final String markdown;
 

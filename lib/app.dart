@@ -32,8 +32,11 @@ import 'presentation/blocs/home_prefill/home_prefill_cubit.dart';
 import 'presentation/blocs/sticker_gen/sticker_gen_bloc.dart';
 import 'presentation/blocs/subscription/subscription_bloc.dart';
 import 'presentation/blocs/wallet/wallet_bloc.dart';
+import 'presentation/blocs/legal_consent/legal_consent_cubit.dart';
+import 'presentation/blocs/legal_consent/legal_consent_state.dart';
 import 'presentation/screens/auth/auth_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
+import 'presentation/screens/legal/legal_consent_error_screen.dart';
 import 'presentation/screens/legal/legal_consent_screen.dart';
 import 'presentation/screens/locale/language_selection_screen.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
@@ -124,6 +127,11 @@ class BikinStikerApp extends StatelessWidget {
               platformLocale: WidgetsBinding.instance.platformDispatcher.locale,
             ),
           ),
+          BlocProvider(
+            create: (ctx) => LegalConsentCubit(
+              ctx.read<LegalConsentRepository>(),
+            ),
+          ),
         ],
         child: BlocBuilder<LocaleCubit, LocaleState>(
           builder: (context, localeState) {
@@ -154,6 +162,7 @@ class _AuthGateState extends State<_AuthGate> {
   bool _anonymousRequested = false;
   bool _startingGuestSession = false;
   User? _previousUser;
+  String _consentKey = '';
 
   StickerPresetRole _roleFor(AuthBlocState auth, SubscriptionState subState) {
     if (auth.user == null) return StickerPresetRole.guest;
@@ -241,28 +250,12 @@ class _AuthGateState extends State<_AuthGate> {
           if (!localeState.explicitlySelected) {
             return const LanguageSelectionScreen();
           }
-          final hasAccepted = context
-              .read<LegalConsentRepository>()
-              .hasAcceptedCurrent;
-          if (!hasAccepted) {
-            _anonymousRequested = false;
-            _startingGuestSession = false;
-            return LegalConsentScreen(onAccepted: () => setState(() {}));
-          }
+          final localeCode = localeState.locale.languageCode;
+          final legal = context.watch<LegalConsentCubit>().state;
+
           switch (state.status) {
             case AuthStatus.unknown:
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            case AuthStatus.authenticated: {
-              final onboarding = getIt<OnboardingRepository>();
-              if (!onboarding.hasCompletedCoreFlow) {
-                return OnboardingScreen(
-                  onFinished: () => setState(() {}),
-                );
-              }
-              return const HomeScreen();
-            }
+              return const _Splash();
             case AuthStatus.unauthenticated:
               if (!_anonymousRequested) {
                 _anonymousRequested = true;
@@ -270,48 +263,15 @@ class _AuthGateState extends State<_AuthGate> {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
                     context.read<AuthBloc>().add(
-                      const AuthAnonymousRequested(),
-                    );
+                          const AuthAnonymousRequested(),
+                        );
                   }
                 });
               }
-              return Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 12),
-                      Text(AppLocalizations.of(context)!.preparingGuestSession),
-                    ],
-                  ),
-                ),
-              );
-            case AuthStatus.guest: {
-              final onboarding = getIt<OnboardingRepository>();
-              if (!onboarding.hasCompletedCoreFlow) {
-                return OnboardingScreen(
-                  onFinished: () => setState(() {}),
-                );
-              }
-              return const HomeScreen();
-            }
+              return const _PreparingSession();
             case AuthStatus.submitting:
               if (_startingGuestSession) {
-                return Scaffold(
-                  body: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 12),
-                        Text(
-                          AppLocalizations.of(context)!.preparingGuestSession,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                return const _PreparingSession();
               }
               return const Stack(
                 children: [
@@ -324,8 +284,107 @@ class _AuthGateState extends State<_AuthGate> {
                   ),
                 ],
               );
+            case AuthStatus.guest:
+            case AuthStatus.authenticated:
+              final userId = state.user!.id;
+              final consentKey = '$userId|$localeCode';
+              if (_consentKey != consentKey) {
+                _consentKey = consentKey;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    context
+                        .read<LegalConsentCubit>()
+                        .check(userId: userId, locale: localeCode);
+                  }
+                });
+              }
+              return _buildAfterUser(
+                context,
+                userId,
+                localeCode,
+                legal,
+              );
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildAfterUser(
+    BuildContext context,
+    String userId,
+    String localeCode,
+    LegalConsentState legal,
+  ) {
+    final consentCubit = context.read<LegalConsentCubit>();
+    switch (legal.phase) {
+      case LegalConsentPhase.ready:
+        if (legal.status != null) {
+          if (legal.status!.requiresAcceptance) {
+            return LegalConsentScreen(
+              status: legal.status!,
+              submitting: legal.submitting,
+              onAccept:
+                  ({required termsSha256, required privacySha256}) async {
+                await consentCubit.accept(
+                  userId: userId,
+                  locale: localeCode,
+                  status: legal.status!,
+                  termsSha256: termsSha256,
+                  privacySha256: privacySha256,
+                );
+              },
+            );
+          }
+          return _homeOrOnboarding(context);
+        }
+        return const _Splash();
+      case LegalConsentPhase.error:
+        return LegalConsentErrorScreen(
+          message: legal.errorMessage ?? '',
+          onRetry: () =>
+              consentCubit.retry(userId: userId, locale: localeCode),
+        );
+      case LegalConsentPhase.loading:
+        return const _Splash();
+    }
+  }
+
+  Widget _homeOrOnboarding(BuildContext context) {
+    final onboarding = getIt<OnboardingRepository>();
+    if (!onboarding.hasCompletedCoreFlow) {
+      return OnboardingScreen(onFinished: () => setState(() {}));
+    }
+    return const HomeScreen();
+  }
+}
+
+class _Splash extends StatelessWidget {
+  const _Splash();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _PreparingSession extends StatelessWidget {
+  const _PreparingSession();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text(AppLocalizations.of(context)!.preparingGuestSession),
+          ],
+        ),
       ),
     );
   }

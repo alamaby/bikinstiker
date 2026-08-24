@@ -14,6 +14,7 @@ import '../../../data/repositories/profile_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/credit_transactions/credit_transactions_bloc.dart';
+import '../../blocs/legal_consent/legal_consent_cubit.dart';
 import '../../blocs/locale/locale_cubit.dart';
 import '../../blocs/profile/profile_cubit.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
@@ -627,6 +628,19 @@ class _ProfileView extends StatelessWidget {
           ),
           const Divider(height: 1),
           ListTile(
+            leading: Icon(Icons.privacy_tip_outlined, color: Colors.orange),
+            title: Text(
+              l10n.withdrawPrivacy,
+              style: const TextStyle(color: Colors.orange),
+            ),
+            subtitle: Text(
+              l10n.withdrawPrivacySub,
+              style: const TextStyle(fontSize: 12),
+            ),
+            onTap: () => _showWithdrawPrivacyDialog(context),
+          ),
+          const Divider(height: 1),
+          ListTile(
             leading: Icon(Icons.delete_forever, color: AppColors.error),
             title: Text(
               l10n.deleteAccount,
@@ -809,6 +823,36 @@ class _ProfileView extends StatelessWidget {
               context.read<AuthBloc>().add(const AuthSignOutRequested());
             },
             child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWithdrawPrivacyDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final userId = context.read<AuthBloc>().state.user!.id;
+    final locale = context.read<LocaleCubit>().state.locale.languageCode;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.withdrawPrivacy),
+        content: Text(l10n.withdrawPrivacyBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<LegalConsentCubit>().withdrawPrivacy(
+                userId: userId,
+                locale: locale,
+              );
+            },
+            child: Text(l10n.withdrawPrivacyConfirm),
           ),
         ],
       ),

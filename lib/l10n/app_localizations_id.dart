@@ -926,4 +926,29 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get presetRetroStickerDesc => 'Nuansa halftone 90an';
+
+  @override
+  String get consentErrorTitle => 'Tidak dapat mengonfirmasi persetujuan';
+
+  @override
+  String get consentErrorBody =>
+      'Kami tidak dapat mengonfirmasi dokumen hukum Anda saat ini. Periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get consentDocsChanged =>
+      'Dokumen hukum telah diperbarui. Harap perbarui aplikasi untuk melanjutkan.';
+
+  @override
+  String get withdrawPrivacy => 'Cabut Persetujuan Privasi';
+
+  @override
+  String get withdrawPrivacySub =>
+      'Hentikan pemrosesan berbasis persetujuan (Ketentuan tetap berlaku).';
+
+  @override
+  String get withdrawPrivacyBody =>
+      'Ini menghentikan pemrosesan yang bergantung pada persetujuan Anda.';
+
+  @override
+  String get withdrawPrivacyConfirm => 'Cabut';
 }

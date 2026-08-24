@@ -290,5 +290,12 @@
   "presetChibi3dLabel": "3D Chibi",
   "presetChibi3dDesc": "Render 3d mengkilap",
   "presetRetroStickerLabel": "Retro",
-  "presetRetroStickerDesc": "Nuansa halftone 90an"
+  "presetRetroStickerDesc": "Nuansa halftone 90an",
+  "consentErrorTitle": "Tidak dapat mengonfirmasi persetujuan",
+  "consentErrorBody": "Kami tidak dapat mengonfirmasi dokumen hukum Anda saat ini. Periksa koneksi Anda dan coba lagi.",
+  "consentDocsChanged": "Dokumen hukum telah diperbarui. Harap perbarui aplikasi untuk melanjutkan.",
+  "withdrawPrivacy": "Cabut Persetujuan Privasi",
+  "withdrawPrivacySub": "Hentikan pemrosesan berbasis persetujuan (Ketentuan tetap berlaku).",
+  "withdrawPrivacyBody": "Ini menghentikan pemrosesan yang bergantung pada persetujuan Anda.",
+  "withdrawPrivacyConfirm": "Cabut"
 }

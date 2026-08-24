@@ -1,40 +1,125 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Server-side legal consent registry status for a single document.
+class LegalConsentDoc {
+  final String version;
+  final String sha256;
+
+  const LegalConsentDoc({required this.version, required this.sha256});
+
+  factory LegalConsentDoc.fromJson(Map<String, dynamic>? json) {
+    return LegalConsentDoc(
+      version: json?['version'] as String? ?? '',
+      sha256: json?['sha256'] as String? ?? '',
+    );
+  }
+}
+
+/// Authoritative consent status returned by Supabase RPCs.
+class LegalConsentStatus {
+  final LegalConsentDoc terms;
+  final LegalConsentDoc privacy;
+  final bool requiresAcceptance;
+
+  const LegalConsentStatus({
+    required this.terms,
+    required this.privacy,
+    required this.requiresAcceptance,
+  });
+
+  factory LegalConsentStatus.fromJson(Map<String, dynamic> json) {
+    return LegalConsentStatus(
+      terms: LegalConsentDoc.fromJson(json['terms'] as Map<String, dynamic>?),
+      privacy:
+          LegalConsentDoc.fromJson(json['privacy'] as Map<String, dynamic>?),
+      requiresAcceptance: json['requiresAcceptance'] as bool? ?? true,
+    );
+  }
+}
+
+class LegalConsentStorageException implements Exception {
+  final String message;
+  const LegalConsentStorageException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// Fetches/swrites legal acceptance exclusively through server-side
+/// SECURITY DEFINER RPCs. Server timestamps are authoritative. The client
+/// submits only current version + content-hash + app version.
 class LegalConsentRepository {
-  static const String _termsKey = 'legal_terms_version';
-  static const String _privacyKey = 'legal_privacy_version';
-  static const String _acceptedAtKey = 'legal_accepted_at';
-
   static const String currentTermsVersion = '2026-07-03';
   static const String currentPrivacyVersion = '2026-07-03';
 
-  final SharedPreferences _prefs;
+  final SupabaseClient _client;
 
-  LegalConsentRepository(this._prefs);
+  LegalConsentRepository(this._client);
 
-  String get termsVersion => _prefs.getString(_termsKey) ?? '';
-  String get privacyVersion => _prefs.getString(_privacyKey) ?? '';
-  DateTime? get acceptedAt {
-    final ts = _prefs.getString(_acceptedAtKey);
-    if (ts == null) return null;
-    return DateTime.tryParse(ts);
+  /// Reads current consent status for an authenticated (inc. anonymous) user.
+  Future<LegalConsentStatus> fetchStatus({required String locale}) async {
+    try {
+      final res = await _client.rpc(
+        'get_legal_consent_status',
+        params: {'p_locale': locale},
+      );
+      return LegalConsentStatus.fromJson(res as Map<String, dynamic>);
+    } catch (e) {
+      throw LegalConsentStorageException(_describe(e));
+    }
   }
 
-  bool get hasAcceptedCurrent {
-    return termsVersion == currentTermsVersion &&
-        privacyVersion == currentPrivacyVersion;
+  /// Records acceptance of the current Terms + Privacy bundle (append-only).
+  Future<LegalConsentStatus> acceptCurrent({
+    required String locale,
+    required String termsVersion,
+    required String termsSha256,
+    required String privacyVersion,
+    required String privacySha256,
+    required String appVersion,
+    required String clientRequestId,
+  }) async {
+    try {
+      final res = await _client.rpc(
+        'accept_current_legal_documents',
+        params: {
+          'p_locale': locale,
+          'p_terms_version': termsVersion,
+          'p_terms_sha256': termsSha256,
+          'p_privacy_version': privacyVersion,
+          'p_privacy_sha256': privacySha256,
+          'p_app_version': appVersion,
+          'p_client_request_id': clientRequestId,
+        },
+      );
+      return LegalConsentStatus.fromJson(res as Map<String, dynamic>);
+    } catch (e) {
+      throw LegalConsentStorageException(_describe(e));
+    }
   }
 
-  Future<void> acceptCurrent() async {
-    final now = DateTime.now().toIso8601String();
-    await _prefs.setString(_termsKey, currentTermsVersion);
-    await _prefs.setString(_privacyKey, currentPrivacyVersion);
-    await _prefs.setString(_acceptedAtKey, now);
+  /// Records withdrawal of the current privacy consent (Terms unaffected).
+  Future<LegalConsentStatus> withdrawPrivacy({
+    required String locale,
+    required String appVersion,
+    required String clientRequestId,
+  }) async {
+    try {
+      final res = await _client.rpc(
+        'withdraw_current_privacy_consent',
+        params: {
+          'p_locale': locale,
+          'p_app_version': appVersion,
+          'p_client_request_id': clientRequestId,
+        },
+      );
+      return LegalConsentStatus.fromJson(res as Map<String, dynamic>);
+    } catch (e) {
+      throw LegalConsentStorageException(_describe(e));
+    }
   }
 
-  Future<void> clear() async {
-    await _prefs.remove(_termsKey);
-    await _prefs.remove(_privacyKey);
-    await _prefs.remove(_acceptedAtKey);
+  String _describe(Object e) {
+    if (e is PostgrestException) return e.message;
+    return e.toString();
   }
 }

@@ -1771,6 +1771,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'90s halftone vibe'**
   String get presetRetroStickerDesc;
+
+  /// No description provided for @consentErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to confirm consent'**
+  String get consentErrorTitle;
+
+  /// No description provided for @consentErrorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not confirm your legal documents right now. Check your connection and try again.'**
+  String get consentErrorBody;
+
+  /// No description provided for @consentDocsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal documents have been updated. Please update the app to continue.'**
+  String get consentDocsChanged;
+
+  /// No description provided for @withdrawPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke Privacy Consent'**
+  String get withdrawPrivacy;
+
+  /// No description provided for @withdrawPrivacySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop consent-based processing (Terms stay valid).'**
+  String get withdrawPrivacySub;
+
+  /// No description provided for @withdrawPrivacyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This stops processing that relies on your consent.'**
+  String get withdrawPrivacyBody;
+
+  /// No description provided for @withdrawPrivacyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get withdrawPrivacyConfirm;
 }
 
 class _AppLocalizationsDelegate

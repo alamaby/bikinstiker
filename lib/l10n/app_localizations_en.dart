@@ -925,4 +925,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get presetRetroStickerDesc => '90s halftone vibe';
+
+  @override
+  String get consentErrorTitle => 'Unable to confirm consent';
+
+  @override
+  String get consentErrorBody =>
+      'We could not confirm your legal documents right now. Check your connection and try again.';
+
+  @override
+  String get consentDocsChanged =>
+      'Legal documents have been updated. Please update the app to continue.';
+
+  @override
+  String get withdrawPrivacy => 'Revoke Privacy Consent';
+
+  @override
+  String get withdrawPrivacySub =>
+      'Stop consent-based processing (Terms stay valid).';
+
+  @override
+  String get withdrawPrivacyBody =>
+      'This stops processing that relies on your consent.';
+
+  @override
+  String get withdrawPrivacyConfirm => 'Revoke';
 }

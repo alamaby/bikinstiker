@@ -290,5 +290,12 @@
   "presetChibi3dLabel": "3D Chibi",
   "presetChibi3dDesc": "Glossy 3d render",
   "presetRetroStickerLabel": "Retro",
-  "presetRetroStickerDesc": "90s halftone vibe"
+  "presetRetroStickerDesc": "90s halftone vibe",
+  "consentErrorTitle": "Unable to confirm consent",
+  "consentErrorBody": "We could not confirm your legal documents right now. Check your connection and try again.",
+  "consentDocsChanged": "Legal documents have been updated. Please update the app to continue.",
+  "withdrawPrivacy": "Revoke Privacy Consent",
+  "withdrawPrivacySub": "Stop consent-based processing (Terms stay valid).",
+  "withdrawPrivacyBody": "This stops processing that relies on your consent.",
+  "withdrawPrivacyConfirm": "Revoke"
 }

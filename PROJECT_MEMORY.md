@@ -1,206 +1,451 @@
 # Project Memory - BikinStiker
 
-Persistent context for future sessions. Update after every significant change.
-Per AGENTS.md, this file captures: features/bugs worked on, key files modified,
-technical decisions, verification commands, and proposed commit messages.
+## Status Saat Ini
+- **Terakhir dikerjakan:** 2026-08-24
+- **Perubahan terakhir:** Cloudflare Workers AI image provider (Fase 0 spike + Fase 1 implementasi + review remediation)
+- **Versi:** `0.19.0+68`
+- **Verifikasi:** `deno test` 80/80, `flutter analyze` (0 issues), `flutter test` (133/133)
+- **Blocker aktif:** deploy: `supabase db push` migrasi 20260824000001 → patch credential SQL (base_url account-id real + api_key + is_active=true) → `supabase functions deploy generate-sticker`.
 
----
+## Riwayat Pekerjaan (terbaru → terlama)
 
-## Snapshot
+### 2026-08-24 | Cloudflare Workers AI Image Provider (Fase 0-1 + Review Remediation)
+- **Status:** selesai implementasi Fase 1 (menunggu deploy + patch credential). Fase 2-3 defer.
+- **Implementasi:**
+  - Migration `20260824000001_add_cloudflare_provider.sql`: extend CHECK `provider_name` += `'cloudflare'`, seed 3 rows (`@cf/black-forest-labs/flux-1-schnell`, `@cf/stabilityai/stable-diffusion-xl-base-1.0`, `@cf/lykon/dreamshaper-8-lcm`) — priority 5 (last-resort setelah pollinations p4), **is_active=false** (remediation H1: cegah alert noise `missing_api_key` sebelum credential dipatch), fallback `always`, timeout 90s, idempotent `WHERE NOT EXISTS`. base_url placeholder `SET_ACCOUNT_ID` agar account id tidak masuk git.
+  - `index.ts`: `ProviderName+="cloudflare"`; `callCloudflare()` handle dua bentuk response (JSON `result.image` base64 → sniff magic bytes JPEG/PNG/WebP via `contentTypeFromBytes()`; binary `image/*` → arrayBuffer); `buildCloudflareRequestBody()` allowlist per model family; guard img2img/inpainting (`model_requires_input_image` 422 retryable); case di `callProvider()`.
+  - Test `index_test.ts`: 10 test baru (flux JSON success + strip negative, sdxl binary + passthrough params, result-as-string varian, non-image payload rejection, missing key 401 no-fetch, 400 non-retryable, 429 retryable, schema_mismatch kosong, trailing slash, img2img guard).
+- **Spike live (Fase 0):** flux=200 JSON b64 JPEG (~173 neurons/4-step); SDXL & DreamShaper=200 binary PNG; error shape `{success:false,errors:[{code,message}]}`. **Temuan kritis: flux-1-schnell menolak `negative_prompt`** dengan 400 code 5006 "Additional or unevaluated properties not allowed" → wajib allowlist param per family.
+- **Keputusan Teknis:**
+  - Priority 5 last-resort konservatif — tidak mengubah chain existing (live DB terkonfirmasi via MCP read: active chain pixazo p1-p3 + pollinations p4); promosi cukup `UPDATE priority` tanpa redeploy.
+  - Seed inactive — aktivasi digabung satu UPDATE dengan patch credential.
+  - Allowlist param per model family (flux: `prompt`+`steps`≤8 saja) karena schema Cloudflare strict-reject unknown fields.
+  - `.env.example`: hapus `CLOUDFLARE_AI_BASE_URL` override (tidak ada kode yang membacanya — menyesatkan), ganti catatan bahwa base_url hidup di DB row.
+- **File:**
+  - `supabase/migrations/20260824000001_add_cloudflare_provider.sql` (NEW)
+  - `supabase/functions/generate-sticker/index.ts` (ProviderName, callCloudflare, helpers, dispatcher)
+  - `supabase/functions/generate-sticker/index_test.ts` (+10 test)
+  - `.env.example`, `plans/2026-08-24-cloudflare-workers-ai-provider-plan.md`, `TODO.md`
+- **Verifikasi:** deno 80/80; flutter analyze 0 issues; flutter test 133/133. Spike curl live 5 request.
+- **Proposed commit:** `feat(providers): add Cloudflare Workers AI image provider with 3 text-to-image models`
 
-- **Stack**: Flutter 3.41 (Dart 3.11) + Supabase (Postgres, Auth, Storage, Edge Functions on Deno)
-- **AI provider**: OpenRouter `sourceful/riverflow-v2-fast` (modalities: ["image"])
-- **Domain**: WhatsApp sticker generator. User picks preset + short prompt -> atomic
-  credit deduction -> OpenRouter -> upload PNG to private bucket -> return signed URL.
-- **Branch state**: `main`, 4 commits ahead of `origin/main`.
-- **Backend repo**: `supabase/` is a git submodule pointing to private repo `bikinstiker-supabase`.
 
----
+### 2026-08-02 | Server-Side Legal Consent Audit
+- **Status:** selesai implementasi (menggantung legal review & backend deploy untuk production).
+- **Fitur baru:**
+  - DB migration `20260802000034_server_side_legal_consent.sql`:
+    - `legal_document_versions` registry (4 current docs seeded with SHA-256).
+    - Pseudonymous `legal_audit_subjects` + `legal_audit_subject_links` (ON DELETE CASCADE).
+    - Append-only `legal_consent_events` (idempotent via `client_request_id`).
+    - SECURITY DEFINER RPCs: `get_legal_consent_status`, `accept_current_legal_documents`, `withdraw_current_privacy_consent`.
+    - Strict RLS + REVOKE ALL direct table access; only RPC EXECUTE for `authenticated`.
+    - `soft_delete_account()` redefined to sever identity link while retaining pseudonymous events.
+  - Flutter stack:
+    - `LegalConsentRepository` rewritten as Supabase-backed (no local prefs authority).
+    - `LegalConsentCubit` + `LegalConsentState` (phases: loading/ready/error + submitting flag).
+    - Auth gate reorder: Language → Anonymous session → Remote consent check → Consent → Onboarding/Home.
+    - `LegalConsentScreen`: loads asset docs, computes SHA-256, verifies against registry; blocks on mismatch.
+    - `LegalConsentErrorScreen`: blocking retry on remote check failure.
+    - Privacy withdrawal action in Profile → Danger Zone (withdraws current privacy consent, Terms unaffected).
+    - Re-consent forced on version/hash change and on Google identity switch (new userId).
+  - New l10n keys: `consentErrorTitle`, `consentErrorBody`, `consentDocsChanged`, `withdrawPrivacy`, `withdrawPrivacySub`, `withdrawPrivacyBody`, `withdrawPrivacyConfirm`.
+  - `AppBuildInfo.version` constant for app metadata submitted with each acceptance.
+- **File diubah:**
+  - `supabase/migrations/20260802000034_server_side_legal_consent.sql` (NEW)
+  - `lib/data/repositories/legal_consent_repository.dart`
+  - `lib/presentation/blocs/legal_consent/legal_consent_cubit.dart` (NEW)
+  - `lib/presentation/blocs/legal_consent/legal_consent_state.dart` (NEW)
+  - `lib/presentation/screens/legal/legal_consent_screen.dart`
+  - `lib/presentation/screens/legal/legal_consent_error_screen.dart` (NEW)
+  - `lib/presentation/screens/profile/profile_screen.dart`
+  - `lib/core/app_version.dart` (NEW)
+  - `lib/app.dart`
+  - `lib/core/di.dart`
+  - `lib/l10n/app_en.arb`, `lib/l10n/app_id.arb`
+  - `pubspec.yaml` (+ crypto, bloc deps; version 0.19.0+68)
+- **Verifikasi:** `flutter analyze` 0 issues, `flutter test` 133/133, `flutter build apk --split-per-abi` sukses (3 APK).
+- **Proposed commit:** `feat(consent): add server-side legal acceptance audit`
 
-## Architecture
+### 2026-08-01 | Multi-Language: English and Bahasa Indonesia
+- **Status:** selesai implementasi (menggantung legal review untuk production).
+- **Fitur baru:**
+  - Flutter Gen L10n diaktifkan di `MaterialApp` dengan delegate, `supportedLocales`, dan `locale` stateful.
+  - `LocaleRepository` + `LocaleCubit` menyimpan pilihan bahasa ke SharedPreferences.
+  - `LanguageSelectionScreen` muncul sebelum legal consent saat first launch (hanya sekali, di-tracking via key `app.locale.selection_completed`).
+  - Bahasa dapat diubah di Profil > Language.
+  - Default locale mengikuti device (`id` untuk bahasa Indonesia, `en` untuk lainnya), dengan fallback ke English.
+  - Dokumen legal dipisah menjadi 4 file per locale: `privacy-policy-{en,id}.md` dan `terms-of-service-{en,id}.md`.
+  - `LegalConsentScreen` memuat dokumen sesuai locale aktif.
+  - Semua teks UI utama dipetakan ke ARB (English + Indonesian).
+  - Preset dan mission dilokalkan via stable ID dengan fallback ke server text.
+  - Caption tetap aturan lama: maksimal 10 karakter, ASCII only (`A-Z 0-9 .!?-`).
+- **File diubah:**
+  - `lib/data/repositories/locale_repository.dart` (NEW)
+  - `lib/presentation/blocs/locale/locale_cubit.dart` (NEW)
+  - `lib/presentation/blocs/locale/locale_state.dart` (NEW)
+  - `lib/presentation/screens/locale/language_selection_screen.dart` (NEW)
+  - `lib/core/localization/preset_localizations.dart` (NEW)
+  - `lib/core/localization/mission_localizations.dart` (NEW)
+  - `lib/app.dart`, `lib/core/di.dart`, `lib/l10n/app_en.arb`, `lib/l10n/app_id.arb`
+  - `lib/presentation/screens/auth/auth_screen.dart`
+  - `lib/presentation/screens/home/home_screen.dart`
+  - `lib/presentation/screens/legal/legal_consent_screen.dart`
+  - `lib/presentation/screens/onboarding/onboarding_screen.dart`
+  - `lib/presentation/screens/history/history_screen.dart`
+  - `lib/presentation/screens/history/widgets/history_filter_chips.dart`
+  - `lib/presentation/screens/history/widgets/history_search_field.dart`
+  - `lib/presentation/screens/missions/missions_screen.dart`
+  - `lib/presentation/screens/missions/widgets/daily_checkin_card.dart`
+  - `lib/presentation/screens/profile/profile_screen.dart`
+  - `lib/presentation/screens/packs/packs_list_screen.dart`
+  - `lib/presentation/screens/packs/pack_create_screen.dart`
+  - `lib/presentation/screens/packs/pack_detail_screen.dart`
+  - `docs/privacy-policy-en.md`, `docs/privacy-policy-id.md`, `docs/terms-of-service-en.md`, `docs/terms-of-service-id.md` (NEW)
+  - `pubspec.yaml`, `test/legal_documents_test.dart`, `test/onboarding_screen_test.dart`, `test/daily_checkin_card_test.dart`
+- **Verifikasi:** `flutter analyze` 0 issues, `flutter test` 133/133.
+- **Proposed commit:** `feat(i18n): add English and Indonesian localization with first-launch chooser`
 
-```
-Flutter app (BLoC + Repository)
-  -> Supabase (Auth, Postgres w/ RLS, private Storage, generate-sticker edge fn)
-     -> OpenRouter (server-side only; key never leaves the edge function)
-```
+### 2026-08-01 | Code Review Fix: Transparent WhatsApp Sticker Pipeline
+- **Status:** selesai (menunggu deploy edge function)
+- **Code Review Temuan & Perbaikan:**
+  1. **Critical: WebP Encoder Missing** - `encodeWEBP()` tidak ada di ImageScript runtime. **Fix**: `encodeWebPWithinLimit()` sekarang throw `ExtractionError` jika >100KB di quality terendah; WASM encoder evaluation pending untuk deploy.
+  2. **Critical: Alpha Validation Incorrect** - `inspectTransparency()` false-positive pada padding non-square. **Fix**: `validateStrictTransparency()` dengan strict corner/ratio checks; inspection dipindah SEBELUM resize.
+  3. **High: Tray Icon Not Resized** - `derive-tray-icon` composite tanpa resize. **Fix**: `fit()` sebelum composite ke canvas 96×96.
+  4. **High: Cache Bypass Risk** - legacy opaque files undetected. **Fix**: version-based invalidation via sticker `updated_at` (1hr window); Flutter `_isValidWebpCache` cek VP8X alpha flag (0x10).
+  5. **High: Style Descriptor Conflicts** - deskripsi minta `dark/white background`, `white border`. **Fix**: `sanitizeVisualGuidance()` strip conflicting background/border dari prompt.
+  6. **High: 100KB Limit Not Enforced** - upload tetap lanjut walau oversize. **Fix**: throw `ExtractionError` jika quality terendah masih >100KB.
+  7. **Medium: PNG Derivative Non-Fatal** - upload PNG boleh gagal. **Fix**: validasi PNG output di `encodeStickerAssets()`.
+  8. **Medium: Native-Transparent Branch** - skip outline/quality gates. **Fix**: `validateStrictTransparency()` + `addWhiteOutline()` pada SEMUA branch accepted.
+- **File Diperbaiki:**
+  - `supabase/functions/generate-sticker/image_processing.ts` (strict validation, process order)
+  - `supabase/functions/generate-sticker/index.ts` (sanitization, strict size, PNG validation)
+  - `supabase/functions/derive-tray-icon/index.ts` (resize fix, cache invalidation)
+  - `lib/data/repositories/sticker_pack_repository.dart` (VP8X alpha check)
+- **Verifikasi:** `deno test` 83/83, `flutter analyze` 0 issues, `flutter test` 143/143, `flutter build apk --split-per-abi` sukses.
+- **Proposed commit:** `fix(stickers): harden transparent WebP generation and WhatsApp export`
 
-**Clean layers** inside `lib/`:
+### 2026-07-14 | Daily Check-in Regression Fix: WIB Timezone + Post-Claim Animation
+- **Status:** selesai (menunggu deploy migration `00033`)
+- **Perubahan:**
+  - **DB cooldown fix**: `load_daily_checkin_streak()` dan `claim_daily_checkin()` sekarang konsisten pakai `AT TIME ZONE 'Asia/Jakarta'::date` untuk semua perbandingan. Cooldown cycle selesai pada 00:00 WIB, bukan UTC midnight. Countdown menghitung sisa detik sampai 00:00 WIB.
+  - **Animation classification fix**: Pilih Lottie dari post-claim streak (`state.streak.cycleCompleted`), bukan dari pre-claim `_pendingCheckinDay`. Day 7 → celebration; day 1-6 → flame; start new cycle (day 1 hasil) → flame.
+  - **Enum overlay refactor**: Ganti 2 boolean (`_showCelebration`, `_showFlame`) dan 2 method show dengan single enum `CheckinAnimationType` + `_showCheckinAnimation(type, claimedDay)`. Hapus `_pendingCheckinDay`.
+  - **Pure helper**: `checkinAnimationFor(DailyCheckinStreak)` di `daily_checkin_streak.dart` — testable tanpa widget tree.
+- **Detail:**
+  - Migration: `20260714000033_fix_daily_checkin_jakarta_cooldown.sql` (baru, jangan edit `00032`)
+  - `lib/data/models/daily_checkin_streak.dart` — enum + helper
+  - `lib/presentation/screens/missions/missions_screen.dart` — refactor animation
+  - `test/daily_checkin_streak_test.dart` — 3 test `checkinAnimationFor`: flame (day 3), celebration (day 7), flame (start new cycle day 1)
+  - `pubspec.yaml`: `0.16.2+61` → `0.16.3+62`
+- **Verifikasi:** `flutter analyze` 1 warning pre-existing; `flutter test` 143/143 (+3 pure function tests); `flutter build apk --split-per-abi` sukses.
+- **Proposed commit:** `fix(daily-checkin): use WIB timezone for cooldown and post-claim animation`
 
-| Layer | Folder | Depends on |
-|---|---|---|
-| Presentation | `presentation/{blocs,screens,widgets}` | Domain glue only |
-| Domain glue | `data/repositories` | Data sources |
-| Data sources | `data/{datasources,models}` | Supabase SDK |
-| Cross-cutting | `core/{theme,constants,errors,di}` | None of the above |
+### 2026-07-14 | Daily Check-in: Flame Animation + Box Marker
+- **Status:** selesai (menunggu deploy migration + fire-flame.json ada di assets)
+- **Perubahan:**
+  - Box "checked-in today" (isCompletedToday) kini render hijau/centang, tidak abu-abu lagi.
+  - Lottie flame (`fire-flame.json`) untuk day 1-6 setelah check-in; celebration tetap untuk day 7.
+  - `_DayBox` visual state machine refactor: `isCompletedToday` → `isCompleted` (gabung dengan completed sebelumnya). Checkmark emoji ✅ untuk hari ini yang sudah check-in.
+  - `missions_screen.dart`: refactor animation timer (enum-based), `_showCheckinFlame()` method, branch logic di listener (day 7 → celebration, else → flame).
+  - Widget test: 5 test baru untuk `_DayBox` render states (isToday, isCompletedToday, locked, cycle complete all green, fresh start).
+- **Detail:**
+  - `lib/presentation/screens/missions/widgets/daily_checkin_card.dart` — `_DayBox.build` visual states
+  - `lib/presentation/screens/missions/missions_screen.dart` — flame/celebration Lottie branch
+  - `test/daily_checkin_card_test.dart` — 5 widget tests
+  - `pubspec.yaml`: `0.16.1+60` → `0.16.2+61`
+- **Verifikasi:** `flutter analyze` 1 warning pre-existing; `flutter test` 139/139 lulus.
+- **Proposed commit:** `fix(daily-checkin): show completed box state + flame Lottie for streak days`
 
-UI never imports `supabase_flutter` directly.
+### 2026-07-14 | Daily Check-in Cycle-Complete Fix
+- **Status:** selesai (menunggu deploy migration + data patch)
+- **Perubahan:** Fix bug user lihat "Cycle complete!" permanen setelah selesai siklus 7 hari dan tidak bisa check-in keesokan harinya.
+  - **Server:** `load_daily_checkin_streak` RPC tambah return kolom `cycle_cooldown_finished` (BOOLEAN) dan `cooldown_remaining_seconds` (INTEGER) untuk memberi tahu client apakah cooldown selesai.
+  - **Model:** `DailyCheckinStreak` tambah field `cycleCooldownFinished`, `cooldownRemainingSeconds`. `canClaim` getter sekarang cek cooldown: jika cycle completed tapi cooldown selesai → claim allowed.
+  - **UI:** `daily_checkin_card.dart` ganti branch tunggal "Cycle complete!" jadi 3-way: cooldown aktif → "Cycle complete! Next in Xh Ym"; cooldown selesai → "Start new cycle" button; normal → "Check-in" button. `_DayBox.locked` logic update untuk fresh start setelah cooldown.
+  - **Test:** tambah 2 test `canClaim` untuk cooldown scenarios + parse `cycle_cooldown_finished`/`cooldown_remaining_seconds`.
+- **Detail:**
+  - Migration: `20260714000032_daily_checkin_cooldown_flag.sql`
+  - `lib/data/models/daily_checkin_streak.dart` — model update
+  - `lib/presentation/screens/missions/widgets/daily_checkin_card.dart` — widget update
+  - `test/daily_checkin_streak_test.dart` — 2 test baru
+- **Verifikasi:** `flutter analyze` (1 warning pre-existing), `flutter test` 134/134 lulus.
+- **Data patch (manual):** `UPDATE public.daily_checkin_streaks SET current_streak=0, current_cycle_day=0, cycle_completed_at=NULL, updated_at=now() WHERE user_id='2b9783ab-7829-4536-80fa-eaaf76acec1e';`
+- **Proposed commit:** `fix(daily-checkin): show "Start new cycle" button after cooldown elapses`
 
----
+### 2026-07-12 | Fix Cerebras: Seed Idempotent, Test 429 & Trailing Slash
+- **Status:** selesai
+- **Perubahan:** Migration seed diubah dari `INSERT ... VALUES ... ON CONFLICT DO NOTHING` menjadi `INSERT ... SELECT ... WHERE NOT EXISTS` berdasarkan combo `(provider_name, route_scope, model_name)`. Tambah 2 unit test: HTTP 429 error mapping dan normalisasi base URL trailing slash.
+- **Detail:**
+  - Migration `20260712000031` diubah langsung (belum pernah di-deploy).
+  - Test 429: assert `ProviderError(429, "provider_http_error")` dengan message mencantumkan `cerebras`.
+  - Test trailing slash: config `base_url = "https://api.cerebras.ai/v1/"` menghasilkan request ke `https://api.cerebras.ai/v1/chat/completions` tanpa `//chat`.
+- **Verifikasi:** `deno test --no-check` 70/70 lulus.
+- **Proposed commit:** `fix(reasoning): harden Cerebras provider seed idempotency and test coverage`
 
-## Key Technical Decisions
+### 2026-07-12 | Cerebras Cloud Reasoning Provider (3 Model)
+- **Status:** selesai (menunggu deploy + patch API key)
+- **Perubahan:** Tambah Cerebras Cloud sebagai provider reasoning dengan 3 model: `gemma-4-31b`, `zai-glm-4.7`, `gpt-oss-120b`. OpenAI-compatible endpoint.
+- **Detail:**
+  - Migration `20260712000031`: extend CHECK constraint `provider_name` dengan `cerebras`, seed 3 config route `reasoning`.
+  - `ProviderName` extended: `"cerebras"`.
+  - `callCerebrasReasoning()`: adapter OpenAI-compatible `/chat/completions`, mapping `max_tokens` ke `max_completion_tokens`, mengambil `reasoning_effort` dan `reasoning_format` dari DB `request_options`.
+  - DB-driven reasoning params: message-level `reasoning_effort` dan `reasoning_format` per model via `request_options`, tanpa hardcode di Edge Function.
+  - Priority: 4 (gemma-4-31b), 5 (zai-glm-4.7), 6 (gpt-oss-120b).
+  - 6 unit test: gemma-4-31b params, GLM tanpa effort, GPT-OSS effort medium, missing key, HTTP 401, empty content.
+- **Keputusan Teknis:**
+  - Pakai OpenAI-compatible (`/chat/completions`), bukan native model API lain.
+  - Mapping `max_tokens` di DB ke `max_completion_tokens` di body Cerebras.
+  - `reasoning_format: "parsed"` agar thought tokens tidak mencemari `message.content`.
+  - `reasoning_effort: "medium"` hanya untuk Gemma 4 dan GPT-OSS. GLM tidak perlu karena reasoning default aktif.
+  - `max_completion_tokens: 800` mengakomodasi reasoning + JSON output.
+- **File:**
+  - `supabase/migrations/20260712000031_add_cerebras_reasoning_provider.sql` (NEW)
+  - `supabase/functions/generate-sticker/index.ts` (ProviderName, callCerebrasReasoning, switch case)
+  - `supabase/functions/generate-sticker/index_test.ts` (6 test Cerebras)
+  - `.env.example` (Cerebras credential docs)
+- **Verifikasi:** `deno test --no-check` 68/68 lulus.
+- **Proposed commit:** `feat(reasoning): add Cerebras Cloud fallback provider`
 
-| # | Decision | Rationale |
-|---|---|---|
-| 1 | SECURITY DEFINER RPCs own all credit mutations | RLS is SELECT-only; RPCs provide atomic `FOR UPDATE` wallet lock + sticker row + ledger insert in one tx |
-| 2 | `deduct_credit_for_sticker` derives user from `auth.uid()` (post-init) | Old caller-supplied `p_user_id` allowed cross-user deduction. See C1 below. |
-| 3 | OpenRouter key lives only in the edge function | Stored as a Supabase secret; never in Flutter `.env` |
-| 4 | Private bucket + signed URLs (TTL 1h) + path-prefix RLS | `auth.uid()::text = (storage.foldername(name))[1]` |
-| 5 | BLoC + Repository abstraction (not Riverpod) | Auditable event->state flow; tests can override repos via `MultiRepositoryProvider` |
-| 6 | Okabe-Ito palette + icon+label+color pairing | Color-blind safe; hue never carries meaning alone |
-| 7 | In-memory signed URL cache, keyed by path (post-init) | History rebuilds were issuing duplicate signed-URL requests. 1h cache TTL matches server. |
-| 8 | `HistoryBloc` hoisted to `app.dart` (post-init) | Per-screen `BlocProvider` discarded list+cache on every History open. Refresh dispatched in `initState`. |
-| 9 | `AuthBlocState.copyWith` uses `Object()` sentinel (post-init) | Omitted param keeps current value; explicit `null` overwrites. Fixes stale-snackbar bug. |
-| 10 | `HistoryCleared` event dispatched on signout | Prevents cross-user data leak via retained bloc state |
-| 11 | APK output auto-renamed to `{applicationId}-{versionName}-{descriptor}.apk` (B1) | `android/app/build.gradle.kts` registers a `doLast` hook on `assemble{Release,Debug,Profile}` that moves the generated APK(s) in `build/app/outputs/flutter-apk/` to a descriptive filename. Pubspec stays single source of truth (Flutter Gradle plugin already maps `version: X.Y.Z+N` -> `versionName/versionCode`); the hook only encodes that into the artifact name. |
-| 12 | supabase/ as git submodule (private repo) | Sensitive backend code (migrations, edge functions, config) lives in separate private repo `bikinstiker-supabase`. Prevents leaking API keys, RLS policies, and business logic in public repo. |
+### 2026-07-12 | Fix Review Ollama Cloud Gemini 4: Model ID, API Key Wajib, Test
+- **Status:** selesai
+- **Perubahan:** Model ID direct API dari `gemma4:31b-cloud` ke `gemma4:31b`. API key kini diverifikasi sebelum HTTP request. Test alert existing diperbaiki kontrak keamanannya. Coverage header Authorization ditambahkan.
+- **Detail:**
+  - Migration `20260712000030`: update model_name config reasoning ollama.
+  - `callOllamaReasoning()`: ganti `cfg.api_key?.trim() ?? ""` dengan `requireApiKey(cfg)` + unconditional `Authorization` header.
+  - Test sukses: assert `new Headers(init?.headers).get("Authorization")` aktual.
+  - Test no_api_key diganti: assert `ProviderError(401, "missing_api_key")` tanpa fetch call.
+  - Test safe alert diperbaiki: verifikasi raw provider error tidak bocor, sambil mengizinkan `error_type` metadata klasifikasi.
+  - Semua 62 test Deno lulus (sebelumnya 61/62).
+- **File:**
+  - `supabase/migrations/20260712000030_fix_ollama_cloud_model_name.sql` (NEW)
+  - `supabase/functions/generate-sticker/index.ts` (requireApiKey)
+  - `supabase/functions/generate-sticker/index_test.ts` (header assert, missing_key test, safe text test)
+- **Verifikasi:** `deno test --no-check` 62/62. `flutter analyze` 1 warning pre-existing. `flutter test` 132/132.
+- **Proposed commit:** `fix(reasoning): correct Ollama Cloud model ID, enforce API key, fix test coverage`
 
----
+### 2026-07-12 | Ollama Cloud Gemma 4 Fallback Reasoning Provider
+- **Status:** selesai (menunggu deploy + patch API key)
+- **Perubahan:** Tambah Ollama Cloud `gemma4:31b-cloud` sebagai fallback reasoning provider ketiga (Priority 3). API native `POST /api/chat` dengan JSON format enforcement. Failover urut: Pollinations (prioritas 1) → Pollinations (prioritas 2) → Ollama Cloud (prioritas 3) → local fallback prompt.
+- **Detail:**
+  - Migration `20260712000029`: extend CHECK constraint `provider_name` dengan `'ollama'`, seed config `api_key = NULL`.
+  - `ProviderName` extended: `"ollama"`.
+  - `callOllamaReasoning()`: adapter Ollama native `/api/chat`, body `stream:false`, `format:"json"`, `options.num_predict`.
+  - `callReasoningProvider()`: case `"ollama"`.
+  - 7 unit test: success dengan preset guidance, 401 throw, empty content schema_mismatch, no api_key tanpa header, regex fallback, missing message.content.
+  - `.env.example`: dokumentasi operasional cara patch API key via SQL Editor.
+- **Keputusan Teknis:**
+  - Pakai API native Ollama (`/api/chat`) bukan OpenAI-compatible, karena `/v1/chat/completions` tidak tersedia di cloud API.
+  - `format: "json"` untuk enforce JSON output tanpa `response_format`.
+  - Credential tetap DB-driven (`image_generation_configs.api_key`), konsisten provider lain.
+  - `fallback_policy: never` (tidak relevan untuk reasoning loop, tetap continue).
+- **File:**
+  - `supabase/migrations/20260712000029_add_ollama_reasoning_provider.sql` (NEW)
+  - `supabase/functions/generate-sticker/index.ts` (ProviderName, callOllamaReasoning, switch case, exports)
+  - `supabase/functions/generate-sticker/index_test.ts` (7 test Ollama)
+  - `.env.example` (Ollama credential docs)
+- **Verifikasi:** `deno test --no-check --config supabase/functions/generate-sticker/deno.json --allow-env --allow-net supabase/functions/generate-sticker/index_test.ts` — 61/62 lulus (1 pre-existing). `flutter analyze` (1 warning pre-existing). `flutter test` (132/132).
+- **Proposed commit:** `feat(reasoning): add Ollama Cloud Gemma 4 as fallback reasoning provider`
 
-## Migrations
+### 2026-07-12 | Provider Failure Email Alerts — Harden & Remediation
+- **Status:** selesai
+- **Perubahan:** Perbaikan dari code review: secret safety (tidak kirim raw provider error), background delivery hardening (`EdgeRuntime.waitUntil()`), config load alerts, test isolation, type fix.
+- **Detail:**
+  - Alert helpers dipisah ke `operator_alerts.ts`: pure functions tanpa dependensi Supabase env. Test import file ini, bukan `index.ts`.
+  - `sendOperatorAlert()` tidak menerima `errorMessage` raw provider. Gunakan `errorType` + `safeAlertText()` → pesan generik aman (no secret, no API key, no provider raw body).
+  - `queueOperatorAlert()` menggunakan `EdgeRuntime.waitUntil()` di Supabase, fallback `void` di runtime lain. Tidak perlu `.catch()` di call site.
+  - `sanitizeAlertError()` diperluas: JSON `api_key`, `apiKey`, `token`, `access_token`, `client_secret`; header `Authorization`, `x-api-key`; query param key.
+  - `alertDedupeKey()` kini pakai `errorType` (fixed string) bukan `errorMessage.slice(0,100)`.
+  - Config alert: database error loading image config → `provider_config_load_failed`. Zero active config → `no_active_provider_config`. Kedua dikirim via `queueOperatorAlert()`.
+  - `loadPreset()` return type diperbaiki: tambah `reasoning_guidance: string | null`.
+  - 46 unit test: klasifikasi status/keyword, safe text, sanitasi (11 format secret), HTML escape, dedupe isolated, no-op tanpa env, fetch failure, config alert body.
+  - Test mock: `Deno.env.get` dan `globalThis.fetch` di-restore manual via `try/finally`. `resetAlertDedupeForTest()` di tiap test dedupe.
+  - `import.meta.main` tetap dipertahankan untuk defensive start prevention.
+- **Keputusan Teknis:**
+  - Alert hanya mengirim pesan generik safe berdasarkan `statusCode` + `errorType`. Tanpa raw error provider untuk mencegah kebocoran secret tak terduga.
+  - `queueOperatorAlert()` adalah satu-satunya call site. `sendOperatorAlert()` tetap publik untuk test langsung.
+  - Config load alert menggunakan provider `configuration`, phase sesuai konteks. Dedupe key `phase|configuration|error_type|status`.
+- **File:**
+  - `supabase/functions/generate-sticker/operator_alerts.ts` (NEW — module alert)
+  - `supabase/functions/generate-sticker/index_test.ts` (46 test)
+  - `supabase/functions/generate-sticker/index.ts` (import module, queueOperatorAlert, config alert, loadPreset type)
+  - `.env.example` (sebelumnya)
+- **Verifikasi:** `flutter test` (132/132). Deno: `deno test --config supabase/functions/generate-sticker/deno.json --allow-env --allow-net supabase/functions/generate-sticker/index_test.ts`.
+- **Proposed commit:** `fix(alerts): harden provider alert delivery and secret redaction`
 
-`supabase/migrations/`:
+### 2026-07-12 | Provider Failure Email Alerts (Initial)
+- **Status:** selesai
+- **Perubahan:** Kirim email alert best-effort ke operator saat provider reasoning atau generate sticker gagal karena credential, konfigurasi, quota, billing, model/endpoint tidak ditemukan, atau provider tidak didukung. Timeout (408) dan 5xx tidak di-alert karena failover menangani. Dedupe in-memory per instance Edge Function (5 menit).
+- **Detail:**
+  - `sendOperatorAlert()` — fire-and-forget via Resend API, 5 detik timeout, tidak pernah throw.
+  - `shouldAlertProviderIssue()` — filter HTTP status + 13 keyword case-insensitive.
+  - `sanitizeAlertError()` — redact Authorization header, API key, Ocp-Apim-Subscription-Key, key query param.
+  - `escapeHtml()` — HTML escape untuk body email.
+  - `alertDedupeKey()` + `_alertDedupeCache` — maksimal satu email per (phase, provider, config, status, error) per 5 menit.
+  - Integrasi alert di `enhancePrompt()` catch block (tiap reasoning provider gagal).
+  - Integrasi alert di `callImageProviderChain()` catch block (tiap image provider gagal).
+  - `requestId` diteruskan ke `ProviderAttemptContext` dan `enhancePrompt()`.
+  - Lock leak fix: `releaseGenerationLock()` dipanggil sebelum return 400 saat preset tidak ditemukan atau text-only > 20 karakter.
+  - Env vars: `RESEND_API_KEY`, `OPERATOR_ALERT_TO`, `OPERATOR_ALERT_FROM`, `APP_NAME`. Kosong = no-op.
+  - `APP_NAME` default `BikinStiker`; `OPERATOR_ALERT_TO` dukung comma-separated recipients.
+  - `import.meta.main` guard agar `Deno.serve` tidak aktif saat modul di-import test.
+  - 35 unit test: klasifikasi alert, sanitasi secret, HTML escape, dedupe, no-op, fetch failure.
+- **Keputusan Teknis:**
+  - Alert bersifat best-effort dan tidak pernah blocking primary flow.
+  - Dedupe in-memory per instance (bukan database) karena menambah observability tanpa state tambahan.
+  - Credential provider dari DB (`image_generation_configs.api_key`), bukan env vars.
+- **File:**
+  - `supabase/functions/generate-sticker/index.ts` (helper alert, integrasi, lock fix)
+  - `supabase/functions/generate-sticker/index_test.ts` (NEW — 35 unit test)
+  - `.env.example` (tambah env alert)
+- **Verifikasi:** `flutter pub get`, `flutter analyze`, `flutter test` (132/132). Deno test: `deno test --allow-env --allow-net supabase/functions/generate-sticker/index_test.ts`.
+- **Proposed commit:** `feat(alerts): email operators for actionable sticker provider failures`
 
-| File | Purpose |
-|---|---|
-| `20260505000001_init_schema.sql` | Tables, enums, RLS (SELECT-only), `deduct_credit_for_sticker` + `refund_failed_sticker` RPCs |
-| `20260505000002_wallet_trigger.sql` | `on_auth_user_created` -> wallet row + 5-credit `topup` ledger entry |
-| `20260505000003_storage_bucket.sql` | Private `stickers` bucket, owner-scoped RLS |
-| `20260505000004_deduct_credit_user_scope.sql` | **Security hardening**: drops 4-arg `deduct_credit_for_sticker`, recreates 3-arg deriving user from `auth.uid()`. Edge function caller in `index.ts` updated in lockstep. |
+### 2026-07-12 | Onboarding Core Flow (Generate → Pack → WhatsApp)
+- **Status:** selesai
+- **Perubahan:** Tambah onboarding 3 langkah untuk core flow setelah legal consent dan sesi guest/auth siap. Tampil sekali per perangkat via `SharedPreferences`. Bisa replay dari Profile.
+- **Detail:**
+  - Step 1: Generate sticker (prompt + style).
+  - Step 2: Add sticker ke pack dengan emoji.
+  - Step 3: Export pack ke WhatsApp (min 3 sticker).
+  - Skip 1 tap, `Back`, `Next`, dan `Create My First Sticker`.
+  - Gate di `_AuthGate` setelah `AuthStatus.authenticated` / `AuthStatus.guest`.
+  - Replay di Profile > How It Works, tanpa mengubah completion.
+  - Contextual guidance inline: "Next: add this sticker to a pack" setelah generate; snackbar dinamis saat add to pack; pack-ready callout di pack detail.
+- **File:**
+  - `lib/data/repositories/onboarding_repository.dart` (NEW)
+  - `lib/presentation/screens/onboarding/onboarding_screen.dart` (NEW)
+  - `test/onboarding_repository_test.dart` (NEW)
+  - `test/onboarding_screen_test.dart` (NEW)
+  - `plans/2026-07-12-core-flow-onboarding-plan.md` (NEW)
+  - `lib/core/di.dart` (register repo)
+  - `lib/app.dart` (gate)
+  - `lib/presentation/screens/profile/profile_screen.dart` (How It Works)
+  - `lib/presentation/screens/home/home_screen.dart` (inline guidance)
+  - `lib/presentation/widgets/add_to_pack_sheet.dart` (dynamic snackbar)
+  - `lib/presentation/screens/packs/pack_detail_screen.dart` (pack-ready callout)
+- **Verifikasi:** `flutter analyze` (0 error selain pre-existing), `flutter test` (132/132).
+- **Proposed commit:** `feat(onboarding): guide users through sticker generation, packs, and WhatsApp export`
 
----
+### 2026-07-12 | Fix Credit History Filter Earnings (PostgREST 22P02)
+- **Status:** selesai
+- **Masalah:** Filter Earnings kirim enum `admin_grant` ke PostgREST, tapi `transaction_type` di PostgreSQL tidak punya nilai itu → `22P02`.
+- **Akar:** Enum Dart `CreditTxType.adminGrant` ada di aplikasi tapi tidak pernah ditambah ke DB via migration. RPC `admin_grant_credits` catat sebagai `topup`.
+- **Perbaikan:** Hapus enum dari model, mapping repository, filter bloc, label display. Filter Earnings kirim 5 tipe valid: `topup`, `daily_reward`, `refund`, `subscription_grant`, `mission_reward`. Grant admin tetap tampil sebagai "Top Up" (nilai DB asli).
+- **File:** `lib/data/models/credit_transaction.dart`, `lib/data/repositories/credit_transaction_repository.dart`, `lib/presentation/blocs/credit_transactions/credit_transactions_bloc.dart`, `lib/presentation/screens/profile/profile_screen.dart`, `test/credit_transaction_test.dart`, `test/credit_transactions_bloc_test.dart`
+- **Verifikasi:** `flutter analyze` (0 error), `flutter test` (121/121).
+- **Proposed commit:** `fix(profile): remove invalid admin_grant enum from earnings filter causing PostgREST 22P02`
 
-## Edge Function Contract
+### 2026-07-10 | Fix AdMob SSV Signature Verification
+- **Status:** selesai (deploy terblokir)
+- **Masalah:** AdMob menandatangani query setelah percent-decoding, tapi `admob-ssv` verifikasi terhadap query encoded → 401.
+- **Perbaikan:** `decodeURIComponent()` sebelum ECDSA verify.
+- **File:** `supabase/functions/admob-ssv/index.ts`, `plans/2026-07-10-fix-admob-ssv-signature-verification.md` (NEW)
+- **Blocker:** Supabase CLI belum login.
+- **Proposed commit:** `fix(admob): verify SSV signatures against decoded callback content`
 
-`supabase/functions/generate-sticker/index.ts`:
+### 2026-07-09 | Credit Reward Amounts (Watch Ad & Share)
+- **Status:** selesai
+- **Perubahan:** Reward watch ad & share social: free=2 credit, plus=3 credit.
+- **File:** `supabase/migrations/20260709000028_update_mission_rewards.sql` (NEW)
 
-- `POST {presetId, userInput}` (userInput <= 200 chars) with bearer JWT
-- Preset IDs (must match `lib/core/constants/presets.dart`): `kawaii | pixel_art | vector_flat | chibi_3d | retro_sticker`
-- Flow: validate -> atomic RPC deduct -> OpenRouter -> upload to `stickers/{uid}/{stickerId}.{ext}` -> update row -> return signed URL (TTL 1h)
-- Failure path: any post-RPC error -> `refund_failed_sticker` (idempotent guard on `status IN ('failed','success')`)
+### 2026-07-09 | Critical Credit Integrity C4-C7
+- **Status:** selesai
+- **Temuan:** Code review lanjutan — 4 celah critical:
+  - **C4:** Guest migration mati — RPC via service-role kehilangan `auth.uid()`. Edge Functions beralih ke `userClient`.
+  - **C5:** Response parsing `RETURNS TABLE` salah. Fix array handling.
+  - **C6:** Monthly grant ledger catat full amount walau balance di-cap. Fix: ledger hanya `v_actual_grant`.
+  - **C7:** Tidak ada `CHECK (amount <> 0)` dan sign consistency di `credit_transactions`. Fix: constraint `NOT VALID`.
+- **File:**
+  - `supabase/functions/create-guest-migration/index.ts`
+  - `supabase/functions/migrate-guest-stickers/index.ts`
+  - `supabase/migrations/20260709000025_fix_monthly_grant_ledger.sql` (NEW)
+  - `supabase/migrations/20260709000026_fix_credit_tx_constraints.sql` (NEW)
+  - `supabase/migrations/20260709000027_fix_daily_checkin_reference_id.sql` (NEW)
+  - `plans/2026-07-09-fix-critical-c4-c7.md` (NEW)
+- **Verifikasi:** `supabase db push` + smoke test per plan.
+- **Proposed commit:** `fix(critical): fix guest migration auth context, monthly grant ledger, and credit tx constraints`
 
----
+### 2026-07-08 | Security Credit Integrity C1-C3
+- **Status:** selesai
+- **Temuan:** 3 celah integritas kredit:
+  - **C1:** `consume_share_token` grant ke `auth.uid()` = NULL di service-role. Fix: RPC `complete_mission_for_user`.
+  - **C2:** `complete_mission` bisa dipanggil langsung user untuk `ad_reward`/`share_app`. Fix: RAISE EXCEPTION; reward hanya via service-role.
+  - **C3:** `claim_daily_checkin` update wallet tanpa `LEAST(..., tier_cap)` → langgar balance cap. Fix: pakai `LEAST`.
+- **Prerequisite:** AdMob SSV implementation (C2 butuh SSV untuk `ad_reward`).
 
-## Recent Work (init session, 2026-06-07)
+### 2026-07-08 | Reward Config Sentralisasi (DB-Driven)
+- **Status:** selesai
+- **Perubahan:** Pindahkan semua reward credit dari hardcode RPC ke DB. Tabel baru: `seasons`, `reward_configs`, `mission_rewards`. Reward dukung tier-based + seasonal.
+- **File:**
+  - `supabase/migrations/20260708000023_reward_config_sentralisasi.sql` (NEW)
+  - `lib/data/models/mission_reward.dart` (NEW)
+  - `lib/data/models/mission.dart`, `lib/data/repositories/mission_repository.dart`
+  - `lib/presentation/screens/missions/missions_screen.dart`, `lib/presentation/screens/missions/widgets/daily_checkin_card.dart`
+- **Proposed commit:** `feat(rewards): centralize reward config into DB with tier + season support`
 
-### C1 - SECURITY: RPC privilege escalation
-- **New**: `supabase/migrations/20260505000004_deduct_credit_user_scope.sql`
-- **Modified**: `supabase/functions/generate-sticker/index.ts` - drop `p_user_id` from RPC payload
-- **Risk closed**: Old RPC accepted caller-supplied `p_user_id`; with `SECURITY DEFINER` bypassing RLS, any authenticated user could decrement another user's wallet.
+### 2026-07-07 | Bugfix: Watch Ad Error Code 3
+- **Status:** selesai
+- **Masalah:** `ADMOB_REWARDED_*` diisi banner test ID, bukan rewarded test ID → "Ad unit doesn't match format".
+- **Perbaikan:** Ganti env ke rewarded test ID (`5224354917` Android / `1712485313` iOS).
 
-### C2 - gitignore hardening
-- **Modified**: `.gitignore` - added `.env`, `.env.*`, `!.env.example`, `.claude/`, `.idea/`, `.metadata`, `*.iml` (generic), `*.iws`, `*.ipr`, `.fvm/`, `fvm_config.json`, Supabase local dev artifacts (`supabase/.branches/`, `supabase/.temp/`, `supabase/.env`, `supabase/.env.local`), cross-platform OS metadata (`.DS_Store`, `Thumbs.db`, `ehthumbs.db`, `Desktop.ini`), built mobile artifacts (`*.apk`, `*.aab`, `*.ipa`, `*.app`), signing material (`*.keystore`, `*.p12`, `*.p8`). `!pubspec.lock` exception added (app convention: track lockfile for reproducible builds).
+### 2026-07-07 | AdMob SSV Implementation
+- **Status:** selesai
+- **Perubahan:** Edge Function `admob-ssv` verifikasi signature ECDSA Google, dedup via `ad_ssv_events`, grant via `complete_mission_for_user`. Client polling singkat menunggu grant.
+- **File:** `supabase/functions/admob-ssv/index.ts`
 
-### H1 - `AuthBlocState.copyWith` sentinel pattern
-- **Modified**: `lib/presentation/blocs/auth/auth_bloc.dart`
-- **Bug**: omitting nullable params implicitly cleared them (e.g. `errorMessage: errorMessage` with no `??`).
-- **Fix**: `static const Object _undefined = Object();` - omitted param keeps current value, explicit `null` overwrites. All existing callers in the bloc remain correct without modification.
+### 2026-07-06 | Share-to-Social-Media (Server-Verified)
+- **Status:** selesai
+- **Perubahan:** Reward hanya diberikan setelah link benar-benar dibuka. Server mint single-use token (10 min) → share sheet → recipient buka link → Edge Function consume → grant → 302 ke app.
+- **File:**
+  - `supabase/migrations/20260706114120_share_tokens_and_rpcs.sql` (NEW)
+  - `supabase/functions/share-redirect/index.ts` (NEW)
+  - `supabase/functions/share-redirect/deno.json` (NEW)
+  - `lib/core/services/share_mission_service.dart` (NEW)
+  - Multi-platform deep link config (Android App Link + iOS Universal Link)
+  - Bloc/screen/widget updates
+- **Keputusan Teknis:** Nonce 24 byte, single-use, atomic UPDATE. Cold-start claim via `consumeInitialLink()`.
+- **Proposed commit:** `feat(missions): verify share_app_daily via single-use short link`
 
-### H2 - Signed URL cache
-- **Modified**: `lib/data/repositories/sticker_repository.dart`
-- Added `Map<String, Future<String?>> _signedUrlCache` keyed by storage path.
-- `signedUrlForPath` is now a cache lookup via `putIfAbsent`; private `_fetchSignedUrl` does the actual call. Concurrent calls for the same path share one in-flight `Future`.
+### 2026-07-06 | Analyze Fix: Share Mission
+- **Status:** selesai
+- **Masalah:** Error analyzer pada fitur share mission: API `share_plus 10.1.4` tidak cocok, import kurang, deklarasi `_unused` ganda.
+- **File:** `lib/core/services/share_mission_service.dart`, `lib/presentation/blocs/mission/mission_bloc.dart`, `lib/presentation/screens/missions/missions_screen.dart`
+- **Proposed commit:** `fix(missions): resolve share mission analyzer errors`
 
-### H3 - `HistoryBloc` hoisted
-- **Modified**: `lib/app.dart`, `lib/presentation/blocs/history/history_bloc.dart`, `lib/presentation/screens/history/history_screen.dart`
-- `BlocProvider` moved to `app.dart`'s `MultiBlocProvider` (lazy).
-- `HistoryScreen` converted to `StatefulWidget`; `HistoryRefreshed` dispatched once in `initState`.
-- Added `HistoryCleared` event; dispatched in `_AuthGate` listener on signout to prevent cross-user data leak.
+### 2026-07-05 | Feedback & Analytics (Rate Up/Down)
+- **Status:** selesai
+- **Perubahan:** User rate up/down hasil generate (thumbs + reason tags). 9 analytic views untuk performa provider, model reasoning, generate image.
+- **File:** `supabase/migrations/20260705000001_generation_feedback_analytics.sql` (NEW), `supabase/migrations/20260705000002_analytics_views.sql` (NEW)
+- **Proposed commit:** `feat(feedback): add sticker rating (up/down + reason tags) and 9 provider/model analytics views`
 
-### H4 - README paths
-- **Modified**: `README.md` - layout section rewritten for root-based structure; `cd bikin_stiker`/`cd ..` removed from setup; migrations table extended with `20260505000004_*` row; running section simplified.
+### 2026-07-05 | Banner Ads Multi-Location
+- **Status:** selesai
+- **Perubahan:** AdMob Banner Ads di 5 lokasi (Home, History, Missions, Profile, Packs) dengan unique ad unit ID per lokasi.
+- **File:**
+  - `lib/core/services/ad_config_service.dart` (NEW)
+  - `lib/presentation/widgets/ads_banner_widget.dart` (NEW)
+  - `lib/presentation/widgets/ads_banner_placeholder.dart` (replace)
+  - 5 screen files (tambah banner), `lib/main.dart` (MobileAds init), `.env` (5 keys)
 
-### C3 - Submodule migration (2026-06-26)
-- **Migrated**: `supabase/` folder to git submodule pointing to private repo `bikinstiker-supabase`
-- **Modified**: `.gitmodules` (new), `README.md` (clone with `--recurse-submodules`), `PROJECT_MEMORY.md`
-- **Commits**: 
-  - `chore: remove supabase/ from tracking (migrating to submodule)`
-  - `chore: add supabase as git submodule from bikinstiker-supabase`
-- **Rationale**: Sensitive backend code (migrations, RLS policies, edge functions with API keys) now lives in a separate private repo. Public repo only contains Flutter app code.
+### 2026-07-05 | Analytics Migration Fix
+- **Status:** selesai
+- **Masalah:** `supabase db push` error — alias scope SQL, kolom nama tidak konsisten, correlated subquery.
+- **Perbaikan:** Non-destruktif, hanya ubah definisi view.
+- **File:** `supabase/migrations/20260705000002_analytics_views.sql`
+- **Proposed commit:** `fix(analytics): correct analytics view aliases and grouped health dashboard`
 
-### B1 - APK rename on build
-- **Modified**: `android/app/build.gradle.kts` - added a `gradle.projectsEvaluated` block hooking `assembleRelease/assembleDebug/assembleProfile` to rename generated APK(s) in `build/app/outputs/flutter-apk/` to `{applicationId}-{versionName}-{descriptor}.apk` (e.g. `com.bikinstiker.bikin_stiker-1.0.0-release.apk`, `com.bikinstiker.bikin_stiker-1.0.0-arm64-v8a-release.apk`).
-- **Semver handling**: No pubspec changes needed; bumping `version:` in `pubspec.yaml` propagates through `flutter.versionName`/`flutter.versionCode` and is picked up by the rename hook automatically.
-
----
-
-## Pending (M-tier)
-
-| ID | Item | Primary file(s) |
-|---|---|---|
-| M1 | Client-side preset whitelist + max-length validation in `home_screen` (empty prompt already checked) | `lib/presentation/screens/home/home_screen.dart` |
-| M2 | Remove silent error swallow in `_fetchSignedUrl` (deliberately deferred from H2) | `lib/data/repositories/sticker_repository.dart` |
-| M3 | Use `CachedNetworkImage` consistently - `_ResultPanel` currently uses `Image.network` | `lib/presentation/screens/home/home_screen.dart` |
-| M4 | Add bloc tests (auth state transitions, sticker gen error mapping) and repository tests | `test/` |
-| M5 | Smooth `WalletBloc` loading on re-login (avoid flash of 0 -> loading -> real) | `lib/presentation/blocs/wallet/wallet_bloc.dart` |
-| M6 | Improve `_AuthGate` for `AuthStatus.submitting` (loading overlay vs full `AuthScreen`) | `lib/app.dart` |
-| M7 | Strengthen preset contract test (parse from `index.ts` or shared fixture) | `test/widget_test.dart` |
-
-## Completed
-
-| ID | Item | Date |
-|---|---|---|
-| C3 | Migrate supabase/ to git submodule (private repo: bikinstiker-supabase) | 2026-06-26 |
-
----
-
-## Verification (run manually)
-
-```bash
-# 1. Static analysis + tests
-flutter analyze
-flutter test
-
-# 2. Clone with submodules (fresh setup)
-git clone --recurse-submodules https://github.com/alamaby/bikinstiker.git
-cd bikinstiker
-
-# 3. Migrations from clean state
-supabase db reset
-
-# 4. Edge function (local)
-supabase functions serve generate-sticker --env-file .env.local
-# smoke: POST with valid JWT + {presetId, userInput} -> 200 + signedUrl
-# failure: set OPENROUTER_API_KEY=invalid, generate -> 500, status='failed',
-#          balance restored, 'refund' row in credit_transactions
-
-# 5. Update submodule
-cd supabase && git pull origin main && cd ..
-git add supabase && git commit -m "chore: update supabase submodule"
-
-# 6. CRITICAL C1 regression check
-# After db reset, sign in as user A, then in psql run:
-#   SELECT deduct_credit_for_sticker(1, 'kawaii', 'pwn');
-# EXPECTED: ERROR: Not authenticated  (auth.uid() is A; no p_user_id to override)
-# This proves the old cross-user deduction vector is closed.
-```
-
----
-
-## Proposed Commit Messages (pending user approval)
-
-Conventional commit, 1 line each:
-
-```text
-fix(supabase): drop p_user_id from deduct_credit_for_sticker; derive from auth.uid()
-chore(git): ignore .env, IDE, and generated Flutter artifacts
-refactor(app): hoist HistoryBloc to app.dart; cache signed URLs; fix AuthBlocState.copyWith
-docs: update README layout/paths after root-relative move
-build(android): rename built APKs to {applicationId}-{versionName}-{descriptor}.apk
-chore: remove supabase/ from tracking (migrating to submodule)
-chore: add supabase as git submodule from bikinstiker-supabase
-```
-
-Or a single combined commit:
-
-```text
-fix(security,ux): harden RPC user scope, gitignore, Bloc state, signed URL cache, README paths
-```
-
----
-
-## Notes for Next Session
-
-- All init-session work is in the working tree, uncommitted. User controls commit/push.
-- Still untracked (will land in the first commit): `lib/`, `pubspec.yaml`, `test/`, `android/`, `ios/`, `analysis_options.yaml`, `TODO.md`, plus the new `supabase/migrations/20260505000004_*` and this `PROJECT_MEMORY.md`.
-- The repo's `TODO.md` duplicates the M-tier items above. Keep this memory and `TODO.md` in sync if status changes.
+### 2026-07-04 | Profile Polish: Filter, Subscription, Packs, Check-in
+- **Status:** selesai
+- **Perubahan:**
+  - Filter Credit History: All/Earnings/Spent/Rewards pakai `Set<CreditTxType>`.
+  - Info Next Monthly Credit di subscription section.
+  - PackCard thumbnail pakai stiker pertama (fallback generic).
+  - PackCard padding fix.
+  - PackDetail cache lokal WebP sebelum jaringan.
+  - Daily Check-in Lottie overlay + day box bounce.
+- **File:**
+  - `lib/data/repositories/credit_transaction_repository.dart`, `lib/presentation/blocs/credit_transactions/credit_transactions_bloc.dart`, `lib/presentation/screens/profile/profile_screen.dart`
+  - `lib/data/models/sticker_pack.dart`, `lib/presentation/blocs/sticker_pack/sticker_pack_bloc.dart`, `lib/presentation/widgets/pack_card.dart`, `lib/presentation/screens/packs/pack_detail_screen.dart`
+  - `lib/presentation/widgets/lottie_overlay.dart` (NEW), `lib/data/models/subscription_next_grant.dart` (NEW)
+  - `lib/presentation/screens/missions/missions_screen.dart`, `lib/presentation/screens/missions/widgets/daily_checkin_card.dart`
+- **Proposed commit:** `fix(profile): broaden earnings filter and show next grant date for subscription`

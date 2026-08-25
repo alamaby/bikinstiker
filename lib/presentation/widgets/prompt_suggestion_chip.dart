@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/prompt_suggestions.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 class PromptSuggestionChip extends StatefulWidget {
   final String presetId;
@@ -31,7 +32,11 @@ class _PromptSuggestionChipState extends State<PromptSuggestionChip> {
 
   void _shuffle() {
     setState(() {
-      _current = randomSuggestionFor(widget.presetId, textOnly: widget.textOnly);
+      _current = randomSuggestionFor(
+        widget.presetId,
+        textOnly: widget.textOnly,
+        avoid: _current,
+      );
     });
   }
 
@@ -58,7 +63,8 @@ class _PromptSuggestionChipState extends State<PromptSuggestionChip> {
                   ),
                 ),
                 child: Text(
-                  'Try: "$_current"',
+                  (AppLocalizations.of(context)?.trySuggestion(_current)) ??
+                      'Try: "$_current"',
                   style: const TextStyle(
                     fontSize: 13,
                     fontStyle: FontStyle.italic,

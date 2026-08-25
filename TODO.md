@@ -1,5 +1,15 @@
 # TODO
 
+## Surprise Me Gap Fixes (2026-08-25)
+
+Hasil audit implementasi fitur "Surprise me". Plan: `plans/2026-08-25-surprise-me-gap-fixes-plan.md`.
+
+- [x] **SM1 (Gap 1)** Label hardcoded `'Surprise me'` tidak memakai l10n — key `surpriseMe` sudah ada di ARB tapi widget pakai string literal (`lib/presentation/widgets/surprise_me_button.dart:30`). Fix: `AppLocalizations.of(context)?.surpriseMe`. **Done (2026-08-25)**.
+- [x] **SM2 (Gap 2)** Random tanpa anti-repeat — `randomSuggestionFor()` bisa mengembalikan saran sama berturut-turut (`lib/core/constants/prompt_suggestions.dart:226`). Fix: param opsional `avoid` + injectable `Random`; `home_screen` pass teks prompt saat ini, chip pass `_current`. **Done (2026-08-25)**.
+- [x] **SM3 (Gap 3)** Fallback semua saran untuk preset tanpa tag match — audit produksi: 8 preset gambar aktif tanpa coverage: `caricature`, `chibi_3d`, `lego_voxel`, `minimal_line`, `pixel_art`, `retro_sticker`, `vector_flat`, + `watercolor` (terlewat di audit awal). Plus cakupan tipis: `origami`, `stained_glass`, `neon_cyber`. Fix: tambah tag pada saran existing (semua preset kini ≥3 match) + test kontrak cakupan (31 preset ID hardcoded di test). Fallback dipertahankan sebagai safety net. **Done (2026-08-25)**.
+- [x] **SM4 (Bonus)** Prefix `'Try:'` hardcoded di `PromptSuggestionChip` (pelanggaran i18n satu keluarga dengan SM1). Fix: key ARB `trySuggestion` (EN/ID) + regen l10n. **Done (2026-08-25)**.
+- [x] **SM5** Verifikasi penuh + bump versi `0.19.1+69`. analyze 0 issues, test 138/138, APK 3 ABI sukses. **Done (2026-08-25)**.
+
 ## Transparent Sticker Review Findings (2026-08-01)
 
 Hasil code review pipeline transparent WhatsApp sticker. Diurutkan kritis → rendah.

@@ -9,23 +9,29 @@ class PromptSuggestion {
 const kPromptSuggestions = <PromptSuggestion>[
   // Kawaii / cute (15 prompts)
   PromptSuggestion('a smiling boba tea cup waving hello', ['kawaii', 'anime']),
-  PromptSuggestion('a sleepy panda eating bamboo', ['kawaii', 'vinyl_toy']),
+  PromptSuggestion(
+    'a sleepy panda eating bamboo',
+    ['kawaii', 'vinyl_toy', 'origami'],
+  ),
   PromptSuggestion(
     'a cute corgi wearing a party hat',
     ['kawaii', 'photoreal'],
   ),
-  PromptSuggestion('a tiny dragon drinking coffee', ['kawaii', 'claymation']),
+  PromptSuggestion(
+    'a tiny dragon drinking coffee',
+    ['kawaii', 'claymation', 'stained_glass'],
+  ),
   PromptSuggestion(
     'a happy cloud with a rainbow tail',
-    ['kawaii', 'sticker_sheet'],
+    ['kawaii', 'sticker_sheet', 'vector_flat', 'watercolor'],
   ),
   PromptSuggestion(
     'a chibi robot holding a heart balloon',
-    ['kawaii', 'anime'],
+    ['kawaii', 'anime', 'chibi_3d', 'caricature'],
   ),
   PromptSuggestion(
     'a round hamster with a tiny backpack',
-    ['kawaii', 'line_doodle'],
+    ['kawaii', 'line_doodle', 'minimal_line'],
   ),
   PromptSuggestion(
     'a smiling sushi piece on a conveyor belt',
@@ -33,27 +39,27 @@ const kPromptSuggestions = <PromptSuggestion>[
   ),
   PromptSuggestion(
     'a cheerful mushroom wearing a beret',
-    ['kawaii', 'riso_print'],
+    ['kawaii', 'riso_print', 'vector_flat'],
   ),
   PromptSuggestion(
     'a baby fox curled up on a crescent moon',
-    ['kawaii', 'embroidery'],
+    ['kawaii', 'embroidery', 'stained_glass', 'origami', 'watercolor'],
   ),
   PromptSuggestion(
     'a giggling avocado with a tiny hat',
-    ['kawaii', 'claymation'],
+    ['kawaii', 'claymation', 'caricature'],
   ),
   PromptSuggestion(
     'a pastel bunny holding a lollipop',
-    ['kawaii', 'vinyl_toy'],
+    ['kawaii', 'vinyl_toy', 'chibi_3d'],
   ),
   PromptSuggestion(
     'a cute axolotl in a teacup',
-    ['kawaii', 'anime'],
+    ['kawaii', 'anime', 'watercolor'],
   ),
   PromptSuggestion(
     'a happy snail with a sparkly shell',
-    ['kawaii', 'sticker_sheet'],
+    ['kawaii', 'sticker_sheet', 'vector_flat'],
   ),
   PromptSuggestion(
     'a tiny elephant blowing bubbles',
@@ -63,11 +69,11 @@ const kPromptSuggestions = <PromptSuggestion>[
   // Retro / vintage (5 prompts)
   PromptSuggestion(
     'a vintage radio playing jazz',
-    ['riso_print', 'pop_art'],
+    ['riso_print', 'pop_art', 'retro_sticker', 'pixel_art'],
   ),
   PromptSuggestion(
     'a retro soda bottle with sunglasses',
-    ['riso_print'],
+    ['riso_print', 'retro_sticker'],
   ),
   PromptSuggestion(
     'a neon sign saying HELLO in cursive',
@@ -75,11 +81,11 @@ const kPromptSuggestions = <PromptSuggestion>[
   ),
   PromptSuggestion(
     'a polaroid camera with a flash',
-    ['riso_print', 'photoreal'],
+    ['riso_print', 'photoreal', 'retro_sticker'],
   ),
   PromptSuggestion(
     'a classic muscle car with flames',
-    ['pop_art', 'line_doodle'],
+    ['pop_art', 'line_doodle', 'retro_sticker'],
   ),
 
   // Spooky / dark (3 prompts)
@@ -93,13 +99,13 @@ const kPromptSuggestions = <PromptSuggestion>[
   ),
   PromptSuggestion(
     'a black cat with glowing eyes',
-    ['line_doodle', 'embroidery'],
+    ['line_doodle', 'embroidery', 'minimal_line', 'origami'],
   ),
 
   // Action / dynamic (4 prompts)
   PromptSuggestion(
     'a cat surfing a pizza wave',
-    ['pop_art', 'anime'],
+    ['pop_art', 'anime', 'caricature'],
   ),
   PromptSuggestion(
     'a rocket launching from a book',
@@ -107,25 +113,25 @@ const kPromptSuggestions = <PromptSuggestion>[
   ),
   PromptSuggestion(
     'a wizard casting a sparkly spell',
-    ['anime', 'neon_cyber'],
+    ['anime', 'neon_cyber', 'pixel_art', 'stained_glass'],
   ),
   PromptSuggestion(
     'a ninja cat throwing stars',
-    ['anime', 'line_doodle'],
+    ['anime', 'line_doodle', 'pixel_art', 'minimal_line'],
   ),
 
   // 3D / toy-like (3 prompts)
   PromptSuggestion(
     'a tiny astronaut floating in space',
-    ['claymation', 'vinyl_toy'],
+    ['claymation', 'vinyl_toy', 'lego_voxel', 'chibi_3d', 'neon_cyber'],
   ),
   PromptSuggestion(
     'a robot made of cardboard boxes',
-    ['claymation', 'sticker_sheet'],
+    ['claymation', 'sticker_sheet', 'lego_voxel'],
   ),
   PromptSuggestion(
     'a toy pirate ship in a bottle',
-    ['vinyl_toy', 'origami'],
+    ['vinyl_toy', 'origami', 'lego_voxel'],
   ),
 ];
 
@@ -211,6 +217,13 @@ const kTypographySuggestions = <PromptSuggestion>[
   PromptSuggestion('LEGEND', ['luxury_gold_text']),
 ];
 
+/// Returns suggestion texts tagged with [presetId].
+///
+/// If no suggestion carries the tag (e.g. a newly added DB preset that does
+/// not have curated suggestions yet), falls back to the whole pool so the
+/// "Surprise me" button always offers something. The server-side reasoning
+/// layer adapts any prompt to the preset's style, so a loose fallback match
+/// is acceptable.
 List<String> suggestionsForPreset(String presetId, {bool textOnly = false}) {
   final source = textOnly ? kTypographySuggestions : kPromptSuggestions;
   final matched = source
@@ -223,7 +236,21 @@ List<String> suggestionsForPreset(String presetId, {bool textOnly = false}) {
   return matched;
 }
 
-String randomSuggestionFor(String presetId, {bool textOnly = false}) {
+/// Picks a random suggestion for [presetId], avoiding an immediate repeat of
+/// [avoid] when the pool has more than one entry.
+///
+/// Pass the currently displayed/entered suggestion as [avoid] so consecutive
+/// taps never yield the same value. [rng] is injectable for deterministic
+/// tests.
+String randomSuggestionFor(
+  String presetId, {
+  bool textOnly = false,
+  String? avoid,
+  Random? rng,
+}) {
   final list = suggestionsForPreset(presetId, textOnly: textOnly);
-  return list[Random().nextInt(list.length)];
+  final pool = list.length > 1 && list.contains(avoid)
+      ? list.where((s) => s != avoid).toList()
+      : list;
+  return pool[(rng ?? Random()).nextInt(pool.length)];
 }

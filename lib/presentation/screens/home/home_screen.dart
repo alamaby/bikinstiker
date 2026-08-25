@@ -392,6 +392,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               presetId: _presetId ?? 'kawaii',
                               enabled: !submitting,
                               textOnly: isTextOnly,
+                              avoid:
+                                  _promptCtrl.text.isEmpty
+                                      ? null
+                                      : _promptCtrl.text,
                               onPressed: (suggestion) {
                                 _promptCtrl.text = suggestion;
                                 setState(() {});

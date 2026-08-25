@@ -840,6 +840,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get surpriseMe => 'Surprise me';
 
   @override
+  String trySuggestion(Object suggestion) {
+    return 'Try: \"$suggestion\"';
+  }
+
+  @override
   String get goodResult => 'Good result';
 
   @override

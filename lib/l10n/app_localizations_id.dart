@@ -841,6 +841,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get surpriseMe => 'Kejutkan saya';
 
   @override
+  String trySuggestion(Object suggestion) {
+    return 'Coba: \"$suggestion\"';
+  }
+
+  @override
   String get goodResult => 'Hasil bagus';
 
   @override

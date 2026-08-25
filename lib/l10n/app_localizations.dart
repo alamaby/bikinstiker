@@ -1616,6 +1616,12 @@ abstract class AppLocalizations {
   /// **'Surprise me'**
   String get surpriseMe;
 
+  /// No description provided for @trySuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Try: \"{suggestion}\"'**
+  String trySuggestion(Object suggestion);
+
   /// No description provided for @goodResult.
   ///
   /// In en, this message translates to:

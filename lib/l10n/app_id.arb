@@ -263,6 +263,7 @@
   "packLimitReached": "Anda telah mencapai batas pack. Hapus pack untuk membuat yang baru.",
   "thanksForFeedback": "Terima kasih atas masukan Anda",
   "surpriseMe": "Kejutkan saya",
+  "trySuggestion": "Coba: \"{suggestion}\"",
   "goodResult": "Hasil bagus",
   "poorResult": "Hasil kurang bagus",
   "rateThisResult": "Beri nilai",

@@ -1,13 +1,37 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-24
-- **Perubahan terakhir:** Cloudflare Workers AI image provider (Fase 0 spike + Fase 1 implementasi + review remediation)
-- **Versi:** `0.19.0+68`
-- **Verifikasi:** `deno test` 80/80, `flutter analyze` (0 issues), `flutter test` (133/133)
+- **Terakhir dikerjakan:** 2026-08-25
+- **Perubahan terakhir:** Surprise Me gap fixes (l10n label, anti-repeat random, tag coverage 8 preset + test kontrak)
+- **Versi:** `0.19.1+69`
+- **Verifikasi:** `flutter analyze` (0 issues), `flutter test` (138/138), `flutter build apk --split-per-abi` sukses (3 APK)
 - **Blocker aktif:** deploy: `supabase db push` migrasi 20260824000001 → patch credential SQL (base_url account-id real + api_key + is_active=true) → `supabase functions deploy generate-sticker`.
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-25 | Surprise Me Gap Fixes
+- **Status:** selesai.
+- **Latar:** Audit implementasi fitur "Surprise me" menemukan 3 gap; semua difix + 1 bonus i18n.
+- **Perubahan:**
+  - Gap 1 (i18n): label hardcoded `'Surprise me'` di `surprise_me_button.dart` diganti `AppLocalizations.of(context)?.surpriseMe ?? 'Surprise me'`. Key l10n sudah ada sebelumnya tapi tak pernah dipakai.
+  - Gap 2 (anti-repeat): `randomSuggestionFor()` dapat param opsional `avoid` + `rng` (injectable untuk test deterministik). Pool >1 dan mengandung `avoid` → exclude sebelum random. Caller wiring: `home_screen.dart` pass `_promptCtrl.text` via prop baru `SurpriseMeButton.avoid`; `prompt_suggestion_chip.dart` pass `_current` di `_shuffle()`.
+  - Gap 3 (tag coverage): audit produksi via MCP read (`sticker_presets`, 31 preset aktif) menunjukkan **8 preset gambar tanpa satu pun saran match** → selalu fallback ke semua 30 prompt: `caricature`, `chibi_3d`, `lego_voxel`, `minimal_line`, `pixel_art`, `retro_sticker`, `vector_flat` + **`watercolor`** (terlewat di audit awal, ketahuan saat recheck daftar). Cakupan tipis: `origami`(1), `stained_glass`(2), `neon_cyber`(2). Fix: tambah tag pada saran existing tanpa konten baru — kini semua 21 image preset ≥3 match, semua 10 text preset = 6 match.
+  - Test kontrak baru: hardcoded 31 preset ID aktif di `test/prompt_suggestions_test.dart`; assert tiap ID ≥3 match di pool masing-masing. Regression net — bukan validator runtime.
+  - Bonus: prefix `'Try:'` hardcoded di chip juga di-i18n-kan via key ARB baru `trySuggestion` (EN "Try:", ID "Coba:") dengan placeholder `{suggestion}` + `flutter gen-l10n`.
+- **Keputusan Teknis:**
+  - Anti-repeat pakai *exclude-last* (param `avoid`), bukan shuffle-bag stateful global: mudah ditest seeded-rng, tanpa state lintas widget, cukup mencegah repeat langsung. Limitasi diakui: nilai sama bisa muncul lagi setelah 1 tekanan lain — acceptable untuk pool 3–15 item.
+  - Fallback "semua saran" dipertahankan (bukan disable tombol) karena reasoning layer server (`enhancePrompt`) tetap mengadaptasi prompt apa pun ke style_descriptor preset; UX lebih baik memberi inspirasi daripada tombol mati. Fokus = memperkecil frekuensi fallback lewat tag.
+  - Test kontrak pakai hardcoded list (bukan parse migration SQL) agar sederhana dan stabil; preset DB baru yang belum masuk list tidak tertangkap test, tapi fallback menjamin UX aman.
+- **File:**
+  - `lib/core/constants/prompt_suggestions.dart` (signature `randomSuggestionFor`, docstring, ~15 penambahan tag)
+  - `lib/presentation/widgets/surprise_me_button.dart` (l10n label + prop `avoid`)
+  - `lib/presentation/widgets/prompt_suggestion_chip.dart` (l10n `trySuggestion` + avoid)
+  - `lib/presentation/screens/home/home_screen.dart` (pass `avoid`)
+  - `lib/l10n/app_en.arb`, `app_id.arb` (+ generated localizations)
+  - `test/prompt_suggestions_test.dart` (+5 test), `pubspec.yaml` (`0.19.1+69`)
+  - `plans/2026-08-25-surprise-me-gap-fixes-plan.md`, `TODO.md`
+- **Verifikasi:** `flutter pub get`, `flutter analyze` 0 issues, `flutter test` 138/138 (+5), `flutter build apk --split-per-abi` sukses (3 APK).
+- **Proposed commit:** `fix(home): localize surprise me labels, prevent repeat suggestions, close preset tag coverage`
 
 ### 2026-08-24 | Cloudflare Workers AI Image Provider (Fase 0-1 + Review Remediation)
 - **Status:** selesai implementasi Fase 1 (menunggu deploy + patch credential). Fase 2-3 defer.

@@ -263,6 +263,7 @@
   "packLimitReached": "You have reached your pack limit. Delete a pack to create a new one.",
   "thanksForFeedback": "Thanks for the feedback",
   "surpriseMe": "Surprise me",
+  "trySuggestion": "Try: \"{suggestion}\"",
   "goodResult": "Good result",
   "poorResult": "Poor result",
   "rateThisResult": "Rate this result",

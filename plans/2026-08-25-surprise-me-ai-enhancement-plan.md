@@ -91,6 +91,13 @@ batas 200 karakter, dan visual feedback penuh.
   membawa file generate-sticker sebagai dependency. Gate 80/80 dua kali lulus.
   Semua fase selesai; verifikasi penuh hijau (analyze 0, test 138/138,
   APK 3 ABI).
+- 2026-08-25 16:00:00 — **Fix production push error 55P04**: `supabase db push`
+  gagal karena ekspresi CHECK memakai nilai enum baru 'surprise_prompt' dalam
+  transaksi yang sama dengan ALTER TYPE ADD VALUE (PG melarang; body PL/pgSQL
+  aman karena lazy-parse, tapi ekspresi CHECK dianalisis saat DDL). Transaksi
+  rollback → remote bersih. Fix: pecah migrasi — enum+tabel+RPC tetap di
+  `20260825000001`, replace CHECK pindah ke `20260825000002_surprise_me_sign_check.sql`
+  beserta catatan manual VALIDATE + preflight query.
 
 ## Notes
 - `kMaxPromptChars = 200` client-side sudah cocok dengan batas server.

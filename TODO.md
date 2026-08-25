@@ -21,7 +21,7 @@ Upgrade "Surprise me" jadi deskripsi AI via reasoning provider. Plan: `plans/202
 - [x] **SME3** Edge function `surprise-me`: kuota 3 gratis/hari → charge 1 credit, style-aware preset, randomizer + avoid-list history, ≤200 char, auto-refund on failure, cooldown in-memory. Deno test 9/9. **Done (2026-08-25)** — pending deploy.
 - [x] **SME4** Flutter: repository + cubit + dialog konfirmasi dinamis + loading/success/failure feedback + l10n EN/ID (10 key). Text-only mode tetap lokal. **Done (2026-08-25)**.
 - [x] **SME5** Verifikasi penuh (deno 9/9 + 80/80, flutter analyze 0, test 138/138, APK 3 ABI) + versi `0.20.0+70`. **Done (2026-08-25)**.
-- [ ] **SME6 (manual)** Deploy: `supabase db push` → preflight data + manual `VALIDATE CONSTRAINT credit_transactions_sign_consistency` (lihat header `20260825000001`) → `supabase functions deploy surprise-me` → redeploy `generate-sticker`.
+- [ ] **SME6 (manual)** Deploy checklist — progres 2026-08-25: `supabase db push` ✅ (kedua migrasi), preflight data ✅ (0 pelanggaran via MCP read), deploy `surprise-me` + `generate-sticker` ✅. **Sisa:** manual `ALTER TABLE public.credit_transactions VALIDATE CONSTRAINT credit_transactions_sign_consistency;` di SQL Editor + patch credential Cloudflare (opsional, provider masih is_active=false).
 
 ## Surprise Me Gap Fixes (2026-08-25)
 

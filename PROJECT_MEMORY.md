@@ -2,10 +2,10 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-08-25
-- **Perubahan terakhir:** Surprise Me review fixes (env var critical, dialog saldo 0 + CTA Missions, refactor button, rate-limit snackbar, catatan VALIDATE)
+- **Perubahan terakhir:** Surprise Me AI Enhancement + review fixes — DEPLOY PRODUKSI SEBAGIAN BESAR SELESAI (migrasi ter-apply, edge functions ter-deploy, preflight bersih)
 - **Versi:** `0.20.1+71`
-- **Verifikasi:** deno surprise-me 10/10 (--allow-read) + generate-sticker 80/80, `flutter analyze` (0 issues), `flutter test` (138/138), `flutter build apk --split-per-abi` sukses (3 APK)
-- **Blocker aktif:** deploy: `supabase db push` migrasi 20260824000001 + 20260825000001 → manual VALIDATE constraint (lihat header 20260825000001) → patch credential Cloudflare SQL → `supabase functions deploy generate-sticker` + `surprise-me`.
+- **Verifikasi:** deno surprise-me 10/10 (--allow-read) + generate-sticker 80/80, `flutter analyze` (0 issues), `flutter test` (138/138), `flutter build apk --split-per-abi` sukses (3 APK); produksi: enum+RPC+RLS+constraint terverifikasi via MCP read, preflight 0 pelanggaran
+- **Blocker aktif:** sisa manual di SQL Editor: `ALTER TABLE public.credit_transactions VALIDATE CONSTRAINT credit_transactions_sign_consistency;` + patch credential Cloudflare (opsional — provider masih is_active=false).
 
 ## Riwayat Pekerjaan (terbaru → terlama)
 

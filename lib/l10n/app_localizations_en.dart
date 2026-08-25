@@ -845,6 +845,48 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get surpriseConfirmTitleFree => 'Free surprise idea';
+
+  @override
+  String get surpriseConfirmTitlePaid => 'Use 1 credit?';
+
+  @override
+  String surpriseConfirmBodyFree(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count free surprises left today.',
+      one: '1 free surprise left today.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String surpriseConfirmBodyPaid(Object balance) {
+    return 'An AI will craft a fresh sticker idea for you. Balance after: $balance credits.';
+  }
+
+  @override
+  String get surpriseCostLine => 'Cost: 1 credit';
+
+  @override
+  String get surpriseLoading => 'Crafting an idea...';
+
+  @override
+  String get surpriseFailed => 'Couldn\'t craft an idea right now.';
+
+  @override
+  String get surpriseLocalFallback => 'Using a local suggestion instead.';
+
+  @override
+  String surpriseWaitSeconds(Object seconds) {
+    return 'Please wait $seconds seconds before trying again.';
+  }
+
+  @override
+  String get surpriseTopUpViaMissions => 'Earn credits on the Missions page.';
+
+  @override
   String get goodResult => 'Good result';
 
   @override

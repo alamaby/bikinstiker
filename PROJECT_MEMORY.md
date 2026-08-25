@@ -2,12 +2,61 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-08-25
-- **Perubahan terakhir:** Surprise Me gap fixes (l10n label, anti-repeat random, tag coverage 8 preset + test kontrak)
-- **Versi:** `0.19.1+69`
-- **Verifikasi:** `flutter analyze` (0 issues), `flutter test` (138/138), `flutter build apk --split-per-abi` sukses (3 APK)
-- **Blocker aktif:** deploy: `supabase db push` migrasi 20260824000001 → patch credential SQL (base_url account-id real + api_key + is_active=true) → `supabase functions deploy generate-sticker`.
+- **Perubahan terakhir:** Surprise Me review fixes (env var critical, dialog saldo 0 + CTA Missions, refactor button, rate-limit snackbar, catatan VALIDATE)
+- **Versi:** `0.20.1+71`
+- **Verifikasi:** deno surprise-me 10/10 (--allow-read) + generate-sticker 80/80, `flutter analyze` (0 issues), `flutter test` (138/138), `flutter build apk --split-per-abi` sukses (3 APK)
+- **Blocker aktif:** deploy: `supabase db push` migrasi 20260824000001 + 20260825000001 → manual VALIDATE constraint (lihat header 20260825000001) → patch credential Cloudflare SQL → `supabase functions deploy generate-sticker` + `surprise-me`.
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-25 | Surprise Me Review Fixes
+- **Status:** selesai. Pending deploy (migration + 2 edge function).
+- **Latar:** Code review implementasi Surprise Me AI menemukan 6 temuan; semua diperbaiki per keputusan user (+CTA Missions di dialog).
+- **Temuan & Fix:**
+  - **H1 Critical:** `surprise-me/index.ts` baca env `SUPABASE_SERVICE_ROLE` padahal runtime inject `SUPABASE_SERVICE_ROLE_KEY` → semua request 500 di produksi (unit test tidak menangkap karena guard env ada di handler). Fix: nama var dikoreksi + **test kontrak baru** membaca source file dan assert nama env benar.
+  - **H2 UX:** Dialog konfirmasi render "-1 credit" saat saldo 0 dan OK tetap aktif → 402 belakangan. Fix: pre-check `willBeCharged && balance < 1` → judul `notEnoughCredits`, isi pesan cost + `surpriseTopUpViaMissions`, tombol utama jadi CTA navigasi ke MissionsScreen (flag `goMissions` + guard mounted setelah await showDialog).
+  - **M1:** `fetchQuota` double-wrap ServerFailure→UnknownFailure; fix `on Failure rethrow`.
+  - **M2:** SurpriseMeButton punya komputasi random mati (parent abaikan suggestion) — refactor jadi `enabled` + `VoidCallback`; props `presetId/textOnly/avoid` dihapus; call site tunggal dirapikan.
+  - **M3:** RateLimitedFailure kini tampil `surpriseWaitSeconds({seconds})`; failure handler pakai switch per tipe Failure.
+  - **L1 Ops:** Migration drop+re-add CHECK sign-consistency menghapus status VALIDATE migrasi lama — header `20260825000001` kini memuat langkah manual VALIDATE + query preflight; deploy checklist SME6 diperluas.
+- **Keputusan Teknis:**
+  - Contract test env-name membaca source sendiri via `Deno.readTextFile(new URL(...))` — **perintah test surprise-me kini butuh `--allow-read`**. Assert substring longgar agar tahan reformat.
+  - CTA Missions dipilih daripada sekadar disable OK (user butuh jalur dapat credit); navigasi plain `MaterialPageRoute` sama seperti appbar (MissionsScreen baca bloc dari provider app-level).
+- **File:**
+  - `supabase/functions/surprise-me/{index.ts,index_test.ts}` (fix + 1 test kontrak, total 10)
+  - `supabase/migrations/20260825000001_surprise_me_ai.sql` (komentar header saja — belum di-deploy, aman diedit)
+  - `lib/data/repositories/surprise_me_repository.dart`, `lib/presentation/widgets/surprise_me_button.dart`, `lib/presentation/screens/home/home_screen.dart`
+  - `lib/l10n/app_{en,id}.arb` (+2 key) + generated
+  - `pubspec.yaml` (`0.20.1+71`)
+  - `plans/2026-08-25-surprise-me-review-fixes-plan.md`, `TODO.md`
+- **Verifikasi:** deno surprise-me 10/10 (`--allow-read`), generate-sticker 80/80, flutter analyze 0 issues, flutter test 138/138, build apk 3 ABI sukses.
+- **Proposed commit:** `fix(surprise-me): correct service role env name, zero-balance dialog guard, and button API cleanup`
+
+### 2026-08-25 | Surprise Me AI Enhancement
+- **Status:** selesai implementasi. Pending deploy (migration + 2 edge function).
+- **Fitur:** Tombol "Surprise me" kini menghasilkan deskripsi stiker via reasoning provider chain (bukan curated list lokal). Konfirmasi biaya sebelum jalan; 3x gratis/hari (WIB) lalu 1 credit; style-aware preset; ≤200 char.
+- **Alur:** klik → fetch `get_surprise_me_quota()` → dialog dinamis (gratis sisa N / bayar 1 credit + saldo setelahnya) → POST `surprise-me` → server: rate-limit in-memory (cooldown 5s + cap 30/hari/user) → kuota habis? `charge_surprise_prompt(1)` FIFO consume → loadPreset (style_descriptor valid dari DB) → seed randomizer (60 subjek × 40 twist, crypto RNG) + avoid-list 20 prompt history → reasoning chain failover (reuse adapter generate-sticker) → validasi non-kosong ≤200 char retry 1x → insert `surprise_me_history` → respons `{prompt, balance, freeRemaining, charged}`. Gagal total semua provider → auto `refund_surprise_prompt(1)` + respons 502 `{refunded:true}`.
+- **Client feedback:** spinner + label "Lagi bikin ide..." + disable TextField/caption/generate/chip saat loading; sukses → isi field + haptic + refresh WalletBloc; gagal → snackbar + fallback lokal kPromptSuggestions gratis + refresh wallet. Text-only (tipografi) tetap perilaku lokal lama.
+- **Keputusan Teknis:**
+  - **Deviasi Fase 2:** ekstraksi `_shared/reasoning.ts` dibatalkan — helper HTTP dipakai luas kode image provider (diff besar). Ganti: tambah `export` pada `callReasoningProvider`, `loadReasoningConfigs`, `resolveUserRole`, `loadPreset` di generate-sticker/index.ts; surprise-me import relatif langsung (`import.meta.main` guard sudah ada sehingga aman). Konsekuensi: surprise-me/deno.json perlu mapping `imagescript`; deploy surprise-me membawa file generate-stiker sebagai dependency.
+  - Charge pakai FIFO consume penuh (copy pola deduct_credit_for_sticker tanpa baris generasi) agar kredit expired tidak bisa dipakai surprise-me.
+  - Refund sengaja sederhana (balance+ledger 'refund' positif), bukan restore FIFO — nuansa expiry hilang pada refund, trade-off diterima (jalur jarang).
+  - FREE_LIMIT=3 hidup di RPC `get_surprise_me_quota` (single source of truth), bukan di Edge Function.
+  - Anti-repeat lintas user TIDAK dijamin absolut (per-user akurat via DB; lintas-user probabilistik — tak terlihat secara UX).
+  - Migration jebakan yang ditangani: CHECK `credit_transactions_sign_consistency` direplace agar 'surprise_prompt' boleh negatif; `ALTER TYPE ADD VALUE` standalone.
+- **File:**
+  - `supabase/migrations/20260825000001_surprise_me_ai.sql` (NEW)
+  - `supabase/functions/surprise-me/{index.ts,index_test.ts,deno.json}` (NEW)
+  - `supabase/functions/generate-sticker/index.ts` (+4 export keyword saja)
+  - `supabase/config.toml` (+[functions.surprise-me])
+  - `lib/data/repositories/surprise_me_repository.dart` (NEW)
+  - `lib/presentation/blocs/surprise_me/{cubit,state}.dart` (NEW)
+  - `lib/core/di.dart`, `lib/app.dart`, `lib/presentation/screens/home/home_screen.dart`
+  - `lib/l10n/app_{en,id}.arb` (+10 key surprise*) + generated
+  - `pubspec.yaml` (`0.20.0+70`)
+  - `plans/2026-08-25-surprise-me-ai-enhancement-plan.md`, `TODO.md`
+- **Verifikasi:** deno surprise-me 9/9; deno generate-sticker 80/80 (gate 2x); flutter analyze 0 issues; flutter test 138/138; build apk 3 ABI.
+- **Proposed commit:** `feat(surprise-me): AI-generated sticker ideas with daily free quota and credit charging`
 
 ### 2026-08-25 | Surprise Me Gap Fixes
 - **Status:** selesai.

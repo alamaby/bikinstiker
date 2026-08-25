@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/presets.dart';
+import '../../../core/constants/prompt_suggestions.dart';
 import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/localization/preset_localizations.dart';
@@ -13,12 +14,15 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_preset.dart';
 import '../../../data/models/user_subscription.dart';
 import '../../../data/repositories/sticker_repository.dart';
+import '../../../data/repositories/surprise_me_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
+import '../../blocs/surprise_me/surprise_me_cubit.dart';
+import '../../blocs/surprise_me/surprise_me_state.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../widgets/ads_banner_placeholder.dart';
@@ -96,9 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final captionRaw = _captionCtrl.text.trim().toUpperCase();
     final validPresetIds = presets.map((p) => p.id).toSet();
     if (input.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.typePromptFirst)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.typePromptFirst)));
       return;
     }
     if (input.length > kMaxPromptChars) {
@@ -133,6 +137,139 @@ class _HomeScreenState extends State<HomeScreen> {
       _captionCtrl.clear();
       _captionPosition = 'bottom';
     });
+  }
+
+  void _applyPrompt(String text) {
+    setState(() => _promptCtrl.text = text);
+  }
+
+  void _refreshWallet() {
+    final userId = context.read<AuthBloc>().state.user?.id;
+    if (userId != null) {
+      context.read<WalletBloc>().add(WalletRefreshRequested(userId));
+    }
+  }
+
+  String _localSuggestion({required bool textOnly}) {
+    return randomSuggestionFor(
+      _presetId ?? 'kawaii',
+      textOnly: textOnly,
+      avoid: _promptCtrl.text.isEmpty ? null : _promptCtrl.text,
+    );
+  }
+
+  Future<void> _onSurpriseMePressed({required bool isTextOnly}) async {
+    // Text-only presets keep the free local curated behavior.
+    if (isTextOnly) {
+      _applyPrompt(_localSuggestion(textOnly: true));
+      return;
+    }
+
+    HapticFeedback.selectionClick();
+
+    SurpriseMeQuota? quota;
+    try {
+      quota = await context.read<SurpriseMeCubit>().fetchQuota();
+    } catch (_) {
+      quota = null;
+    }
+    if (!mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final free = quota != null && !quota.willBeCharged;
+    final insufficient =
+        quota != null && quota.willBeCharged && quota.balance < 1;
+    var goMissions = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          insufficient
+              ? l10n.notEnoughCredits
+              : free
+              ? l10n.surpriseConfirmTitleFree
+              : l10n.surpriseConfirmTitlePaid,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (insufficient) ...[
+              Text(l10n.surpriseCostLine),
+              const SizedBox(height: 4),
+              Text(l10n.surpriseTopUpViaMissions),
+            ] else if (free)
+              Text(l10n.surpriseConfirmBodyFree(quota!.freeRemaining))
+            else ...[
+              Text(l10n.surpriseCostLine),
+              const SizedBox(height: 4),
+              Text(
+                quota != null
+                    ? l10n.surpriseConfirmBodyPaid(quota.balance - 1)
+                    : l10n.surpriseCostLine,
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          if (insufficient)
+            FilledButton(
+              onPressed: () {
+                goMissions = true;
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: Text(l10n.missions),
+            )
+          else
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.ok),
+            ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (goMissions) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const MissionsScreen()));
+      return;
+    }
+    if (confirmed != true) return;
+    context.read<SurpriseMeCubit>().requestSurprise(
+      presetId: _presetId ?? 'kawaii',
+    );
+  }
+
+  void _onSurpriseMeStateChanged(AppLocalizations l10n, SurpriseMeState state) {
+    if (state is SurpriseMeSuccess) {
+      HapticFeedback.mediumImpact();
+      _applyPrompt(state.prompt);
+      _refreshWallet();
+    } else if (state is SurpriseMeFailure) {
+      // Provider failed; server already refunded any charge. Fall back to a
+      // free local suggestion so the user still gets inspiration.
+      _applyPrompt(_localSuggestion(textOnly: false));
+      _refreshWallet();
+      final String message;
+      final failure = state.failure;
+      if (failure is InsufficientCreditsFailure) {
+        message = l10n.notEnoughCredits;
+      } else if (failure is RateLimitedFailure) {
+        message = l10n.surpriseWaitSeconds(failure.retryAfterSeconds);
+      } else {
+        message = '${l10n.surpriseFailed} ${l10n.surpriseLocalFallback}';
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   void _onRefresh() {
@@ -313,194 +450,227 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (context, genState) {
                         final submitting =
                             genState.status == StickerGenStatus.submitting;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _CreditsCard(),
-                            const SizedBox(height: 8),
-                            BlocBuilder<SubscriptionBloc, SubscriptionState>(
-                              builder: (context, subState) {
-                                final isGuest = context
-                                    .read<AuthBloc>()
-                                    .state
-                                    .isGuest;
-                                final showAd = !isGuest && !subState.isPlus;
-                                if (!showAd) return const SizedBox.shrink();
-                                return const AdsBannerPlaceholder();
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              l10n.chooseStyle,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            if (isLoading && presets.isEmpty)
-                              const _PresetSkeleton()
-                            else if (isEmpty)
-                              _EmptyPresetsView(onRefresh: _onRefresh)
-                            else
-                              _PresetSelector(
-                                presets: presets,
-                                selectedId: _presetId,
-                                onSelected: submitting
-                                    ? null
-                                    : _onPresetSelected,
-                              ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    inputLabel,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                if (_lastSuccessfulPrompt != null)
-                                  TextButton.icon(
-                                    onPressed: submitting
-                                        ? null
-                                        : _reuseLastPrompt,
-                                    icon: const Icon(Icons.replay, size: 16),
-                                    label: Text(l10n.useLast),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _promptCtrl,
-                              enabled: !submitting && !isEmpty,
-                              maxLength: inputMaxChars,
-                              maxLines: isTextOnly ? 1 : 3,
-                              onChanged: (_) => setState(() {}),
-                              decoration: InputDecoration(
-                                hintText: inputHint,
-                                filled: submitting,
-                                fillColor: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            SurpriseMeButton(
-                              presetId: _presetId ?? 'kawaii',
-                              enabled: !submitting,
-                              textOnly: isTextOnly,
-                              avoid:
-                                  _promptCtrl.text.isEmpty
-                                      ? null
-                                      : _promptCtrl.text,
-                              onPressed: (suggestion) {
-                                _promptCtrl.text = suggestion;
-                                setState(() {});
-                              },
-                            ),
-                            if (_promptCtrl.text.isEmpty && _presetId != null)
-                              PromptSuggestionChip(
-                                key: ValueKey('chip_$_presetId'),
-                                presetId: _presetId!,
-                                enabled: !submitting,
-                                textOnly: isTextOnly,
-                                onSuggestionSelected: (suggestion) {
-                                  _promptCtrl.text = suggestion;
-                                  setState(() {});
+                        final surpriseBusy =
+                            context.watch<SurpriseMeCubit>().state
+                                is SurpriseMeLoading;
+                        return BlocListener<SurpriseMeCubit, SurpriseMeState>(
+                          listener: (context, state) =>
+                              _onSurpriseMeStateChanged(l10n, state),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _CreditsCard(),
+                              const SizedBox(height: 8),
+                              BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                                builder: (context, subState) {
+                                  final isGuest = context
+                                      .read<AuthBloc>()
+                                      .state
+                                      .isGuest;
+                                  final showAd = !isGuest && !subState.isPlus;
+                                  if (!showAd) return const SizedBox.shrink();
+                                  return const AdsBannerPlaceholder();
                                 },
                               ),
-                            const SizedBox(height: 16),
-                            if (!isTextOnly) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                l10n.chooseStyle,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (isLoading && presets.isEmpty)
+                                const _PresetSkeleton()
+                              else if (isEmpty)
+                                _EmptyPresetsView(onRefresh: _onRefresh)
+                              else
+                                _PresetSelector(
+                                  presets: presets,
+                                  selectedId: _presetId,
+                                  onSelected: submitting
+                                      ? null
+                                      : _onPresetSelected,
+                                ),
+                              const SizedBox(height: 16),
                               Row(
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      l10n.captionOptional,
+                                      inputLabel,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 16,
                                       ),
                                     ),
                                   ),
-                                  Text(
-                                    '${_captionCtrl.text.length} / 10',
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.outline,
-                                      fontSize: 12,
+                                  if (_lastSuccessfulPrompt != null)
+                                    TextButton.icon(
+                                      onPressed: submitting
+                                          ? null
+                                          : _reuseLastPrompt,
+                                      icon: const Icon(Icons.replay, size: 16),
+                                      label: Text(l10n.useLast),
                                     ),
-                                  ),
                                 ],
                               ),
                               const SizedBox(height: 8),
                               TextField(
-                                controller: _captionCtrl,
-                                enabled: !submitting && !isEmpty,
-                                maxLength: 10,
-                                textCapitalization:
-                                    TextCapitalization.characters,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[A-Z0-9 .!?\-]'),
-                                  ),
-                                  LengthLimitingTextInputFormatter(10),
-                                ],
-                                decoration: InputDecoration(
-                                  hintText: l10n.captionExample,
-                                  counterText: '',
-                                ),
+                                controller: _promptCtrl,
+                                enabled:
+                                    !submitting && !surpriseBusy && !isEmpty,
+                                maxLength: inputMaxChars,
+                                maxLines: isTextOnly ? 1 : 3,
                                 onChanged: (_) => setState(() {}),
+                                decoration: InputDecoration(
+                                  hintText: surpriseBusy
+                                      ? l10n.surpriseLoading
+                                      : inputHint,
+                                  filled: submitting || surpriseBusy,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withValues(alpha: 0.3),
+                                ),
                               ),
-                              if (_captionCtrl.text.trim().isNotEmpty) ...[
-                                const SizedBox(height: 4),
+                              if (surpriseBusy)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        l10n.surpriseLoading,
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.outline,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                SurpriseMeButton(
+                                  enabled: !submitting,
+                                  onPressed: () => _onSurpriseMePressed(
+                                    isTextOnly: isTextOnly,
+                                  ),
+                                ),
+                              if (_promptCtrl.text.isEmpty && _presetId != null)
+                                PromptSuggestionChip(
+                                  key: ValueKey('chip_$_presetId'),
+                                  presetId: _presetId!,
+                                  enabled: !submitting && !surpriseBusy,
+                                  textOnly: isTextOnly,
+                                  onSuggestionSelected: (suggestion) {
+                                    _promptCtrl.text = suggestion;
+                                    setState(() {});
+                                  },
+                                ),
+                              const SizedBox(height: 16),
+                              if (!isTextOnly) ...[
                                 Row(
                                   children: [
+                                    Expanded(
+                                      child: Text(
+                                        l10n.captionOptional,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
                                     Text(
-                                      l10n.position,
+                                      '${_captionCtrl.text.length} / 10',
                                       style: TextStyle(
                                         color: Theme.of(
                                           context,
                                         ).colorScheme.outline,
-                                        fontSize: 13,
+                                        fontSize: 12,
                                       ),
-                                    ),
-                                    const Spacer(),
-                                    SegmentedButton<String>(
-                                      segments: [
-                                        ButtonSegment(
-                                          value: 'top',
-                                          label: Text(l10n.top),
-                                        ),
-                                        ButtonSegment(
-                                          value: 'bottom',
-                                          label: Text(l10n.bottom),
-                                        ),
-                                      ],
-                                      selected: {_captionPosition},
-                                      onSelectionChanged: submitting
-                                          ? null
-                                          : (s) => setState(
-                                              () => _captionPosition = s.first,
-                                            ),
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: _captionCtrl,
+                                  enabled:
+                                      !submitting && !surpriseBusy && !isEmpty,
+                                  maxLength: 10,
+                                  textCapitalization:
+                                      TextCapitalization.characters,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[A-Z0-9 .!?\-]'),
+                                    ),
+                                    LengthLimitingTextInputFormatter(10),
+                                  ],
+                                  decoration: InputDecoration(
+                                    hintText: l10n.captionExample,
+                                    counterText: '',
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                                if (_captionCtrl.text.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        l10n.position,
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.outline,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      SegmentedButton<String>(
+                                        segments: [
+                                          ButtonSegment(
+                                            value: 'top',
+                                            label: Text(l10n.top),
+                                          ),
+                                          ButtonSegment(
+                                            value: 'bottom',
+                                            label: Text(l10n.bottom),
+                                          ),
+                                        ],
+                                        selected: {_captionPosition},
+                                        onSelectionChanged: submitting
+                                            ? null
+                                            : (s) => setState(
+                                                () =>
+                                                    _captionPosition = s.first,
+                                              ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
+                              const SizedBox(height: 8),
+                              _GenerateButton(
+                                onPressed: submitting || surpriseBusy
+                                    ? null
+                                    : () => _onGenerate(presets),
+                              ),
+                              const SizedBox(height: 24),
+                              KeyedSubtree(
+                                key: _resultKey,
+                                child: const _ResultPanel(),
+                              ),
                             ],
-                            const SizedBox(height: 8),
-                            _GenerateButton(
-                              onPressed: () => _onGenerate(presets),
-                            ),
-                            const SizedBox(height: 24),
-                            KeyedSubtree(
-                              key: _resultKey,
-                              child: const _ResultPanel(),
-                            ),
-                          ],
+                          ),
                         );
                       },
                     ),
@@ -661,10 +831,7 @@ class _PresetSelector extends StatelessWidget {
                   ),
                   Text(
                     localizedPresetDescription(l10n, selected),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
               ),
@@ -772,7 +939,7 @@ class _PresetPickerSheet extends StatelessWidget {
 }
 
 class _GenerateButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   const _GenerateButton({required this.onPressed});
 
   @override
@@ -784,7 +951,7 @@ class _GenerateButton extends StatelessWidget {
           builder: (context, genState) {
             final submitting = genState.status == StickerGenStatus.submitting;
             final hasCredits = walletState.balance >= kStickerCost;
-            final enabled = !submitting && hasCredits;
+            final enabled = !submitting && hasCredits && onPressed != null;
             return Tooltip(
               message: hasCredits ? '' : l10n.notEnoughCredits,
               child: FilledButton.icon(

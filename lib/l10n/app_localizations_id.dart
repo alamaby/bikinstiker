@@ -846,6 +846,48 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get surpriseConfirmTitleFree => 'Ide kejutan gratis';
+
+  @override
+  String get surpriseConfirmTitlePaid => 'Pakai 1 credit?';
+
+  @override
+  String surpriseConfirmBodyFree(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sisa $count kejutan gratis hari ini.',
+      one: 'Sisa 1 kejutan gratis hari ini.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String surpriseConfirmBodyPaid(Object balance) {
+    return 'AI akan membuatkan ide stiker baru untukmu. Saldo setelahnya: $balance credit.';
+  }
+
+  @override
+  String get surpriseCostLine => 'Biaya: 1 credit';
+
+  @override
+  String get surpriseLoading => 'Lagi bikin ide...';
+
+  @override
+  String get surpriseFailed => 'Gagal membuat ide saat ini.';
+
+  @override
+  String get surpriseLocalFallback => 'Memakai saran lokal sebagai gantinya.';
+
+  @override
+  String surpriseWaitSeconds(Object seconds) {
+    return 'Tunggu $seconds detik sebelum mencoba lagi.';
+  }
+
+  @override
+  String get surpriseTopUpViaMissions => 'Kumpulkan credit di halaman Misi.';
+
+  @override
   String get goodResult => 'Hasil bagus';
 
   @override

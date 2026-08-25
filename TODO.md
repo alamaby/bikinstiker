@@ -1,5 +1,28 @@
 # TODO
 
+## Surprise Me Review Fixes (2026-08-25)
+
+Hasil review implementasi Surprise Me AI. Plan: `plans/2026-08-25-surprise-me-review-fixes-plan.md`.
+
+- [x] **SRF1 (Critical)** Env var salah `SUPABASE_SERVICE_ROLE` → harus `SUPABASE_SERVICE_ROLE_KEY` (`surprise-me/index.ts:266`) — semua request 500 di produksi. + test kontrak env name (butuh `--allow-read`). **Done (2026-08-25)**.
+- [x] **SRF2 (High UX)** Dialog konfirmasi saat saldo 0: render "-1 credit", OK aktif → 402 belakangan. Fix: pre-check insufficient + CTA ke MissionsScreen. **Done (2026-08-25)**.
+- [x] **SRF3 (Medium)** `fetchQuota` double-wrap ServerFailure→UnknownFailure. Fix: `on Failure rethrow`. **Done (2026-08-25)**.
+- [x] **SRF4 (Medium)** SurpriseMeButton API mati → refactor VoidCallback, props tak terpakai dihapus. **Done (2026-08-25)**.
+- [x] **SRF5 (Low)** Rate-limit snackbar generik → `surpriseWaitSeconds({seconds})` EN/ID. **Done (2026-08-25)**.
+- [x] **SRF6 (Ops)** Manual VALIDATE dicatat di header migration `20260825000001` + deploy checklist SME6. **Done (2026-08-25)**.
+- [x] **SRF7** Verifikasi penuh (deno 10/10 + 80/80, analyze 0, test 138/138, APK 3 ABI) + versi `0.20.1+71`. **Done (2026-08-25)**.
+
+## Surprise Me AI Enhancement (2026-08-25)
+
+Upgrade "Surprise me" jadi deskripsi AI via reasoning provider. Plan: `plans/2026-08-25-surprise-me-ai-enhancement-plan.md`.
+
+- [x] **SME1** Migration: enum `surprise_prompt` + fix CHECK sign-consistency + tabel `surprise_me_history` + RPC `get_surprise_me_quota` / `charge_surprise_prompt` / `refund_surprise_prompt`. **Done (2026-08-25)** — `20260825000001_surprise_me_ai.sql`, pending deploy.
+- [x] **SME2** Reuse reasoning via export langsung dari generate-sticker (deviasi dari rencana `_shared/` — lihat plan). Gate deno 80/80 lulus. **Done (2026-08-25)**.
+- [x] **SME3** Edge function `surprise-me`: kuota 3 gratis/hari → charge 1 credit, style-aware preset, randomizer + avoid-list history, ≤200 char, auto-refund on failure, cooldown in-memory. Deno test 9/9. **Done (2026-08-25)** — pending deploy.
+- [x] **SME4** Flutter: repository + cubit + dialog konfirmasi dinamis + loading/success/failure feedback + l10n EN/ID (10 key). Text-only mode tetap lokal. **Done (2026-08-25)**.
+- [x] **SME5** Verifikasi penuh (deno 9/9 + 80/80, flutter analyze 0, test 138/138, APK 3 ABI) + versi `0.20.0+70`. **Done (2026-08-25)**.
+- [ ] **SME6 (manual)** Deploy: `supabase db push` → preflight data + manual `VALIDATE CONSTRAINT credit_transactions_sign_consistency` (lihat header `20260825000001`) → `supabase functions deploy surprise-me` → redeploy `generate-sticker`.
+
 ## Surprise Me Gap Fixes (2026-08-25)
 
 Hasil audit implementasi fitur "Surprise me". Plan: `plans/2026-08-25-surprise-me-gap-fixes-plan.md`.

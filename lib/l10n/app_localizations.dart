@@ -1622,6 +1622,66 @@ abstract class AppLocalizations {
   /// **'Try: \"{suggestion}\"'**
   String trySuggestion(Object suggestion);
 
+  /// No description provided for @surpriseConfirmTitleFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free surprise idea'**
+  String get surpriseConfirmTitleFree;
+
+  /// No description provided for @surpriseConfirmTitlePaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 1 credit?'**
+  String get surpriseConfirmTitlePaid;
+
+  /// No description provided for @surpriseConfirmBodyFree.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 free surprise left today.} other{{count} free surprises left today.}}'**
+  String surpriseConfirmBodyFree(num count);
+
+  /// No description provided for @surpriseConfirmBodyPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'An AI will craft a fresh sticker idea for you. Balance after: {balance} credits.'**
+  String surpriseConfirmBodyPaid(Object balance);
+
+  /// No description provided for @surpriseCostLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost: 1 credit'**
+  String get surpriseCostLine;
+
+  /// No description provided for @surpriseLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Crafting an idea...'**
+  String get surpriseLoading;
+
+  /// No description provided for @surpriseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t craft an idea right now.'**
+  String get surpriseFailed;
+
+  /// No description provided for @surpriseLocalFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Using a local suggestion instead.'**
+  String get surpriseLocalFallback;
+
+  /// No description provided for @surpriseWaitSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait {seconds} seconds before trying again.'**
+  String surpriseWaitSeconds(Object seconds);
+
+  /// No description provided for @surpriseTopUpViaMissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn credits on the Missions page.'**
+  String get surpriseTopUpViaMissions;
+
   /// No description provided for @goodResult.
   ///
   /// In en, this message translates to:

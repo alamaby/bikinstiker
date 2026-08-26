@@ -997,4 +997,154 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get withdrawPrivacyConfirm => 'Revoke';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get tierPlus => 'Plus';
+
+  @override
+  String get tierFree => 'Free';
+
+  @override
+  String get showcaseTitle => 'Showcase';
+
+  @override
+  String get showcaseSearchHint => 'Search packs, creators, tags...';
+
+  @override
+  String get showcaseSortTrending => 'Trending';
+
+  @override
+  String get showcaseSortTopRated => 'Top rated';
+
+  @override
+  String get showcaseSortPopular => 'Popular';
+
+  @override
+  String get showcaseSortNewest => 'Newest';
+
+  @override
+  String get showcaseEmpty =>
+      'No packs on showcase yet.\nList yours from a pack page!';
+
+  @override
+  String get showcaseOwned => 'Owned';
+
+  @override
+  String get showcaseReport => 'Report listing';
+
+  @override
+  String showcaseBySeller(String seller) {
+    return 'by $seller';
+  }
+
+  @override
+  String showcaseStickerCount(int count) {
+    return '$count stickers';
+  }
+
+  @override
+  String get showcaseUnlist => 'Remove from Showcase';
+
+  @override
+  String get showcaseUnlistShort => 'Unlist';
+
+  @override
+  String get showcaseUnlistConfirm =>
+      'Buyers who already purchased keep their copies. Unlist this pack?';
+
+  @override
+  String get showcaseUnlisted => 'Pack removed from Showcase.';
+
+  @override
+  String get showcaseOpenOwnedPack => 'Open my copy';
+
+  @override
+  String showcaseBuyFor(int price) {
+    return 'Get for $price credits';
+  }
+
+  @override
+  String get showcaseConfirmTitle => 'Add to my packs?';
+
+  @override
+  String showcaseConfirmBody(int price, String tier, int after) {
+    return '$price credits will be spent ($tier price). Balance afterwards: $after.';
+  }
+
+  @override
+  String showcaseNotEnoughCredits(int price, int balance) {
+    return 'You need $price credits but only have $balance.';
+  }
+
+  @override
+  String get showcasePurchaseSuccess => 'Pack added to your collection!';
+
+  @override
+  String get showcasePurchaseRefunded =>
+      'Purchase was refunded — the pack could not be copied.';
+
+  @override
+  String get showcasePurchasePendingRetry =>
+      'Copy is still processing. Try again shortly or refund from history.';
+
+  @override
+  String get showcaseListTitle => 'List on Showcase';
+
+  @override
+  String get showcaseEditTitle => 'Edit listing';
+
+  @override
+  String get showcasePriceLabel => 'Base price (credits)';
+
+  @override
+  String get showcaseDescriptionHint => 'Describe your pack (optional)...';
+
+  @override
+  String get showcaseTagsHint => 'tag1, tag2, tag3...';
+
+  @override
+  String get showcaseTagsHelper =>
+      'Up to 8 tags, separated by commas (max 24 chars each).';
+
+  @override
+  String get showcaseListConfirm => 'Publish';
+
+  @override
+  String get showcaseListSuccess => 'Listing saved.';
+
+  @override
+  String get showcasePlusRequired => 'Showcase listing is a Plus feature.';
+
+  @override
+  String get showcasePurchaseLabel => 'Showcase purchase';
+
+  @override
+  String get showcaseSaleLabel => 'Showcase sale';
+
+  @override
+  String get showcaseReasonCopyright => 'Copyright / IP infringement';
+
+  @override
+  String get showcaseReasonInappropriate => 'Inappropriate content';
+
+  @override
+  String get showcaseReasonSpam => 'Spam or misleading';
+
+  @override
+  String get showcaseReasonOther => 'Other';
+
+  @override
+  String get showcaseReportNoteHint => 'Additional details (optional)...';
+
+  @override
+  String get showcaseReportSent => 'Report submitted. Thank you.';
+
+  @override
+  String get packListedBadge => 'Listed';
 }

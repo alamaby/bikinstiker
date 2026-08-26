@@ -998,4 +998,154 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get withdrawPrivacyConfirm => 'Cabut';
+
+  @override
+  String get confirm => 'Konfirmasi';
+
+  @override
+  String get send => 'Kirim';
+
+  @override
+  String get tierPlus => 'Plus';
+
+  @override
+  String get tierFree => 'Gratis';
+
+  @override
+  String get showcaseTitle => 'Showcase';
+
+  @override
+  String get showcaseSearchHint => 'Cari pack, kreator, tag...';
+
+  @override
+  String get showcaseSortTrending => 'Trending';
+
+  @override
+  String get showcaseSortTopRated => 'Terbaik';
+
+  @override
+  String get showcaseSortPopular => 'Populer';
+
+  @override
+  String get showcaseSortNewest => 'Terbaru';
+
+  @override
+  String get showcaseEmpty =>
+      'Belum ada pack di showcase.\nDaftarkan pack Anda dari halaman pack!';
+
+  @override
+  String get showcaseOwned => 'Dimiliki';
+
+  @override
+  String get showcaseReport => 'Laporkan listing';
+
+  @override
+  String showcaseBySeller(String seller) {
+    return 'oleh $seller';
+  }
+
+  @override
+  String showcaseStickerCount(int count) {
+    return '$count stiker';
+  }
+
+  @override
+  String get showcaseUnlist => 'Hapus dari Showcase';
+
+  @override
+  String get showcaseUnlistShort => 'Batal daftar';
+
+  @override
+  String get showcaseUnlistConfirm =>
+      'Pembeli yang sudah membeli tetap menyimpan salinannya. Batalkan listing pack ini?';
+
+  @override
+  String get showcaseUnlisted => 'Pack dihapus dari Showcase.';
+
+  @override
+  String get showcaseOpenOwnedPack => 'Buka salinan saya';
+
+  @override
+  String showcaseBuyFor(int price) {
+    return 'Dapatkan dengan $price credit';
+  }
+
+  @override
+  String get showcaseConfirmTitle => 'Tambahkan ke pack saya?';
+
+  @override
+  String showcaseConfirmBody(int price, String tier, int after) {
+    return '$price credit akan dipakai (harga $tier). Saldo setelahnya: $after.';
+  }
+
+  @override
+  String showcaseNotEnoughCredits(int price, int balance) {
+    return 'Anda butuh $price credit namun hanya punya $balance.';
+  }
+
+  @override
+  String get showcasePurchaseSuccess => 'Pack ditambahkan ke koleksi Anda!';
+
+  @override
+  String get showcasePurchaseRefunded =>
+      'Pembelian dikembalikan — pack tidak dapat disalin.';
+
+  @override
+  String get showcasePurchasePendingRetry =>
+      'Penyalinan masih diproses. Coba lagi sebentar atau refund dari riwayat.';
+
+  @override
+  String get showcaseListTitle => 'Daftar ke Showcase';
+
+  @override
+  String get showcaseEditTitle => 'Ubah listing';
+
+  @override
+  String get showcasePriceLabel => 'Harga dasar (credit)';
+
+  @override
+  String get showcaseDescriptionHint => 'Deskripsikan pack Anda (opsional)...';
+
+  @override
+  String get showcaseTagsHint => 'tag1, tag2, tag3...';
+
+  @override
+  String get showcaseTagsHelper =>
+      'Maksimal 8 tag, pisahkan dengan koma (maks 24 karakter per tag).';
+
+  @override
+  String get showcaseListConfirm => 'Terbitkan';
+
+  @override
+  String get showcaseListSuccess => 'Listing tersimpan.';
+
+  @override
+  String get showcasePlusRequired => 'Listing Showcase adalah fitur Plus.';
+
+  @override
+  String get showcasePurchaseLabel => 'Pembelian Showcase';
+
+  @override
+  String get showcaseSaleLabel => 'Penjualan Showcase';
+
+  @override
+  String get showcaseReasonCopyright => 'Pelanggaran hak cipta / IP';
+
+  @override
+  String get showcaseReasonInappropriate => 'Konten tidak pantas';
+
+  @override
+  String get showcaseReasonSpam => 'Spam atau menyesatkan';
+
+  @override
+  String get showcaseReasonOther => 'Lainnya';
+
+  @override
+  String get showcaseReportNoteHint => 'Detail tambahan (opsional)...';
+
+  @override
+  String get showcaseReportSent => 'Laporan terkirim. Terima kasih.';
+
+  @override
+  String get packListedBadge => 'Terdaftar';
 }

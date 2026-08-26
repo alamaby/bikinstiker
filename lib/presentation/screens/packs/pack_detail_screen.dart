@@ -9,9 +9,11 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/whatsapp_pack_exporter.dart';
 import '../../../data/models/sticker_pack.dart';
 import '../../../data/models/sticker_pack_item.dart';
+import '../../../data/repositories/showcase_repository.dart';
 import '../../../data/repositories/sticker_pack_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
+import '../showcase/showcase_list_form_sheet.dart';
 
 /// Screen showing a single sticker pack's details.
 /// Includes pack metadata, grid of stickers, and actions (rename, delete, add sticker).
@@ -25,6 +27,8 @@ class PackDetailScreen extends StatefulWidget {
 }
 
 class _PackDetailScreenState extends State<PackDetailScreen> {
+  bool _isListed = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +38,19 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
       context.read<StickerPackBloc>().add(
         StickerPackDetailLoadRequested(widget.packId),
       );
+      _refreshListedState();
     });
+  }
+
+  Future<void> _refreshListedState() async {
+    try {
+      final ids =
+          await getIt<ShowcaseRepository>().fetchListedPackIds();
+      if (!mounted) return;
+      setState(() => _isListed = ids.contains(widget.packId));
+    } catch (_) {
+      // Badge state is cosmetic; ignore lookup failures.
+    }
   }
 
   @override
@@ -49,6 +65,17 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
           appBar: AppBar(
             title: Text(pack?.name ?? l10n.pack),
             actions: [
+              if (pack != null && pack.canRename)
+                IconButton(
+                  icon: Icon(
+                    Icons.storefront_outlined,
+                    color: _isListed
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  tooltip: l10n.showcaseListTitle,
+                  onPressed: () => _openShowcaseForm(pack),
+                ),
               if (pack != null && pack.canRename)
                 IconButton(
                   icon: const Icon(Icons.edit),
@@ -269,6 +296,36 @@ onPressed: canExport
             backgroundColor: AppColors.error,
           ),
         );
+    }
+  }
+
+  Future<void> _openShowcaseForm(StickerPack pack) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final tier = await getIt<ShowcaseRepository>().fetchViewerTier();
+      if (!mounted) return;
+      if (tier != 'plus') {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.showcasePlusRequired),
+        ));
+        return;
+      }
+      await showShowcaseListFormSheet(context, packId: pack.id,
+        onChanged: () {
+          if (!mounted) return;
+          // M2: refresh detail + badge setelah save/unlist sukses.
+          context.read<StickerPackBloc>().add(
+            StickerPackDetailLoadRequested(pack.id),
+          );
+          _refreshListedState();
+        },
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorOccurred)),
+        );
+      }
     }
   }
 

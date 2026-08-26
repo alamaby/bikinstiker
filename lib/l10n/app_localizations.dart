@@ -1879,6 +1879,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Revoke'**
   String get withdrawPrivacyConfirm;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @tierPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus'**
+  String get tierPlus;
+
+  /// No description provided for @tierFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get tierFree;
+
+  /// No description provided for @showcaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Showcase'**
+  String get showcaseTitle;
+
+  /// No description provided for @showcaseSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search packs, creators, tags...'**
+  String get showcaseSearchHint;
+
+  /// No description provided for @showcaseSortTrending.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending'**
+  String get showcaseSortTrending;
+
+  /// No description provided for @showcaseSortTopRated.
+  ///
+  /// In en, this message translates to:
+  /// **'Top rated'**
+  String get showcaseSortTopRated;
+
+  /// No description provided for @showcaseSortPopular.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get showcaseSortPopular;
+
+  /// No description provided for @showcaseSortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get showcaseSortNewest;
+
+  /// No description provided for @showcaseEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No packs on showcase yet.\nList yours from a pack page!'**
+  String get showcaseEmpty;
+
+  /// No description provided for @showcaseOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Owned'**
+  String get showcaseOwned;
+
+  /// No description provided for @showcaseReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report listing'**
+  String get showcaseReport;
+
+  /// No description provided for @showcaseBySeller.
+  ///
+  /// In en, this message translates to:
+  /// **'by {seller}'**
+  String showcaseBySeller(String seller);
+
+  /// No description provided for @showcaseStickerCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} stickers'**
+  String showcaseStickerCount(int count);
+
+  /// No description provided for @showcaseUnlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Showcase'**
+  String get showcaseUnlist;
+
+  /// No description provided for @showcaseUnlistShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlist'**
+  String get showcaseUnlistShort;
+
+  /// No description provided for @showcaseUnlistConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Buyers who already purchased keep their copies. Unlist this pack?'**
+  String get showcaseUnlistConfirm;
+
+  /// No description provided for @showcaseUnlisted.
+  ///
+  /// In en, this message translates to:
+  /// **'Pack removed from Showcase.'**
+  String get showcaseUnlisted;
+
+  /// No description provided for @showcaseOpenOwnedPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Open my copy'**
+  String get showcaseOpenOwnedPack;
+
+  /// No description provided for @showcaseBuyFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Get for {price} credits'**
+  String showcaseBuyFor(int price);
+
+  /// No description provided for @showcaseConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to my packs?'**
+  String get showcaseConfirmTitle;
+
+  /// No description provided for @showcaseConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} credits will be spent ({tier} price). Balance afterwards: {after}.'**
+  String showcaseConfirmBody(int price, String tier, int after);
+
+  /// No description provided for @showcaseNotEnoughCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {price} credits but only have {balance}.'**
+  String showcaseNotEnoughCredits(int price, int balance);
+
+  /// No description provided for @showcasePurchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Pack added to your collection!'**
+  String get showcasePurchaseSuccess;
+
+  /// No description provided for @showcasePurchaseRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase was refunded — the pack could not be copied.'**
+  String get showcasePurchaseRefunded;
+
+  /// No description provided for @showcasePurchasePendingRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy is still processing. Try again shortly or refund from history.'**
+  String get showcasePurchasePendingRetry;
+
+  /// No description provided for @showcaseListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'List on Showcase'**
+  String get showcaseListTitle;
+
+  /// No description provided for @showcaseEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit listing'**
+  String get showcaseEditTitle;
+
+  /// No description provided for @showcasePriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Base price (credits)'**
+  String get showcasePriceLabel;
+
+  /// No description provided for @showcaseDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your pack (optional)...'**
+  String get showcaseDescriptionHint;
+
+  /// No description provided for @showcaseTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'tag1, tag2, tag3...'**
+  String get showcaseTagsHint;
+
+  /// No description provided for @showcaseTagsHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 8 tags, separated by commas (max 24 chars each).'**
+  String get showcaseTagsHelper;
+
+  /// No description provided for @showcaseListConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get showcaseListConfirm;
+
+  /// No description provided for @showcaseListSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing saved.'**
+  String get showcaseListSuccess;
+
+  /// No description provided for @showcasePlusRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Showcase listing is a Plus feature.'**
+  String get showcasePlusRequired;
+
+  /// No description provided for @showcasePurchaseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Showcase purchase'**
+  String get showcasePurchaseLabel;
+
+  /// No description provided for @showcaseSaleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Showcase sale'**
+  String get showcaseSaleLabel;
+
+  /// No description provided for @showcaseReasonCopyright.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright / IP infringement'**
+  String get showcaseReasonCopyright;
+
+  /// No description provided for @showcaseReasonInappropriate.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate content'**
+  String get showcaseReasonInappropriate;
+
+  /// No description provided for @showcaseReasonSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam or misleading'**
+  String get showcaseReasonSpam;
+
+  /// No description provided for @showcaseReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get showcaseReasonOther;
+
+  /// No description provided for @showcaseReportNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional details (optional)...'**
+  String get showcaseReportNoteHint;
+
+  /// No description provided for @showcaseReportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted. Thank you.'**
+  String get showcaseReportSent;
+
+  /// No description provided for @packListedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Listed'**
+  String get packListedBadge;
 }
 
 class _AppLocalizationsDelegate

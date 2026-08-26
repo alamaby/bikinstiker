@@ -68,7 +68,8 @@ void main() {
       expect(capturedTypes!.contains(CreditTxType.generateSticker), isFalse);
     });
 
-    test('Spent filter passes {generateSticker} to repo', () async {
+    test('Spent filter passes debit types (generate, surprise, showcase) to repo',
+        () async {
       Set<CreditTxType>? capturedTypes;
 
       when(() => repo.fetchTransactions(
@@ -90,7 +91,11 @@ void main() {
       await bloc.stream.firstWhere(
           (s) => s.status == CreditTransactionsStatus.loaded);
 
-      expect(capturedTypes, {CreditTxType.generateSticker});
+      expect(capturedTypes, {
+        CreditTxType.generateSticker,
+        CreditTxType.surprisePrompt,
+        CreditTxType.showcasePurchase,
+      });
     });
 
     test('Rewards filter passes dailyReward, missionReward, subscriptionGrant',

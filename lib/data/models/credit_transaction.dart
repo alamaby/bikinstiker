@@ -9,6 +9,9 @@ enum CreditTxType {
   missionReward,
   expired,
   locked,
+  surprisePrompt,
+  showcasePurchase,
+  showcaseSale,
   unknown,
 }
 
@@ -30,6 +33,12 @@ CreditTxType _typeFrom(String raw) {
       return CreditTxType.expired;
     case 'locked':
       return CreditTxType.locked;
+    case 'surprise_prompt':
+      return CreditTxType.surprisePrompt;
+    case 'showcase_purchase':
+      return CreditTxType.showcasePurchase;
+    case 'showcase_sale':
+      return CreditTxType.showcaseSale;
     default:
       return CreditTxType.unknown;
   }

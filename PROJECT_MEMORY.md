@@ -2,12 +2,75 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-08-25
-- **Perubahan terakhir:** Surprise Me AI Enhancement + review fixes — DEPLOY PRODUKSI SEBAGIAN BESAR SELESAI (migrasi ter-apply, edge functions ter-deploy, preflight bersih)
-- **Versi:** `0.20.1+71`
-- **Verifikasi:** deno surprise-me 10/10 (--allow-read) + generate-sticker 80/80, `flutter analyze` (0 issues), `flutter test` (138/138), `flutter build apk --split-per-abi` sukses (3 APK); produksi: enum+RPC+RLS+constraint terverifikasi via MCP read, preflight 0 pelanggaran
-- **Blocker aktif:** sisa manual di SQL Editor: `ALTER TABLE public.credit_transactions VALIDATE CONSTRAINT credit_transactions_sign_consistency;` + patch credential Cloudflare (opsional — provider masih is_active=false).
+- **Perubahan terakhir:** Showcase Sticker Pack (credit-based) + Tier Cap Overhaul — SELESAI implementasi, PENDING DEPLOY (4 migrasi + 2 edge function)
+- **Versi:** `0.21.0+72`
+- **Verifikasi:** deno showcase 14/14, `flutter analyze` (0 issues), `flutter test` (142/142), `flutter build apk --split-per-abi` sukses (3 APK); preflight SQL tercantum di header masing-masing migrasi
+- **Blocker aktif:** deploy manual: `supabase db push` (00003–00006) → deploy `showcase-purchase-copy` + `showcase-preview` → manual `VALIDATE CONSTRAINT credit_transactions_sign_consistency` (header migration 00006) + sisa VALIDATE lama surprise-me; smoke purchase staging sebelum buka ke user.
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-26 | Showcase Review Fixes (11 temuan)
+- **Status:** selesai. Pending deploy bersama migrasi showcase utama.
+- **Latar:** Code review implementasi showcase menemukan 2 HIGH, 4 MEDIUM, 9 LOW; kesesuaian inti plan ✅. Plan: `plans/2026-08-26-showcase-review-fixes-plan.md`.
+- **Keputusan Owner:** M4 — pack pembelian tetap terkunci saat downgrade (konsisten slot; catat di ToS v2); L9 — badge "Listed" diimplementasi.
+- **Fix per temuan:**
+  - **H1** orphan storage antar retry purchase-copy: cleanup path lama (`collectOrphanPaths()` pure fn) SEBELUM delete rows; remove best-effort.
+  - **H2** own-listing tanpa gambar: detail `_load()` selalu fetch preview; browse prefetch tanpa filter isOwned.
+  - **M1** refund decrement `purchase_count` (RPC GREATEST guard + EF fetch-then-update).
+  - **M2** form sheet callback `onChanged` → PackDetail reload detail bloc + refresh ikon listed (aksen warna).
+  - **M3** semantik slot selaras `create_pack`: exclude `is_locked` (RPC 00007 + EF).
+  - **L1** blok self-favorite; **L2** fetchViewerTier retry 1x; **L3** cubit `refresh(silent:)` post-detail tanpa flash grid; **L4** preview items paralel Promise.all; **L5** `OwnerListingSnapshot` return type; **L6** Deno total 19 test; **L7** widget test gate 3 kasus (`pack_detail_showcase_gate_test.dart`, mock getIt ShowcaseRepository + mocktail pack repo); **L9** `fetchListedPackIds()` + `PackCard(isListed:)` chip l10n `packListedBadge`. L8 pagination & analytics sengaja di luar scope.
+- **File:**
+  - `supabase/migrations/20260826000007_showcase_review_fixes.sql` (NEW)
+  - `supabase/functions/showcase-purchase-copy/{index.ts,index_test.ts}`, `supabase/functions/showcase-preview/index.ts`
+  - `lib/data/repositories/showcase_repository.dart`, `lib/presentation/blocs/showcase/showcase_cubit.dart`
+  - `lib/presentation/screens/showcase/{showcase_detail_screen,showcase_screen,showcase_list_form_sheet}.dart`
+  - `lib/presentation/screens/packs/{packs_list_screen,pack_detail_screen}.dart`, `lib/presentation/widgets/pack_card.dart`
+  - `lib/l10n/app_{en,id}.arb` (+1 key) + generated
+  - `test/pack_detail_showcase_gate_test.dart` (NEW), `test/showcase-purchase-copy/index_test.ts` (+5)
+  - `plans/2026-08-26-showcase-review-fixes-plan.md` (NEW), TODO.md
+- **Verifikasi:** deno 19/19 (13+6); flutter analyze 0 issues; flutter test 145/145 (+3); build apk --split-per-abi sukses (3 APK). Versi tetap `0.21.0+72` (belum rilis; fix pre-deploy).
+- **Proposed commit:** `fix(showcase): resolve review findings — orphan storage cleanup, refund stats, listed badge, gate polish`
+
+### 2026-08-25 | Showcase Sticker Pack (Credit-Based) + Tier Cap Overhaul
+- **Status:** selesai implementasi. Pending deploy (4 migrasi + 2 edge function baru).
+- **Fitur:** Marketplace showcase berbasis kredit (jalur fallback dari plan cash marketplace). Seller plus me-listing pack (harga dasar 5–100 credit, deskripsi ≤500, ≤8 tag); buyer free/plus search-rate-favorite-beli; free bayar ceil(dasar×1.25) sebagai benefit plus; split seller floor(dasar×80%) clamp tier_cap, sisanya dibakar (sink inflasi); slot pack terkunci via existence join selama listing; moderasi pasca-publish + auto-suspend 3 laporan unik; guest browse-only.
+- **Keputusan Owner:** split 80/20 burn; surcharge +25% ceil; harga bebas 5–100; cap kredit free 150 / plus 10000 via helper DB `tier_cap_for()`; moderasi pasca-publish; guest tidak boleh transaksi; pembelian memakai slot reguler buyer.
+- **Temuan & Fix kritis saat analisa:**
+  - **Bug laten #1:** trigger `downgrade_expired_subscription` (00011) set tier_cap tanpa clamp balance → CHECK `balance<=tier_cap` melanggar saat plus→free bersaldo tinggi (proses tier gagal total). Fix di 00003: clamp + ledger 'expired' negatif (pola C6).
+  - **Bug laten #2:** `admin_grant_credits` UPDATE kolom `cancelled_at` yang tak ada di `user_subscriptions` → jalur simulasi tier admin selalu error. Fix aditif: ADD COLUMN + redefine RPC pakai helper + grant diclamp.
+  - Bucket stickers/tray_icons private owner-scoped → client tak bisa sign URL file seller → pembelian WAJIB dua langkah: RPC charge atomik (entitlement 'pending') → EF salin file (status 'completed'); pipeline export WhatsApp existing tak tersentuh.
+- **Keputusan Teknis:**
+  - Surcharge free TIDAK diterima seller (murni sink + monetisasi plus) — income seller deterministik.
+  - Deadlock wallet: lock dua wallet urut user_id dalam purchase RPC.
+  - Idempotensi copy: kolom `sticker_generations.showcase_entitlement_id` (tanpa FK) untuk cleanup retry parsial.
+  - Slot-cap race antara RPC dan EF: EF re-check + auto system-refund.
+  - Preview browse/detail via Edge Function `showcase-preview` (signed URL batch, TTL 3600s, verify_jwt=false dengan auth opsional in-handler).
+  - Filter riwayat kredit diperluas: Earnings += showcase_sale; Spent += surprise_prompt + showcase_purchase (+mapping enum).
+  - Deviasi plan awal: FTS tsvector diganti ILIKE + GIN tags (skala kecil; index FTS bisa menyusul).
+- **File:**
+  - `supabase/migrations/20260825000003_tier_cap_overhaul.sql`, `...000004_showcase_enum_values.sql`, `...000005_showcase_schema.sql`, `...000006_showcase_sign_check.sql` (NEW)
+  - `supabase/functions/showcase-purchase-copy/{index.ts,index_test.ts,deno.json}`, `supabase/functions/showcase-preview/{index.ts,index_test.ts,deno.json}` (NEW)
+  - `supabase/config.toml` (+2 function entries)
+  - `lib/data/models/showcase_listing.dart` (NEW), `lib/data/models/credit_transaction.dart` (+3 enum), `lib/core/errors/failures.dart` (+PackSlotLimitFailure)
+  - `lib/data/repositories/showcase_repository.dart` (NEW), `lib/presentation/blocs/showcase/showcase_cubit.dart` (NEW)
+  - `lib/presentation/screens/showcase/{showcase_screen,showcase_detail_screen,showcase_list_form_sheet}.dart` (NEW)
+  - `lib/presentation/screens/packs/{packs_list_screen,pack_detail_screen}.dart` (entry points), `lib/core/di.dart`, `lib/l10n/app_{en,id}.arb` (+~45 key) + generated
+  - `test/showcase_model_test.dart` (NEW), `test/credit_transactions_bloc_test.dart` (update ekspektasi filter Spent)
+  - `pubspec.yaml` (`0.21.0+72`), `plans/2026-08-25-showcase-sticker-pack-plan.md` (NEW), TODO.md
+- **Verifikasi:** deno showcase-purchase-copy 8/8 + showcase-preview 6/6; flutter analyze 0 issues; flutter test 142/142 (+4 model, netral lainnya); build apk --split-per-abi sukses (3 APK).
+- **Deploy checklist:** lihat SSC5 di `TODO.md` (push migrasi urut → preflight MCP read → deploy 2 EF → VALIDATE constraint manual → smoke purchase staging → seed pack owner → ToS v2 re-consent).
+- **Proposed commit:** `feat(showcase): add credit-based sticker pack showcase with tier cap overhaul`
+
+### 2026-08-25 | Sticker Pack Marketplace Plan (DRAFT — menunggu keputusan owner)
+- **Status:** analisa selesai, TIDAK ada kode/migrasi. Owner sedang mempertimbangkan.
+- **Ide:** user listing pack (deskripsi/tier harga/tag) ke marketplace, slot pack terkunci selama listing, beli via Google Play Billing, split net-setelah-store-fee 70% seller / 30% platform, cash payout langsung.
+- **Keputusan owner:** basis komisi = net setelah fee Google Play; cash payout sejak hari pertama; Android-first; tier harga fix ($0.99/$1.99/$2.99/$4.99 SKU tetap).
+- **Temuan kunci:** fee Play 2026 = service fee + billing fee 5% (~20–30% efektif) → split dari gross tidak viable; cash payout menyentuh PJP BI (PBI 23/6/2021), PMSE (PP 80/2019 + Permendag 19/2026), pajak (PPh UMKM, PMK 37/2025, WHT PPh 26) → wajib konsultan; Play policy revenue-share payout belum terkonfirmasi resmi (BLOCKER Fase 2); refund clawback → hold earnings 75 hari + ledger negatif.
+- **Arsitektur rencana:** tabel `price_tiers`/`market_listings`/`market_purchases`/`seller_earnings_ledger`/`payout_requests`/`seller_kyc`/`listing_reports`; Edge Functions `play-verify-purchase` + `play-rtdn-webhook` (pola admob-ssv); slot lock via existence join listing aktif; guest dilarang transaksi; re-consent legal otomatis via registry versi dokumen.
+- **Fallback resmi:** jika struktur payout dinilai berisiko → seller terima credit in-app dulu (Fase payout ditunda).
+- **File:** `plans/2026-08-25-sticker-pack-marketplace-plan.md` (NEW)
+- **Next:** owner review checklist Go/No-Go di plan → Fase 0 (konsultan hukum/pajak, registrasi NPWP/NIB/SIUPMSE/DMCA, konfirmasi Play policy) sebelum implementasi.
 
 ### 2026-08-25 | Surprise Me Review Fixes
 - **Status:** selesai. Pending deploy (migration + 2 edge function).

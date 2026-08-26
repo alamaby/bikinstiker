@@ -1,5 +1,24 @@
 # TODO
 
+## Showcase Sticker Pack + Tier Cap Overhaul (2026-08-25)
+
+Implementasi fitur showcase berbasis kredit + overhaul cap. Plan: `plans/2026-08-25-showcase-sticker-pack-plan.md`.
+
+- [x] **SSC0 (Fase 0)** Migration `20260825000003_tier_cap_overhaul.sql`: helper `tier_cap_for()` (free 150 / plus 10000), fix bug clamp downgrade (`balance=LEAST` + ledger 'expired' negatif), fix runtime `admin_grant_credits` (kolom `cancelled_at` ditambah aditif + grant di-clamp ala C6), backfill wallet + default kolom. **Done (2026-08-25)** — pending deploy.
+- [x] **SSC1a** Migration `20260825000004_showcase_enum_values.sql`: enum `showcase_purchase` (negatif) & `showcase_sale` (positif), file terpisah (lesson surprise-me). **Done (2026-08-25)** — pending deploy.
+- [x] **SSC1b** Migration `20260825000005_showcase_schema.sql`: 5 tabel (listings/ratings/favorites/reports/purchases) + RLS strict RPC-only-write + kolom `sticker_generations.showcase_entitlement_id` + guard existence-join pada `add/remove_sticker_to_pack`, `rename_pack`, `delete_pack` + 11 RPC showcase (create/update/unlist/search/detail/toggle rating/favorite/report/purchase/refund + helper price/tags/not-guest). Harga free = ceil(dasar×1.25); split seller floor(dasar×80%) clamp tier_cap; surcharge murni sink. **Done (2026-08-25)** — pending deploy.
+- [x] **SSC1c** Migration `20260825000006_showcase_sign_check.sql`: replace CHECK sign-consistency (+2 nilai baru) NOT VALID; VALIDATE manual dicatat di header. **Done (2026-08-25)** — pending deploy.
+- [x] **SSC2** Edge Function `showcase-purchase-copy` (salin file tray+stiker ke folder buyer, clone generations, pack+items baru, idempotent retry via showcase_entitlement_id, auto system-refund slot penuh/sumber hilang) + `showcase-preview` (signed URL batch, guest boleh listing aktif) + deno.json + config.toml. Deno test 14/14. **Done (2026-08-25)** — pending deploy.
+- [x] **SSC3** Flutter: model ShowcaseListing/Detail/PreviewUrls, repository (mapping Failure: InsufficientCredits/PackSlotLimit/Auth/Server), ShowcaseCubit browse, ShowcaseScreen (search debounce+sort chips+grid preview EF), ShowcaseDetailScreen (PageView item URLs, rate/fav/report RadioGroup, dialog beli dinamis per tier dengan saldo, alur owned/open-copy), form sheet listing owner (slider harga 5–100, deskripsi ≤500, tags ≤8, unlist) + gate plus dari PackDetail storefront icon + entry Showcase dari PacksList appbar + enum CreditTxType (surprise_prompt/showcase_purchase/showcase_sale) + label profil + filter Earnings/Spent + l10n EN/ID (~45 key). **Done (2026-08-25)**.
+- [x] **SSC4** Verifikasi penuh: deno 14/14, flutter analyze 0 issues, flutter test 142/142, build apk --split-per-abi sukses (3 APK); versi `0.21.0+72`. **Done (2026-08-25)**.
+- [ ] **SSC5 (manual)** Deploy checklist: `supabase db push` (**5 migrasi urut**: 00003–00006 + `20260826000007_showcase_review_fixes`) → preflight MCP read (cap per tier, over_cap_rows=0, pg_policies showcase, routines, preflight header 00007 untuk M1/M3/L1) → deploy 3 edge functions (`showcase-purchase-copy`, `showcase-preview`, plus sisa `surprise-me` jika belum) → SQL Editor manual: `VALIDATE CONSTRAINT credit_transactions_sign_consistency` (header migration 00006 memuat query preflight pelanggaran) → smoke purchase staging (RPC pending → EF copy completed → export WhatsApp buyer; retry copy untuk verifikasi H1 cleanup; refund pending untuk M1) → seed 2–3 pack owner (harga 0/5) untuk cold start → ToS v2 via registry legal_consent (re-consent otomatis; masukkan klausul M4: pack pembelian mengikuti aturan slot tier).
+
+### Showcase Review Fixes (2026-08-26)
+
+Hasil code review implementasi showcase. Plan: `plans/2026-08-26-showcase-review-fixes-plan.md`.
+
+- [x] **SRF-A/B/C** Semua temuan fix selesai (H1 orphan storage, H2 own-listing preview, M1 refund stats, M2 reload after sheet, M3 slot semantics, L1/L2/L3/L4/L5/L6/L7/L9; M4 = keputusan produk tanpa kode). Verifikasi: deno 19/19, analyze 0, test 145/145, APK 3 ABI. **Done (2026-08-26)** — deploy menyatu dengan SSC5.
+
 ## Surprise Me Review Fixes (2026-08-25)
 
 Hasil review implementasi Surprise Me AI. Plan: `plans/2026-08-25-surprise-me-review-fixes-plan.md`.

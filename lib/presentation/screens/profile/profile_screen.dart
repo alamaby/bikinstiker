@@ -933,6 +933,12 @@ class _ProfileView extends StatelessWidget {
         return l10n.expired;
       case CreditTxType.locked:
         return l10n.locked;
+      case CreditTxType.surprisePrompt:
+        return l10n.surpriseMe;
+      case CreditTxType.showcasePurchase:
+        return l10n.showcasePurchaseLabel;
+      case CreditTxType.showcaseSale:
+        return l10n.showcaseSaleLabel;
       case CreditTxType.unknown:
         return l10n.unknown;
     }

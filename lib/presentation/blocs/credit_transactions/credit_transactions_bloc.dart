@@ -203,9 +203,14 @@ class CreditTransactionsBloc
           CreditTxType.refund,
           CreditTxType.subscriptionGrant,
           CreditTxType.missionReward,
+          CreditTxType.showcaseSale,
         };
       case CreditTransactionsFilter.spent:
-        return const {CreditTxType.generateSticker};
+        return const {
+          CreditTxType.generateSticker,
+          CreditTxType.surprisePrompt,
+          CreditTxType.showcasePurchase,
+        };
       case CreditTransactionsFilter.rewards:
         return const {
           CreditTxType.dailyReward,

@@ -37,6 +37,12 @@ class SupabaseCreditTransactionRepository
         return 'expired';
       case CreditTxType.locked:
         return 'locked';
+      case CreditTxType.surprisePrompt:
+        return 'surprise_prompt';
+      case CreditTxType.showcasePurchase:
+        return 'showcase_purchase';
+      case CreditTxType.showcaseSale:
+        return 'showcase_sale';
       default:
         return 'unknown';
     }

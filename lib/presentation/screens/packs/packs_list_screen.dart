@@ -1,25 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/di.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/repositories/showcase_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
+import '../../blocs/showcase/showcase_cubit.dart';
 import '../../widgets/ads_banner_widget.dart';
 import '../../widgets/pack_capacity_indicator.dart';
 import '../../widgets/pack_card.dart';
+import '../showcase/showcase_screen.dart';
 import 'pack_create_screen.dart';
 import 'pack_detail_screen.dart';
 
 /// Screen showing the user's sticker packs in a grid.
 /// Includes capacity indicator, FAB to create new packs, and pull-to-refresh.
-class PacksListScreen extends StatelessWidget {
+class PacksListScreen extends StatefulWidget {
   const PacksListScreen({super.key});
+
+  @override
+  State<PacksListScreen> createState() => _PacksListScreenState();
+}
+
+class _PacksListScreenState extends State<PacksListScreen> {
+  Set<String> _listedPackIds = const <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _refreshListedIds();
+    });
+  }
+
+  // L9: badge "Listed" pada kartu pack yang punya listing showcase.
+  Future<void> _refreshListedIds() async {
+    try {
+      final ids = await getIt<ShowcaseRepository>().fetchListedPackIds();
+      if (!mounted) return;
+      setState(() => _listedPackIds = ids);
+    } catch (_) {
+      // Kosmetik; abaikan kegagalan lookup.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.myStickerPacks)),
+      appBar: AppBar(
+        title: Text(l10n.myStickerPacks),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.storefront_outlined),
+            tooltip: l10n.showcaseTitle,
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => BlocProvider(
+                  create: (_) => ShowcaseCubit(
+                    getIt<ShowcaseRepository>(),
+                  ),
+                  child: const ShowcaseScreen(),
+                ),
+              ));
+            },
+          ),
+        ],
+      ),
       body: MultiBlocListener(
         listeners: [
           BlocListener<StickerPackBloc, StickerPackState>(
@@ -64,6 +113,7 @@ class PacksListScreen extends StatelessWidget {
                 context.read<StickerPackBloc>().add(
                   const StickerPackLoadRequested(),
                 );
+                await _refreshListedIds();
               },
               child: CustomScrollView(
                 slivers: [
@@ -102,6 +152,8 @@ class PacksListScreen extends StatelessWidget {
                           final pack = state.packs[index];
                           return PackCard(
                             pack: pack,
+                            isListed:
+                                _listedPackIds.contains(pack.id),
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(

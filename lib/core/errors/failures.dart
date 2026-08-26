@@ -15,6 +15,10 @@ class InsufficientCreditsFailure extends Failure {
   const InsufficientCreditsFailure() : super('Insufficient credits');
 }
 
+class PackSlotLimitFailure extends Failure {
+  const PackSlotLimitFailure() : super('Pack slot limit reached');
+}
+
 class GenerationFailure extends Failure {
   const GenerationFailure(super.message);
 }

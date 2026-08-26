@@ -16,6 +16,7 @@ import '../data/repositories/sticker_repository.dart';
 import '../data/repositories/onboarding_repository.dart';
 import '../data/repositories/subscription_repository.dart';
 import '../data/repositories/surprise_me_repository.dart';
+import '../data/repositories/showcase_repository.dart';
 import '../data/repositories/wallet_repository.dart';
 import 'image_cache.dart';
 import 'services/ad_config_service.dart';
@@ -74,5 +75,8 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<SurpriseMeRepository>(
     () => SurpriseMeRepository(client),
+  );
+  getIt.registerLazySingleton<ShowcaseRepository>(
+    () => SupabaseShowcaseRepository(client),
   );
 }

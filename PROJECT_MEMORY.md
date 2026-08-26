@@ -1,11 +1,11 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-25
-- **Perubahan terakhir:** Showcase Sticker Pack (credit-based) + Tier Cap Overhaul — SELESAI implementasi, PENDING DEPLOY (4 migrasi + 2 edge function)
+- **Terakhir dikerjakan:** 2026-08-26
+- **Perubahan terakhir:** Showcase Sticker Pack DEPLOY PRODUKSI SELESAI (5 migrasi 00003–00007 ter-push; edge functions `showcase-purchase-copy` + `showcase-preview` aktif; VALIDATE constraint sukses; preflight MCP read hijau semua)
 - **Versi:** `0.21.0+72`
-- **Verifikasi:** deno showcase 14/14, `flutter analyze` (0 issues), `flutter test` (142/142), `flutter build apk --split-per-abi` sukses (3 APK); preflight SQL tercantum di header masing-masing migrasi
-- **Blocker aktif:** deploy manual: `supabase db push` (00003–00006) → deploy `showcase-purchase-copy` + `showcase-preview` → manual `VALIDATE CONSTRAINT credit_transactions_sign_consistency` (header migration 00006) + sisa VALIDATE lama surprise-me; smoke purchase staging sebelum buka ke user.
+- **Verifikasi produksi:** migrasi terdaftar; enum showcase_purchase/sale; sign-consistency convalidated=true; wallet 15/free cap 150/over_cap 0; 15 RPC+helper ada; marker fix M1/M3/L1/clamp-downgrade ✅; RLS 5 tabel showcase + policy; kolom clone & cancelled_at; admin_grant bebas hardcode
+- **Blocker aktif:** sisa manual non-SQL: smoke purchase staging via app (pending→copy→export) + seed pack owner (akun plus owner di app) + ToS v2 (klausul M4). Sisa legacy: patch credential Cloudflare (opsional).
 
 ## Riwayat Pekerjaan (terbaru → terlama)
 

@@ -1148,4 +1148,145 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get packListedBadge => 'Terdaftar';
+
+  @override
+  String get limitedBadge => 'Terbatas';
+
+  @override
+  String get seasonalSectionTitle => 'Gaya Musiman';
+
+  @override
+  String get seasonalSectionInfo => 'Hanya tersedia untuk waktu terbatas.';
+
+  @override
+  String seasonalEndsOn(String date) {
+    return 'Tersedia sampai $date';
+  }
+
+  @override
+  String get plusOnlyPreset => 'Gaya ini khusus pengguna Plus.';
+
+  @override
+  String get presetBackToSchoolDoodleLabel => 'Coretan Kembali Sekolah';
+
+  @override
+  String get presetBackToSchoolDoodleDesc => 'Doodle sekolah gambar tangan';
+
+  @override
+  String get presetCozyStudyClubLabel => 'Komunitas Belajar Nyaman';
+
+  @override
+  String get presetCozyStudyClubDesc => 'Suasana belajar gouache lembut';
+
+  @override
+  String get presetRainyDaysLabel => 'Hari Hujan';
+
+  @override
+  String get presetRainyDaysDesc => 'Cat air hujan yang hangat';
+
+  @override
+  String get presetAutumnFirstLeafLabel => 'Daun Pertama Musim Gugur';
+
+  @override
+  String get presetAutumnFirstLeafDesc => 'Potongan kertas musim gugur';
+
+  @override
+  String get presetHarvestMarketLabel => 'Pasar Panen';
+
+  @override
+  String get presetHarvestMarketDesc => 'Ilustrasi folk-art pasar panen';
+
+  @override
+  String get presetFriendlySpookyLabel => 'Spooky Ramah';
+
+  @override
+  String get presetFriendlySpookyDesc => 'Halloween lucu dan ramah';
+
+  @override
+  String get presetWitchyPotionLabLabel => 'Lab Ramuan Sihir';
+
+  @override
+  String get presetWitchyPotionLabDesc => 'Lab ramuan sihir bercahaya';
+
+  @override
+  String get presetGothicStainedGlassLabel => 'Kaca Patri Gothic';
+
+  @override
+  String get presetGothicStainedGlassDesc => 'Kaca patri gothic elegan';
+
+  @override
+  String get presetPumpkinPatchClayLabel => 'Kebun Labu Clay';
+
+  @override
+  String get presetPumpkinPatchClayDesc => 'Diorama labu clay lembut';
+
+  @override
+  String get presetNightForestLinocutLabel => 'Linocut Hutan Malam';
+
+  @override
+  String get presetNightForestLinocutDesc =>
+      'Cetakan hutan malam kontras tinggi';
+
+  @override
+  String get presetGratitudeJournalLabel => 'Jurnal Rasa Syukur';
+
+  @override
+  String get presetGratitudeJournalDesc => 'Catatan syukur lukis tangan';
+
+  @override
+  String get presetWarmKitchenTableLabel => 'Meja Dapur Hangat';
+
+  @override
+  String get presetWarmKitchenTableDesc => 'Ilustrasi makanan rumahan hangat';
+
+  @override
+  String get presetWoodlandSweaterClubLabel => 'Sweater Hewan Hutan';
+
+  @override
+  String get presetWoodlandSweaterClubDesc => 'Hewan hutan berpakaian rajut';
+
+  @override
+  String get presetNovemberRainNoirLabel => 'November Rain Noir';
+
+  @override
+  String get presetNovemberRainNoirDesc => 'Kota hujan noir sinematik';
+
+  @override
+  String get presetDealHunterPopLabel => 'Pop Pemburu Diskon';
+
+  @override
+  String get presetDealHunterPopDesc => 'Stiker diskon pop-art berani';
+
+  @override
+  String get presetGingerbreadWorkshopLabel => 'Workshop Gingerbread';
+
+  @override
+  String get presetGingerbreadWorkshopDesc => 'Dunia kukis gingerbread';
+
+  @override
+  String get presetFrostedPaperVillageLabel => 'Desa Kertas Beku';
+
+  @override
+  String get presetFrostedPaperVillageDesc => 'Desa dingin potongan kertas';
+
+  @override
+  String get presetTropicalHolidayCheerLabel => 'Semangat Liburan Tropis';
+
+  @override
+  String get presetTropicalHolidayCheerDesc => 'Perayaan akhir tahun tropis';
+
+  @override
+  String get presetMidnightNewYearChromeLabel =>
+      'Chrome Tahun Baru Tengah Malam';
+
+  @override
+  String get presetMidnightNewYearChromeDesc =>
+      'Pesta tahun baru chrome glossy';
+
+  @override
+  String get presetYearInReviewScrapbookLabel => 'Scrapbook Rekap Tahunan';
+
+  @override
+  String get presetYearInReviewScrapbookDesc =>
+      'Refleksi akhir tahun scrapbook';
 }

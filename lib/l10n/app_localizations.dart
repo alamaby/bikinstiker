@@ -2149,6 +2149,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Listed'**
   String get packListedBadge;
+
+  /// No description provided for @limitedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited'**
+  String get limitedBadge;
+
+  /// No description provided for @seasonalSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seasonal Styles'**
+  String get seasonalSectionTitle;
+
+  /// No description provided for @seasonalSectionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Only available for a limited time.'**
+  String get seasonalSectionInfo;
+
+  /// No description provided for @seasonalEndsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Available until {date}'**
+  String seasonalEndsOn(String date);
+
+  /// No description provided for @plusOnlyPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'This style is exclusive to Plus.'**
+  String get plusOnlyPreset;
+
+  /// No description provided for @presetBackToSchoolDoodleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Back-to-School Doodle'**
+  String get presetBackToSchoolDoodleLabel;
+
+  /// No description provided for @presetBackToSchoolDoodleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-drawn school doodles'**
+  String get presetBackToSchoolDoodleDesc;
+
+  /// No description provided for @presetCozyStudyClubLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cozy Study Club'**
+  String get presetCozyStudyClubLabel;
+
+  /// No description provided for @presetCozyStudyClubDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft gouache study comfort'**
+  String get presetCozyStudyClubDesc;
+
+  /// No description provided for @presetRainyDaysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainy Days'**
+  String get presetRainyDaysLabel;
+
+  /// No description provided for @presetRainyDaysDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cozy rainy day watercolor'**
+  String get presetRainyDaysDesc;
+
+  /// No description provided for @presetAutumnFirstLeafLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Autumn First Leaf'**
+  String get presetAutumnFirstLeafLabel;
+
+  /// No description provided for @presetAutumnFirstLeafDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Layered paper-cut autumn'**
+  String get presetAutumnFirstLeafDesc;
+
+  /// No description provided for @presetHarvestMarketLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Harvest Market'**
+  String get presetHarvestMarketLabel;
+
+  /// No description provided for @presetHarvestMarketDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Folk-art harvest market'**
+  String get presetHarvestMarketDesc;
+
+  /// No description provided for @presetFriendlySpookyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Friendly Spooky'**
+  String get presetFriendlySpookyLabel;
+
+  /// No description provided for @presetFriendlySpookyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cute and friendly Halloween'**
+  String get presetFriendlySpookyDesc;
+
+  /// No description provided for @presetWitchyPotionLabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Witchy Potion Lab'**
+  String get presetWitchyPotionLabLabel;
+
+  /// No description provided for @presetWitchyPotionLabDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Glowing magic potion lab'**
+  String get presetWitchyPotionLabDesc;
+
+  /// No description provided for @presetGothicStainedGlassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gothic Stained Glass'**
+  String get presetGothicStainedGlassLabel;
+
+  /// No description provided for @presetGothicStainedGlassDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Elegant gothic glasswork'**
+  String get presetGothicStainedGlassDesc;
+
+  /// No description provided for @presetPumpkinPatchClayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pumpkin Patch Clay'**
+  String get presetPumpkinPatchClayLabel;
+
+  /// No description provided for @presetPumpkinPatchClayDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft clay pumpkin diorama'**
+  String get presetPumpkinPatchClayDesc;
+
+  /// No description provided for @presetNightForestLinocutLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Night Forest Linocut'**
+  String get presetNightForestLinocutLabel;
+
+  /// No description provided for @presetNightForestLinocutDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'High-contrast night forest print'**
+  String get presetNightForestLinocutDesc;
+
+  /// No description provided for @presetGratitudeJournalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gratitude Journal'**
+  String get presetGratitudeJournalLabel;
+
+  /// No description provided for @presetGratitudeJournalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-painted gratitude notes'**
+  String get presetGratitudeJournalDesc;
+
+  /// No description provided for @presetWarmKitchenTableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm Kitchen Table'**
+  String get presetWarmKitchenTableLabel;
+
+  /// No description provided for @presetWarmKitchenTableDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cozy homemade food illustration'**
+  String get presetWarmKitchenTableDesc;
+
+  /// No description provided for @presetWoodlandSweaterClubLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Woodland Sweater Club'**
+  String get presetWoodlandSweaterClubLabel;
+
+  /// No description provided for @presetWoodlandSweaterClubDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Knitted woodland animals'**
+  String get presetWoodlandSweaterClubDesc;
+
+  /// No description provided for @presetNovemberRainNoirLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'November Rain Noir'**
+  String get presetNovemberRainNoirLabel;
+
+  /// No description provided for @presetNovemberRainNoirDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cinematic rainy city noir'**
+  String get presetNovemberRainNoirDesc;
+
+  /// No description provided for @presetDealHunterPopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deal Hunter Pop'**
+  String get presetDealHunterPopLabel;
+
+  /// No description provided for @presetDealHunterPopDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold pop-art sale stickers'**
+  String get presetDealHunterPopDesc;
+
+  /// No description provided for @presetGingerbreadWorkshopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gingerbread Workshop'**
+  String get presetGingerbreadWorkshopLabel;
+
+  /// No description provided for @presetGingerbreadWorkshopDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Edible gingerbread world'**
+  String get presetGingerbreadWorkshopDesc;
+
+  /// No description provided for @presetFrostedPaperVillageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Frosted Paper Village'**
+  String get presetFrostedPaperVillageLabel;
+
+  /// No description provided for @presetFrostedPaperVillageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Paper-cut winter village'**
+  String get presetFrostedPaperVillageDesc;
+
+  /// No description provided for @presetTropicalHolidayCheerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tropical Holiday Cheer'**
+  String get presetTropicalHolidayCheerLabel;
+
+  /// No description provided for @presetTropicalHolidayCheerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tropical year-end celebration'**
+  String get presetTropicalHolidayCheerDesc;
+
+  /// No description provided for @presetMidnightNewYearChromeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Midnight New Year Chrome'**
+  String get presetMidnightNewYearChromeLabel;
+
+  /// No description provided for @presetMidnightNewYearChromeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Glossy chrome new year party'**
+  String get presetMidnightNewYearChromeDesc;
+
+  /// No description provided for @presetYearInReviewScrapbookLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year in Review Scrapbook'**
+  String get presetYearInReviewScrapbookLabel;
+
+  /// No description provided for @presetYearInReviewScrapbookDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Scrapbook year-in-review'**
+  String get presetYearInReviewScrapbookDesc;
 }
 
 class _AppLocalizationsDelegate

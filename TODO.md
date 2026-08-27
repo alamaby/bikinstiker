@@ -1,5 +1,14 @@
 # TODO
 
+## Seasonal Preset Styles (2026-08-27)
+
+20 preset musiman Sep 2026 – Jan 2027 (5/bulan), 8 plus-only (Set A: cozy_study_club, autumn_first_leaf, witchy_potion_lab, gothic_stained_glass, november_rain_noir, woodland_sweater_club, frosted_paper_village, midnight_new_year_chrome). Plan: `plans/2026-08-27-seasonal-presets-plan.md`.
+
+- [x] **SP1** Migrasi `20260827000001_seasonal_presets.sql`: shift sort_order +100 semua preset existing + upsert 20 preset dengan jendela UTC WIB-anchored. **Done (2026-08-27)** — pending deploy.
+- [x] **SP2** `list-presets` param `?include_locked=1` (helper `allowedRolesForRequest`) + kontrak test deno 7/7; tanpa param = perilaku lama (app lama aman). `generate-sticker`/`surprise-me` tanpa perubahan (loadPreset tetap enforce 403). **Done (2026-08-27)** — pending deploy.
+- [x] **SP3** Flutter: model `isSeasonal`+`isLockedFor`, repo include_locked, widget publik `preset_picker_sheet.dart` (section Seasonal + badge Limited + tanggal berakhir + tile terkunci), guard selectable penuh di home_screen, l10n EN/ID (+45 key), versi `0.22.0+74`. Verifikasi: analyze 0, test 158/158, APK 3 ABI. **Done (2026-08-27)**.
+- [ ] **SP4 (manual)** Deploy: push submodule supabase → `supabase db push` (migrasi 00001) → `supabase functions deploy list-presets` → smoke app (free lihat badge+gembok & tidak bisa pilih; plus bisa pilih; generate via preset plus free → 403 dari server). Catatan: preset #1 (`back_to_school_doodle`) langsung aktif setelah deploy (jendela mulai 25 Agu 2026). Tahun depan perlu migrasi penggeser jendela + arsip manual (mis. deal_hunter_pop).
+
 ## Showcase Sticker Pack + Tier Cap Overhaul (2026-08-25)
 
 Implementasi fitur showcase berbasis kredit + overhaul cap. Plan: `plans/2026-08-25-showcase-sticker-pack-plan.md`.

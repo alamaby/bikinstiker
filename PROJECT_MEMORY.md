@@ -1,13 +1,41 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-26
-- **Perubahan terakhir:** Showcase Sticker Pack DEPLOY PRODUKSI SELESAI (5 migrasi 00003–00007 ter-push; edge functions `showcase-purchase-copy` + `showcase-preview` aktif; VALIDATE constraint sukses; preflight MCP read hijau semua)
-- **Versi:** `0.21.0+72`
-- **Verifikasi produksi:** migrasi terdaftar; enum showcase_purchase/sale; sign-consistency convalidated=true; wallet 15/free cap 150/over_cap 0; 15 RPC+helper ada; marker fix M1/M3/L1/clamp-downgrade ✅; RLS 5 tabel showcase + policy; kolom clone & cancelled_at; admin_grant bebas hardcode
-- **Blocker aktif:** sisa manual non-SQL: smoke purchase staging via app (pending→copy→export) + seed pack owner (akun plus owner di app) + ToS v2 (klausul M4). Sisa legacy: patch credential Cloudflare (opsional).
+- **Terakhir dikerjakan:** 2026-08-27
+- **Perubahan terakhir:** Seasonal Preset Styles — 20 preset musiman Sep 2026–Jan 2027 (8 plus-only), UI section "Seasonal" paling atas + badge Limited + tanggal berakhir, preset plus tampil terkunci (gembok) bagi free/guest via `list-presets?include_locked=1`, migrasi `20260827000001` (pending deploy)
+- **Versi:** `0.22.0+74`
+- **Verifikasi:** deno list-presets 7/7; deno generate-sticker regresi 101/101; flutter analyze 0 issues; flutter test 158/158; build apk --split-per-abi sukses (3 APK)
+- **Blocker aktif:** deploy manual SP4 (push submodule → `supabase db push` → deploy `list-presets` → smoke app). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-27 | Seasonal Preset Styles
+- **Status:** selesai implementasi. Pending deploy (migrasi + EF list-presets).
+- **Fitur:** 20 preset style musiman (5/bulan Sep–Des): Back-to-School Doodle, Cozy Study Club*, Rainy Days, Autumn First Leaf*, Harvest Market, Friendly Spooky, Witchy Potion Lab*, Gothic Stained Glass*, Pumpkin Patch Clay, Night Forest Linocut, Gratitude Journal, Warm Kitchen Table, Woodland Sweater Club*, November Rain Noir*, Deal Hunter Pop, Gingerbread Workshop, Frosted Paper Village*, Tropical Holiday Cheer, Midnight New Year Chrome*, Year in Review Scrapbook (* = plus, Set A keputusan owner: 2/bulan × 4 bulan = 8). Tampil di section "Seasonal" paling atas dengan badge Limited + ikon jam pasir + info periode + tanggal berakhir terlokalisasi; preset plus tampil TERKUNCI bagi free/guest termasuk 10 plus existing (keputusan owner).
+- **Keputusan Teknis:**
+  - Availability murni di `valid_from`/`valid_until` (tanpa bulan/tahun dalam prompt); jendela UTC WIB-anchored (00:00 WIB = 17:00 UTC H-1; valid_until 23:59:59 WIB); sekali jalan 2026–2027, tahun depan migrasi penggeser.
+  - Kontrak list-presets berubah arah dari commit 909f81b: `?include_locked=1` (app baru) menghilangkan filter role dari LISTING; isolasi tetap ketat di GENERASI (`loadPreset` 403, surprise-me reuse). Tanpa param → perilaku lama persis (nol regresi app versi lama). Helper pure `allowedRolesForRequest()` untuk test kontrak.
+  - `resolveUserRole` hanya dipanggil saat filter role aktif (hemat 1 query/request).
+  - Preset kedaluwarsa tidak pernah dihapus — is_active true, hilang dari katalog via filter jendela; histori reproducible via `sticker_generations.final_prompt`. Versi prompt = konvensi migrasi baru (tanpa kolom).
+  - Client: guest≡free untuk katalog (mencerminkan resolveUserRole server); lock presen­tation-only; guard selectable menyeluruh (_onGenerate, auto-select postFrame, HomePrefill prefill, surprise-me, fallback selector).
+  - Widget picker diekstrak publik `lib/presentation/widgets/preset_picker_sheet.dart` (+`PresetLimitedBadge`) agar widget-testable tanpa pump HomeScreen penuh.
+- **Jebakan yang ditangani saat implementasi:**
+  - Klausa awal shift sort_order memakai `WHERE sort_order <= 20` (salah — merusak urutan relatif) → dikoreksi shift SEMUA baris existing.
+  - Fixture id test bentrok dengan case `preset_localizations` → tile label bukan id; fixture test diganti id netral.
+  - gen-l10n: getter-nya `AppLocalizations.localizationsDelegates`.
+- **File:**
+  - `supabase/migrations/20260827000001_seasonal_presets.sql` (NEW)
+  - `supabase/functions/list-presets/{index.ts,index_test.ts}` (helper + 3 test baru)
+  - `lib/data/models/sticker_preset.dart` (isSeasonal, isLockedFor)
+  - `lib/data/repositories/preset_repository.dart` (include_locked=1)
+  - `lib/presentation/widgets/preset_picker_sheet.dart` (NEW)
+  - `lib/presentation/screens/home/home_screen.dart` (viewRole/selectable wiring, _PresetSelector badge+fallback, hapus sheet privat)
+  - `lib/core/localization/preset_localizations.dart` (+40 case)
+  - `lib/l10n/app_{en,id}.arb` (+45 key) + generated
+  - `test/sticker_preset_test.dart` (NEW), `test/preset_picker_sheet_test.dart` (NEW)
+  - `pubspec.yaml` (`0.22.0+74`), `plans/2026-08-27-seasonal-presets-plan.md` (NEW), TODO.md
+- **Verifikasi:** deno list-presets 7/7; deno generate-sticker 101/101 (regresi); flutter analyze 0 issues; flutter test 158/158 (+13); build apk --split-per-abi sukses (3 APK).
+- **Proposed commit:** `feat(presets): add seasonal limited-time styles with plus-tier locked tiles`
 
 ### 2026-08-26 | Showcase Review Fixes (11 temuan)
 - **Status:** selesai. Pending deploy bersama migrasi showcase utama.

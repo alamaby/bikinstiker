@@ -66,6 +66,17 @@ class StickerPreset extends Equatable {
 
   bool get isTextOnly => inputMode == StickerPresetInputMode.textOnly;
 
+  /// Time-limited (seasonal) preset — shown in its own top section with a
+  /// "Limited" badge and an end date. Detected from the server-provided
+  /// window; permanent presets have no validUntil.
+  bool get isSeasonal => validUntil != null;
+
+  /// True when the given viewer role may not select this preset. Locking is
+  /// presentation-only: the server independently enforces tiers inside
+  /// generate-sticker's loadPreset (403 preset_forbidden).
+  bool isLockedFor(StickerPresetRole role) =>
+      requiredRole.index > role.index;
+
   bool get isCurrentlyValid {
     final now = DateTime.now().toUtc();
     if (validFrom != null && validFrom!.isAfter(now)) return false;

@@ -29,6 +29,7 @@ import '../../widgets/ads_banner_placeholder.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/loading_lottie.dart';
 import '../../widgets/prompt_suggestion_chip.dart';
+import '../../widgets/preset_picker_sheet.dart';
 import '../../widgets/sticker_feedback_buttons.dart';
 import '../../widgets/surprise_me_button.dart';
 import '../../widgets/tier_badge.dart';
@@ -381,7 +382,19 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           if (state.presetId != null) {
             final presetState = context.read<PresetBloc>().state;
-            final allowedIds = presetState.presets.map((p) => p.id).toSet();
+            // Prefill may only apply a preset the current viewer could have
+            // selected (locked/above-tier presets are rejected here, and
+            // generate-sticker independently enforces the same rule).
+            final subState = context.read<SubscriptionBloc>().state;
+            final isPlusViewer =
+                !context.read<AuthBloc>().state.isGuest && subState.isPlus;
+            final viewerRole = isPlusViewer
+                ? StickerPresetRole.plus
+                : StickerPresetRole.free;
+            final allowedIds = presetState.presets
+                .where((p) => !p.isLockedFor(viewerRole))
+                .map((p) => p.id)
+                .toSet();
             if (allowedIds.contains(state.presetId)) {
               setState(() => _presetId = state.presetId);
             }
@@ -422,6 +435,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 final isError = presetState.status == PresetStatus.failure;
                 final isEmpty = presets.isEmpty && !isLoading && !isError;
 
+                // Viewer tier mirrors the server's resolveUserRole: guests
+                // and free users share the same catalog; plus unlocks tiles.
+                final isPlusViewer =
+                    !context.watch<AuthBloc>().state.isGuest &&
+                    context.watch<SubscriptionBloc>().state.isPlus;
+                final viewRole = isPlusViewer
+                    ? StickerPresetRole.plus
+                    : StickerPresetRole.free;
+                final selectable = presets
+                    .where((p) => !p.isLockedFor(viewRole))
+                    .toList();
+
                 // Look up the selected preset to determine input mode
                 final selectedPreset = _presetId != null
                     ? presets.where((p) => p.id == _presetId).firstOrNull
@@ -443,13 +468,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                // Ensure _presetId is set to first available preset
-                if (presets.isNotEmpty &&
+                // Ensure _presetId is set to the first selectable preset
+                // (never a locked/above-tier tile).
+                if (selectable.isNotEmpty &&
                     (_presetId == null ||
-                        !presets.any((p) => p.id == _presetId))) {
+                        !selectable.any((p) => p.id == _presetId))) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted && presets.isNotEmpty) {
-                      setState(() => _presetId = presets.first.id);
+                    if (mounted && selectable.isNotEmpty) {
+                      setState(() => _presetId = selectable.first.id);
                     }
                   });
                 }
@@ -503,6 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _PresetSelector(
                                   presets: presets,
                                   selectedId: _presetId,
+                                  viewRole: viewRole,
                                   onSelected: submitting
                                       ? null
                                       : _onPresetSelected,
@@ -580,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       !submitting && presets.isNotEmpty,
                                   onPressed: () => _onSurpriseMePressed(
                                     isTextOnly: isTextOnly,
-                                    presets: presets,
+                                    presets: selectable,
                                   ),
                                 ),
                               if (_promptCtrl.text.isEmpty && _presetId != null)
@@ -679,7 +706,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               _GenerateButton(
                                 onPressed: submitting || surpriseBusy
                                     ? null
-                                    : () => _onGenerate(presets),
+                                    : () => _onGenerate(selectable),
                               ),
                               const SizedBox(height: 24),
                               KeyedSubtree(
@@ -808,24 +835,33 @@ class _CreditsCard extends StatelessWidget {
 class _PresetSelector extends StatelessWidget {
   final List<StickerPreset> presets;
   final String? selectedId;
+  final StickerPresetRole viewRole;
   final ValueChanged<String>? onSelected;
   const _PresetSelector({
     required this.presets,
     required this.selectedId,
+    required this.viewRole,
     this.onSelected,
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final selected = presets.firstWhere(
-      (p) => p.id == selectedId,
-      orElse: () => presets.first,
-    );
+    final selectable = presets
+        .where((p) => !p.isLockedFor(viewRole))
+        .toList();
+    final selected = presets
+            .where((p) => p.id == selectedId)
+            .firstOrNull ??
+        (selectable.isNotEmpty
+            ? selectable.first
+            : presets.firstOrNull);
     final enabled = onSelected != null;
+    final showLimitedBadge =
+        selected != null && selected.isSeasonal;
 
     return GestureDetector(
-      onTap: enabled ? () => _openPicker(context) : null,
+      onTap: enabled && selectable.isNotEmpty ? () => _openPicker(context) : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -835,19 +871,35 @@ class _PresetSelector extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(selected.emoji ?? '', style: const TextStyle(fontSize: 20)),
+            Text(selected?.emoji ?? '', style: const TextStyle(fontSize: 20)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    localizedPresetLabel(l10n, selected),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          selected == null
+                              ? ''
+                              : localizedPresetLabel(l10n, selected),
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      if (showLimitedBadge) ...[
+                        const SizedBox(width: 6),
+                        const PresetLimitedBadge(),
+                      ],
+                    ],
                   ),
                   Text(
-                    localizedPresetDescription(l10n, selected),
+                    selected == null
+                        ? ''
+                        : localizedPresetDescription(l10n, selected),
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
@@ -869,87 +921,14 @@ class _PresetSelector extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => _PresetPickerSheet(
+      builder: (_) => PresetPickerSheet(
         presets: presets,
         selectedId: selectedId,
+        viewRole: viewRole,
         onSelect: (id) {
           Navigator.of(context).pop();
           onSelected?.call(id);
         },
-      ),
-    );
-  }
-}
-
-class _PresetPickerSheet extends StatelessWidget {
-  final List<StickerPreset> presets;
-  final String? selectedId;
-  final ValueChanged<String> onSelect;
-  const _PresetPickerSheet({
-    required this.presets,
-    required this.selectedId,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.black26,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.chooseStyleTitle,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: presets.length,
-              itemBuilder: (context, i) {
-                final p = presets[i];
-                final selected = p.id == selectedId;
-                return ListTile(
-                  leading: Text(
-                    p.emoji ?? '',
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                  title: Text(
-                    localizedPresetLabel(l10n, p),
-                    style: TextStyle(
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  subtitle: Text(
-                    localizedPresetDescription(l10n, p),
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  trailing: selected
-                      ? const Icon(Icons.check_circle, color: AppColors.primary)
-                      : null,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  onTap: () => onSelect(p.id),
-                );
-              },
-            ),
-          ),
-        ],
       ),
     );
   }

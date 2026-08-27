@@ -34,8 +34,11 @@ class SupabasePresetRepository implements PresetRepository {
     }
 
     try {
+      // include_locked=1 (new-client contract): the catalog also returns
+      // above-tier presets so they can be rendered as locked tiles. Tier
+      // enforcement itself stays server-side inside generate-sticker.
       final res = await _client.functions.invoke(
-        'list-presets',
+        'list-presets?include_locked=1',
         method: HttpMethod.get,
       );
 

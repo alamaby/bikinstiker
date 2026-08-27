@@ -1147,4 +1147,141 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get packListedBadge => 'Listed';
+
+  @override
+  String get limitedBadge => 'Limited';
+
+  @override
+  String get seasonalSectionTitle => 'Seasonal Styles';
+
+  @override
+  String get seasonalSectionInfo => 'Only available for a limited time.';
+
+  @override
+  String seasonalEndsOn(String date) {
+    return 'Available until $date';
+  }
+
+  @override
+  String get plusOnlyPreset => 'This style is exclusive to Plus.';
+
+  @override
+  String get presetBackToSchoolDoodleLabel => 'Back-to-School Doodle';
+
+  @override
+  String get presetBackToSchoolDoodleDesc => 'Hand-drawn school doodles';
+
+  @override
+  String get presetCozyStudyClubLabel => 'Cozy Study Club';
+
+  @override
+  String get presetCozyStudyClubDesc => 'Soft gouache study comfort';
+
+  @override
+  String get presetRainyDaysLabel => 'Rainy Days';
+
+  @override
+  String get presetRainyDaysDesc => 'Cozy rainy day watercolor';
+
+  @override
+  String get presetAutumnFirstLeafLabel => 'Autumn First Leaf';
+
+  @override
+  String get presetAutumnFirstLeafDesc => 'Layered paper-cut autumn';
+
+  @override
+  String get presetHarvestMarketLabel => 'Harvest Market';
+
+  @override
+  String get presetHarvestMarketDesc => 'Folk-art harvest market';
+
+  @override
+  String get presetFriendlySpookyLabel => 'Friendly Spooky';
+
+  @override
+  String get presetFriendlySpookyDesc => 'Cute and friendly Halloween';
+
+  @override
+  String get presetWitchyPotionLabLabel => 'Witchy Potion Lab';
+
+  @override
+  String get presetWitchyPotionLabDesc => 'Glowing magic potion lab';
+
+  @override
+  String get presetGothicStainedGlassLabel => 'Gothic Stained Glass';
+
+  @override
+  String get presetGothicStainedGlassDesc => 'Elegant gothic glasswork';
+
+  @override
+  String get presetPumpkinPatchClayLabel => 'Pumpkin Patch Clay';
+
+  @override
+  String get presetPumpkinPatchClayDesc => 'Soft clay pumpkin diorama';
+
+  @override
+  String get presetNightForestLinocutLabel => 'Night Forest Linocut';
+
+  @override
+  String get presetNightForestLinocutDesc => 'High-contrast night forest print';
+
+  @override
+  String get presetGratitudeJournalLabel => 'Gratitude Journal';
+
+  @override
+  String get presetGratitudeJournalDesc => 'Hand-painted gratitude notes';
+
+  @override
+  String get presetWarmKitchenTableLabel => 'Warm Kitchen Table';
+
+  @override
+  String get presetWarmKitchenTableDesc => 'Cozy homemade food illustration';
+
+  @override
+  String get presetWoodlandSweaterClubLabel => 'Woodland Sweater Club';
+
+  @override
+  String get presetWoodlandSweaterClubDesc => 'Knitted woodland animals';
+
+  @override
+  String get presetNovemberRainNoirLabel => 'November Rain Noir';
+
+  @override
+  String get presetNovemberRainNoirDesc => 'Cinematic rainy city noir';
+
+  @override
+  String get presetDealHunterPopLabel => 'Deal Hunter Pop';
+
+  @override
+  String get presetDealHunterPopDesc => 'Bold pop-art sale stickers';
+
+  @override
+  String get presetGingerbreadWorkshopLabel => 'Gingerbread Workshop';
+
+  @override
+  String get presetGingerbreadWorkshopDesc => 'Edible gingerbread world';
+
+  @override
+  String get presetFrostedPaperVillageLabel => 'Frosted Paper Village';
+
+  @override
+  String get presetFrostedPaperVillageDesc => 'Paper-cut winter village';
+
+  @override
+  String get presetTropicalHolidayCheerLabel => 'Tropical Holiday Cheer';
+
+  @override
+  String get presetTropicalHolidayCheerDesc => 'Tropical year-end celebration';
+
+  @override
+  String get presetMidnightNewYearChromeLabel => 'Midnight New Year Chrome';
+
+  @override
+  String get presetMidnightNewYearChromeDesc => 'Glossy chrome new year party';
+
+  @override
+  String get presetYearInReviewScrapbookLabel => 'Year in Review Scrapbook';
+
+  @override
+  String get presetYearInReviewScrapbookDesc => 'Scrapbook year-in-review';
 }

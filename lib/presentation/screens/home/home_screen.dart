@@ -158,10 +158,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _onSurpriseMePressed({required bool isTextOnly}) async {
+  Future<void> _onSurpriseMePressed({
+    required bool isTextOnly,
+    required List<StickerPreset> presets,
+  }) async {
     // Text-only presets keep the free local curated behavior.
     if (isTextOnly) {
       _applyPrompt(_localSuggestion(textOnly: true));
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+    final validPresetIds = presets.map((p) => p.id).toSet();
+    if (_presetId == null || !validPresetIds.contains(_presetId)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.chooseValidStyle)));
       return;
     }
 
@@ -175,7 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (!mounted) return;
 
-    final l10n = AppLocalizations.of(context)!;
     final free = quota != null && !quota.willBeCharged;
     final insufficient =
         quota != null && quota.willBeCharged && quota.balance < 1;
@@ -564,6 +575,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   enabled: !submitting,
                                   onPressed: () => _onSurpriseMePressed(
                                     isTextOnly: isTextOnly,
+                                    presets: presets,
                                   ),
                                 ),
                               if (_promptCtrl.text.isEmpty && _presetId != null)

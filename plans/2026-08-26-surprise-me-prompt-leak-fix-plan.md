@@ -45,6 +45,7 @@ Out of scope: skema DB, RLS, billing/cap kredit (sudah 150/10000).
 - 2026-08-26 — Eksekusi dimulai (build mode).
 - 2026-08-26 — T1, T2, T3 selesai: `buildSurpriseSeed` jadi `${subject} ${twist}`; `parseEnhancedPrompt` & `extractPromptFields` throw `ProviderError("Missing positive_prompt ...", 422, true, "schema_mismatch")` saat regex/JSON gagal (T2); guard `/^suggest\s+one\s+fresh/i` di surprise-me kandidat (T3).
 - 2026-08-27 — T4/T5 selesai: `home_screen.dart:161` tambah validasi `validPresetIds.contains`; `generate-sticker/index.ts:62` refactor `loadPreset` → `LoadPresetResult` + 403 `preset_forbidden`; `surprise-me/index.ts:344` sama. T7 tests 5 baru, deno 98 passed. T8: flutter analyze 0 issues, flutter test 145 passed, bump patch. Plan closed.
+- 2026-08-27 — Review fixes (F1-F8) approved: keep hardcode `plus` (F1), `home_screen.dart:577` disable `enabled: !submitting && presets.isNotEmpty` (F2), TS 499/963 fixed, `list-presets` 4 tests, re-verify 102 deno + 145 flutter passed. Lihat `plans/2026-08-27-surprise-preset-review-fixes-plan.md`.
 
 ## Notes
 - Standar Oracle C2M / TM Forum ODA tidak relevan (bugfix non-rating/billing); jika menyentuh skema, perubahan wajib di plan (read-only constraint).

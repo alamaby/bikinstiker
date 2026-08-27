@@ -169,6 +169,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final l10n = AppLocalizations.of(context)!;
+    // Null => block (sync with _onGenerate:114), not fallback to 'kawaii'.
+    // _presetId is auto-set to presets.first via postFrameCallback:449,
+    // so null only occurs during initial load — caught here until R2 disables button.
     final validPresetIds = presets.map((p) => p.id).toSet();
     if (_presetId == null || !validPresetIds.contains(_presetId)) {
       ScaffoldMessenger.of(
@@ -572,7 +575,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 )
                               else
                                 SurpriseMeButton(
-                                  enabled: !submitting,
+                                  // Disable while presets still loading to avoid false snackbar (R2).
+                                  enabled:
+                                      !submitting && presets.isNotEmpty,
                                   onPressed: () => _onSurpriseMePressed(
                                     isTextOnly: isTextOnly,
                                     presets: presets,

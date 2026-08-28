@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/di.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/localization/preset_localizations.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
@@ -81,7 +82,8 @@ class _HistoryView extends StatelessWidget {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        state.errorMessage ?? l10n.failedToLoad,
+                        safeErrorMessage(l10n, state.errorMessage,
+                            fallback: l10n.failedToLoad),
                         style: const TextStyle(color: AppColors.error),
                       ),
                     ),

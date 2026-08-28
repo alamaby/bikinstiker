@@ -1,13 +1,32 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-27
-- **Perubahan terakhir:** Seasonal Preset Styles — 20 preset musiman Sep 2026–Jan 2027 (8 plus-only), UI section "Seasonal" paling atas + badge Limited + tanggal berakhir, preset plus tampil terkunci (gembok) bagi free/guest via `list-presets?include_locked=1`, migrasi `20260827000001` (pending deploy)
-- **Versi:** `0.22.0+74`
-- **Verifikasi:** deno list-presets 7/7; deno generate-sticker regresi 101/101; flutter analyze 0 issues; flutter test 158/158; build apk --split-per-abi sukses (3 APK)
-- **Blocker aktif:** deploy manual SP4 (push submodule → `supabase db push` → deploy `list-presets` → smoke app). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
+- **Terakhir dikerjakan:** 2026-08-28
+- **Perubahan terakhir:** Fix 4 temuan testing owner: (1) snackbar preset terkunci kini render di dalam bottom sheet (Scaffold+Messenger lokal); (2) foreign-style strip di generate-sticker — style dikontrol murni preset terpilih, teks deskripsi tidak bisa menyuntik style preset lain; (3) output surprise-me di-strip dari semua frasa style + min-length + guidance baru; (4) `safeErrorMessage` mapper — exception mentah/URL backend tidak pernah tampil di UI (12 file). Versi `0.22.1+75`.
+- **Verifikasi:** deno generate-sticker 109/109; deno surprise-me 12/12; deno list-presets 7/7; flutter analyze 0 issues; flutter test 173/173; build apk 3 ABI sukses
+- **Blocker aktif:** deploy manual FX5 (push submodule → deploy `generate-sticker` + `surprise-me` → release APK 0.22.1+75 → smoke 3 kasus). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-28 | Fix 4 Temuan Testing (Snackbar, Style Injection, Surprise Leak, Error Sensitif)
+- **Status:** selesai implementasi. Pending deploy (2 edge function, tanpa migrasi).
+- **Latar:** Owner testing build seasonal: (1) tap preset plus oleh free → snackbar tak terlihat (terhalang sheet); (2) celah: surprise-me output di-copy-paste ke preset lain → style bocor via teks; (3) output surprise-me memuat fragmen style_descriptor; (4) screenshot: legal consent error + Missions menampilkan `AuthRetryableFetchException` + URL Supabase mentah.
+- **Keputusan Owner:** sheet tetap terbuka (snackbar di dalam sheet); perbaikan error sistemik semua layar; versi bugfix `0.22.1+75`.
+- **Keputusan Teknis:**
+  - **Style strip (generate-sticker):** helper `normalizeStyleText` / `stylePhrasesFromDescriptor` (split koma, segmen ≥2 kata + full descriptor + label ≥2 kata; label 1 kata dilewati anti false-positive) / `stripStylePhrases` (regex token `[^a-z0-9]+` join, tahan tanda baca "hand-drawn"≠"hand drawn", maks 3 pass, cleanup "in style" + koma tepi). Query semua preset aktif 1x/request (tanpa cache — kesederhanaan); frasa asing = semua preset kecuali terpilih. Strip `userInput` (hanya `subject`; `text_only` = teks literal, skip) sebelum prompt/reasoning; `positive` hasil reasoning di-strip ulang → kosong = fallback prompt deterministik dari input ter-sanitasi.
+  - **Surprise-me:** frasa SEMUA preset aktif termasuk terpilih (temuan: fragmen berasal dari descriptor preset sendiri); candidate di-strip sebelum checks; min-length <10 → `prompt_too_short` (retry/failover/refund existing); guidance + "Never mention art styles, mediums, textures, color palettes, or artist names".
+  - **F1:** akar masalah = ScaffoldMessenger root berada di bawah ModalBottomSheetRoute; fix = ScaffoldMessenger+Scaffold transparan lokal dalam sheet.
+  - **F4:** bloc tanpa l10n tetap simpan raw; mapper string-heuristik di UI: marker jaringan (socketexception/clientexception/authretryablefetchexception/errno/supabase./timeout/dll) → `l10n.connectionError`; marker internal (exception(/postgrest/functionexception/violates/permission denied/#0 stack/dll) → `l10n.errorOccurred`; selain itu passthrough (pesan server terkurasi aman). `authexception` polos masuk bucket internal (bukan semua auth error jaringan).
+- **File:**
+  - `supabase/functions/generate-sticker/index.ts` (+helper, strip di handler), `index_test.ts` (+8)
+  - `supabase/functions/surprise-me/index.ts` (strip + min-length + guidance), `index_test.ts` (+2, termasuk kontrak baca source)
+  - `lib/core/errors/safe_error_message.dart` (NEW), `lib/l10n/app_{en,id}.arb` (+connectionError) + generated
+  - `lib/presentation/widgets/preset_picker_sheet.dart`, `sticker_feedback_buttons.dart`
+  - 10 screen: legal_consent_error, missions, history, home, packs_list, pack_detail, showcase_screen, showcase_detail, showcase_list_form_sheet, profile, auth
+  - `test/safe_error_message_test.dart` (NEW, 15 test)
+  - `pubspec.yaml` (`0.22.1+75`), `plans/2026-08-27-style-strip-and-safe-errors-plan.md` (NEW), TODO.md
+- **Verifikasi:** deno 109/109 + 12/12 + 7/7 (regresi); analyze 0; test 173/173 (+15); APK 3 ABI.
+- **Proposed commit:** `fix(ux): visible locked-preset feedback, style-strip backend, safe error messages`
 
 ### 2026-08-27 | Seasonal Preset Styles
 - **Status:** selesai implementasi. Pending deploy (migrasi + EF list-presets).

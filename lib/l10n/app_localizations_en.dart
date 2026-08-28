@@ -1284,4 +1284,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get presetYearInReviewScrapbookDesc => 'Scrapbook year-in-review';
+
+  @override
+  String get connectionError =>
+      'No internet connection. Check your network and try again.';
 }

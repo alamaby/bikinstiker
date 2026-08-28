@@ -8,6 +8,7 @@ import '../../../core/constants/presets.dart';
 import '../../../core/constants/prompt_suggestions.dart';
 import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/localization/preset_localizations.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
@@ -462,8 +463,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 if (isError && presets.isEmpty) {
                   return _PresetErrorView(
-                    message:
-                        presetState.errorMessage ?? l10n.failedToLoadStyles,
+                    message: safeErrorMessage(
+                      l10n,
+                      presetState.errorMessage,
+                      fallback: l10n.failedToLoadStyles,
+                    ),
                     onRetry: _onRefresh,
                   );
                 }
@@ -1180,7 +1184,8 @@ class _ResultPanel extends StatelessWidget {
 
                 final msg = failure is InsufficientCreditsFailure
                     ? l10n.notEnoughCreditsToGenerate
-                    : failure?.message ?? l10n.generationFailed;
+                    : safeErrorMessage(l10n, failure?.message,
+                        fallback: l10n.generationFailed);
                 final icon = failure is InsufficientCreditsFailure
                     ? Icons.error_outline
                     : Icons.error_outline;

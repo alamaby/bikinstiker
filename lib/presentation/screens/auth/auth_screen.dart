@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -103,7 +104,7 @@ class _AuthScreenState extends State<AuthScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          state.errorMessage!,
+                          safeErrorMessage(l10n, state.errorMessage),
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),

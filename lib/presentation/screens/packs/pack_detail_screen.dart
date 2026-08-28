@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/di.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/whatsapp_pack_exporter.dart';
 import '../../../data/models/sticker_pack.dart';
@@ -98,7 +99,10 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
                 listener: (context, state) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(state.errorMessage ?? l10n.errorOccurred),
+                      content: Text(
+                        safeErrorMessage(l10n, state.errorMessage,
+                            fallback: l10n.errorOccurred),
+                      ),
                       backgroundColor: AppColors.error,
                     ),
                   );
@@ -135,7 +139,12 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
     }
 
     if (state.detailStatus == StickerPackStatus.error && pack == null) {
-      return Center(child: Text(state.errorMessage ?? l10n.errorLoadingPack));
+      return Center(
+        child: Text(
+          safeErrorMessage(l10n, state.errorMessage,
+              fallback: l10n.errorLoadingPack),
+        ),
+      );
     }
 
     if (pack == null) {

@@ -2419,6 +2419,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scrapbook year-in-review'**
   String get presetYearInReviewScrapbookDesc;
+
+  /// No description provided for @connectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Check your network and try again.'**
+  String get connectionError;
 }
 
 class _AppLocalizationsDelegate

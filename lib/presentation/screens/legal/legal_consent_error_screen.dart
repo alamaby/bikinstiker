@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -37,7 +38,13 @@ class LegalConsentErrorScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  message.isEmpty ? l10n.consentErrorBody : message,
+                  message.isEmpty
+                      ? l10n.consentErrorBody
+                      : safeErrorMessage(
+                          l10n,
+                          message,
+                          fallback: l10n.consentErrorBody,
+                        ),
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.black87),
                 ),

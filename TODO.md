@@ -1,5 +1,16 @@
 # TODO
 
+## Fix 4 Temuan Testing (2026-08-28)
+
+Snackbar terhalang sheet, style injection via deskripsi, surprise-me style leak, error sensitif di UI. Plan: `plans/2026-08-27-style-strip-and-safe-errors-plan.md`. Versi `0.22.1+75`.
+
+- [x] **F1** Snackbar preset terkunci: ScaffoldMessenger+Scaffold lokal di `preset_picker_sheet.dart` → render di dalam modal route, sheet tetap terbuka. **Done (2026-08-28)**.
+- [x] **F2** Foreign-style strip (generate-sticker): helper `stripStylePhrases` + query preset aktif 1x/request; userInput `subject` di-strip sebelum prompt/reasoning; `positive` hasil reasoning di-strip ulang (fallback prompt deterministik). `text_only` sengaja tidak di-strip. Deno 109/109. **Done (2026-08-28)** — pending deploy.
+- [x] **F3** Surprise-me: candidate di-strip dengan frasa SEMUA preset aktif + min-length 10 char (`prompt_too_short` → retry/failover/refund) + guidance larang menyebut style/medium/palet. Deno 12/12. **Done (2026-08-28)** — pending deploy.
+- [x] **F4** Safe error messages: `lib/core/errors/safe_error_message.dart` (heuristik marker jaringan/internal → `connectionError`/`errorOccurred` terlokalisasi) diterapkan di 12 file render (legal, missions, history, home, packs×2, showcase×3, profile, auth, feedback). Flutter test 173/173 (+15). **Done (2026-08-28)**.
+- [ ] **FX5 (manual)** Deploy: push submodule → `supabase functions deploy generate-sticker` + `supabase functions deploy surprise-me` (tanpa migrasi) → release APK `0.22.1+75` → smoke: (a) free tap preset terkunci → snackbar terlihat di atas sheet; (b) surprise-me → hasil tanpa frasa style; (c) matikan internet → error tampil "Tidak ada koneksi internet", tanpa URL/exception.
+- [ ] **Follow-up (backlog)**: snackbar tersembunyi di balik sheet pada `add_to_pack_sheet.dart` & `sticker_feedback_buttons.dart` (kelas bug sama F1); label preset 1 kata tidak di-strip (dokumentasi risiko di plan).
+
 ## Seasonal Preset Styles (2026-08-27)
 
 20 preset musiman Sep 2026 – Jan 2027 (5/bulan), 8 plus-only (Set A: cozy_study_club, autumn_first_leaf, witchy_potion_lab, gothic_stained_glass, november_rain_noir, woodland_sweater_club, frosted_paper_village, midnight_new_year_chrome). Plan: `plans/2026-08-27-seasonal-presets-plan.md`.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/di.dart';
+import '../../core/errors/safe_error_message.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/sticker_feedback.dart';
 import '../../data/repositories/sticker_feedback_repository.dart';
@@ -82,7 +83,7 @@ class _StickerFeedbackButtonsState extends State<StickerFeedbackButtons> {
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'Failed to save feedback: $e',
+            safeErrorMessage(AppLocalizations.of(context)!, 'Failed to save feedback: $e'),
             style: const TextStyle(color: Colors.white),
           ),
         ),

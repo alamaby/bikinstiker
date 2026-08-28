@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../core/localization/mission_localizations.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/daily_checkin_streak.dart';
 import '../../../data/models/mission.dart';
@@ -67,7 +68,10 @@ class _MissionsScreenState extends State<MissionsScreen> {
             listener: (context, state) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.errorMessage ?? l10n.claimFailed),
+                  content: Text(
+                    safeErrorMessage(l10n, state.errorMessage,
+                        fallback: l10n.claimFailed),
+                  ),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -148,7 +152,8 @@ class _MissionsScreenState extends State<MissionsScreen> {
                         state.missions.isEmpty) {
                       return Center(
                         child: Text(
-                          state.errorMessage ?? l10n.error,
+                          safeErrorMessage(l10n, state.errorMessage,
+                              fallback: l10n.error),
                         ),
                       );
                     }

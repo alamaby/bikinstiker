@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 
 import '../../../core/di.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/credit_transaction.dart';
 import '../../../data/models/user_profile.dart';
@@ -78,7 +79,11 @@ class _ProfileView extends StatelessWidget {
                   children: [
                     const Icon(Icons.error_outline, color: Colors.white),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(state.message)),
+                    Expanded(
+                      child: Text(
+                        safeErrorMessage(l10n, state.message),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -356,7 +361,8 @@ class _ProfileView extends StatelessWidget {
                 if (state.status == CreditTransactionsStatus.error) {
                   return Center(
                     child: Text(
-                      state.error ?? l10n.failedToLoadTransactions,
+                      safeErrorMessage(l10n, state.error,
+                          fallback: l10n.failedToLoadTransactions),
                       style: const TextStyle(color: AppColors.error),
                     ),
                   );

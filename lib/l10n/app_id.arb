@@ -415,5 +415,6 @@
   "presetMidnightNewYearChromeLabel": "Chrome Tahun Baru Tengah Malam",
   "presetMidnightNewYearChromeDesc": "Pesta tahun baru chrome glossy",
   "presetYearInReviewScrapbookLabel": "Scrapbook Rekap Tahunan",
-  "presetYearInReviewScrapbookDesc": "Refleksi akhir tahun scrapbook"
+  "presetYearInReviewScrapbookDesc": "Refleksi akhir tahun scrapbook",
+  "connectionError": "Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi."
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/di.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/showcase_listing.dart';
 import '../../../data/repositories/showcase_repository.dart';
@@ -137,7 +138,11 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
         }
         if (state.status == ShowcaseStatus.error &&
             state.listings.isEmpty) {
-          return Center(child: Text(state.errorMessage ?? l10n.error));
+          return Center(
+            child: Text(
+              safeErrorMessage(l10n, state.errorMessage, fallback: l10n.error),
+            ),
+          );
         }
         if (state.listings.isEmpty) {
           return RefreshIndicator(

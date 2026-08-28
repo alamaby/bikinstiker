@@ -63,69 +63,83 @@ class PresetPickerSheet extends StatelessWidget {
     final seasonal = presets.where((p) => p.isSeasonal).toList();
     final regular = presets.where((p) => !p.isSeasonal).toList();
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16,
-        16,
-        16 + MediaQuery.paddingOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.black26,
-                borderRadius: BorderRadius.circular(2),
+    // Local messenger + transparent scaffold so the locked-tile SnackBar
+    // renders INSIDE the modal route (above the sheet content). The root
+    // messenger's SnackBars sit below the modal barrier and are never seen.
+    return ScaffoldMessenger(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.paddingOf(context).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.chooseStyleTitle,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                if (seasonal.isNotEmpty) ...[
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_month_outlined,
-                        size: 18,
-                        color: AppColors.secondary,
+              const SizedBox(height: 16),
+              Text(
+                l10n.chooseStyleTitle,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    if (seasonal.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month_outlined,
+                            size: 18,
+                            color: AppColors.secondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            l10n.seasonalSectionTitle,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(height: 2),
                       Text(
-                        l10n.seasonalSectionTitle,
+                        l10n.seasonalSectionInfo,
                         style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          color: Colors.black54,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      ...seasonal.map((p) => _buildTile(context, l10n, p)),
+                      const SizedBox(height: 8),
                     ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    l10n.seasonalSectionInfo,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 8),
-                  ...seasonal.map((p) => _buildTile(context, l10n, p)),
-                  const SizedBox(height: 8),
-                ],
-                ...regular.map((p) => _buildTile(context, l10n, p)),
-              ],
-            ),
+                    ...regular.map((p) => _buildTile(context, l10n, p)),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

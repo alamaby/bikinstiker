@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/showcase_repository.dart';
 import '../../../l10n/app_localizations.dart';
@@ -168,7 +169,10 @@ class _ListFormSheetState extends State<_ListFormSheet> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(safeErrorMessage(l10n, msg))),
+    );
   }
 
   Future<void> _save() async {

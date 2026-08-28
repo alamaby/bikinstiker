@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/datasources/supabase_client.dart';
 import '../../../data/models/showcase_listing.dart';
@@ -120,7 +121,12 @@ class _ShowcaseDetailScreenState extends State<ShowcaseDetailScreen> {
   Widget _buildBody(BuildContext context, AppLocalizations l10n) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
-      return Center(child: Text(_error!));
+      final l10n = AppLocalizations.of(context)!;
+      return Center(
+        child: Text(
+          safeErrorMessage(l10n, _error, fallback: l10n.error),
+        ),
+      );
     }
     final d = _detail!;
     final urls = [
@@ -351,7 +357,10 @@ class _ShowcaseDetailScreenState extends State<ShowcaseDetailScreen> {
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(safeErrorMessage(l10n, message))),
+    );
   }
 
   Future<void> _unlist() async {

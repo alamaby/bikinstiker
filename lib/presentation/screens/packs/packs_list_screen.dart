@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/di.dart';
+import '../../../core/errors/safe_error_message.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/showcase_repository.dart';
 import '../../../l10n/app_localizations.dart';
@@ -77,7 +78,10 @@ class _PacksListScreenState extends State<PacksListScreen> {
             listener: (context, state) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.errorMessage ?? l10n.errorOccurred),
+                  content: Text(
+                    safeErrorMessage(l10n, state.errorMessage,
+                        fallback: l10n.errorOccurred),
+                  ),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -105,7 +109,12 @@ class _PacksListScreenState extends State<PacksListScreen> {
             }
             if (state.status == StickerPackStatus.error &&
                 state.packs.isEmpty) {
-              return Center(child: Text(state.errorMessage ?? l10n.error));
+              return Center(
+                child: Text(
+                  safeErrorMessage(l10n, state.errorMessage,
+                      fallback: l10n.error),
+                ),
+              );
             }
 
             return RefreshIndicator(

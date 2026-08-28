@@ -1289,4 +1289,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get presetYearInReviewScrapbookDesc =>
       'Refleksi akhir tahun scrapbook';
+
+  @override
+  String get connectionError =>
+      'Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi.';
 }

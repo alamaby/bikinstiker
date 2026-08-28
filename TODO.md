@@ -1,5 +1,14 @@
 # TODO
 
+## Fix "JWT issued at future" saat cold start (2026-08-28)
+
+RCA: skew jam sementara (GoTrue/validator Supabase atau jam perangkat) → gate legal consent menampilkan error screen mentah; retry manual menyembuhkan. Tindakan (opsi 1+2 keputusan owner). Versi `0.22.2+76`.
+
+- [x] **JW1** NEW `lib/core/errors/transient_retry.dart`: `retryOnTransient` (backoff 500ms→1s, maxRetries 2, delay injectable). Dipakai di `LegalConsentCubit._fetchStatus` → retry senyap sebelum error screen; guard `isClosed`. Hanya call read-only — submit path tidak dibungkus. **Done (2026-08-28)**.
+- [x] **JW2** `safeErrorMessage` + marker `issued at` / `jwt` → bucket koneksi (pesan ramah tanpa jargon). **Done (2026-08-28)**.
+- [x] **JW3** Test +6 (transient_retry 4; marker JWT 2). Verifikasi: analyze 0, test 179/179, APK 3 ABI. **Done (2026-08-28)**.
+- [ ] **JW4 (manual)** Release APK `0.22.2+76`; monitor kejadian ulang — kalau masih sering: cek jam perangkat user (H2) dan Supabase status/maintenance (H1/H3); pertimbangkan deteksi clock skew device (banding `DateTime.now()` vs header `Date` respons) bila pola H2 dominan.
+
 ## Fix 4 Temuan Testing (2026-08-28)
 
 Snackbar terhalang sheet, style injection via deskripsi, surprise-me style leak, error sensitif di UI. Plan: `plans/2026-08-27-style-strip-and-safe-errors-plan.md`. Versi `0.22.1+75`.

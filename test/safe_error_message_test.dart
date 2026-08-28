@@ -23,6 +23,9 @@ void main() {
       'SocketException: Connection refused (OS Error: errno = 111)',
       'TimeoutException after 0:00:30.000000',
       'Connection closed while receiving data',
+      // GoTrue clock-skew rejection seen at cold start (RCA 2026-08-28).
+      'JWT issued at future',
+      'AuthApiException(message: JWT issued at future, statusCode: 400)',
     ];
     for (final raw in networkRaw) {
       test('maps: ${raw.split(':')[0]}', () {

@@ -2,11 +2,23 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-08-28
-- **Perubahan terakhir:** Fix 4 temuan testing owner: (1) snackbar preset terkunci kini render di dalam bottom sheet (Scaffold+Messenger lokal); (2) foreign-style strip di generate-sticker — style dikontrol murni preset terpilih, teks deskripsi tidak bisa menyuntik style preset lain; (3) output surprise-me di-strip dari semua frasa style + min-length + guidance baru; (4) `safeErrorMessage` mapper — exception mentah/URL backend tidak pernah tampil di UI (12 file). Versi `0.22.1+75`.
-- **Verifikasi:** deno generate-sticker 109/109; deno surprise-me 12/12; deno list-presets 7/7; flutter analyze 0 issues; flutter test 173/173; build apk 3 ABI sukses
-- **Blocker aktif:** deploy manual FX5 (push submodule → deploy `generate-sticker` + `surprise-me` → release APK 0.22.1+75 → smoke 3 kasus). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
+- **Perubahan terakhir:** Fix "JWT issued at future" saat cold start: gate legal consent kini auto-retry transien (`retryOnTransient`, backoff 500ms→1s ×2) + `safeErrorMessage` kenal marker JWT → pesan koneksi ramah. Versi `0.22.2+76`.
+- **Verifikasi:** flutter analyze 0 issues; flutter test 179/179; build apk 3 ABI sukses
+- **Blocker aktif:** release APK `0.22.2+76` (JW4); deploy manual FX5 (deploy `generate-sticker` + `surprise-me` bila belum). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-28 | Fix "JWT issued at future" Cold Start (Opsi 1+2)
+- **Status:** selesai. Tanpa perubahan backend — murni Flutter.
+- **Latar:** RCA temuan owner: saat buka app sempat tampil "JWT issued at future" di layar gate legal consent, hilang setelah "Coba lagi". RCA: token akses bermula di masa depan menurut jam validator → skew jam sementara (antar komponen Supabase H1, atau jam perangkat mendepani H2) atau sesi cache lintas maintenance (H3). Sifat transient (retry sukses) = petunjuk kuat skew sementara. Error tampak di layar consent karena itu panggilan authenticated pertama saat cold start. Tidak terkait perubahan kode seasonal/strip/error-mapper.
+- **Keputusan Owner:** opsi 1 (auto-retry di gate) + opsi 2 (marker JWT di safeErrorMessage).
+- **Keputusan Teknis:**
+  - Helper `retryOnTransient` (NEW `lib/core/errors/transient_retry.dart`): backoff eksponensial 500ms/1s, maxRetries 2, `delay` injectable untuk test, `isTransient` opsional. Default retry semua error — dibatasi panggilan read-only; submit consent (`accept`/`withdrawPrivacy`) sengaja TIDAK dibungkus (hindari double-submit; punya idempotency key sendiri).
+  - Wiring di `LegalConsentCubit._fetchStatus` + guard `isClosed` sebelum emit (cegah emit setelah cubit close selama delay).
+  - `safeErrorMessage`: marker `'issued at'` + `'jwt'` di bucket koneksi — menutup passthrough teks jargon; menutup juga build lama yang belum punya retry.
+- **File:** `lib/core/errors/transient_retry.dart` (NEW), `lib/presentation/blocs/legal_consent/legal_consent_cubit.dart`, `lib/core/errors/safe_error_message.dart`, `test/transient_retry_test.dart` (NEW), `test/safe_error_message_test.dart` (+2), `pubspec.yaml` (`0.22.2+76`), TODO.md.
+- **Verifikasi:** analyze 0 issues; test 179/179 (+6); APK 3 ABI.
+- **Proposed commit:** `fix(auth): auto-retry transient consent gate failures and map jwt clock-skew errors`
 
 ### 2026-08-28 | Fix 4 Temuan Testing (Snackbar, Style Injection, Surprise Leak, Error Sensitif)
 - **Status:** selesai implementasi. Pending deploy (2 edge function, tanpa migrasi).

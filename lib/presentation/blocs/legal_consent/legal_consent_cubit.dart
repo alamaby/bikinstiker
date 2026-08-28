@@ -5,6 +5,7 @@ import 'package:bloc/bloc.dart';
 import 'package:crypto/crypto.dart';
 
 import '../../../core/app_version.dart';
+import '../../../core/errors/transient_retry.dart';
 import '../../../data/repositories/legal_consent_repository.dart';
 import 'legal_consent_state.dart';
 
@@ -52,9 +53,16 @@ class LegalConsentCubit extends Cubit<LegalConsentState> {
   Future<void> _fetchStatus(String locale) async {
     emit(const LegalConsentState.loading());
     try {
-      final s = await _repo.fetchStatus(locale: locale);
+      // Startup reads hit transient auth/network errors (e.g. GoTrue's
+      // "JWT issued at future" clock-skew rejection) that clear on retry —
+      // retry silently instead of showing the error screen. Read-only call.
+      final s = await retryOnTransient(
+        () => _repo.fetchStatus(locale: locale),
+      );
+      if (isClosed) return;
       emit(LegalConsentState(phase: LegalConsentPhase.ready, status: s));
     } on Exception catch (e) {
+      if (isClosed) return;
       emit(LegalConsentState(
         phase: LegalConsentPhase.error,
         errorMessage: _message(e),

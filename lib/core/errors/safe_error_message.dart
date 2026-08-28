@@ -32,6 +32,10 @@ String safeErrorMessage(
     'timed out',
     'timeoutexception',
     'authretryablefetchexception',
+    // GoTrue clock-skew rejection — transient, cleared by retry (the consent
+    // gate retries automatically; this covers any other call site).
+    'issued at',
+    'jwt',
     'errno',
     'xmlhttprequesterror',
     'network',

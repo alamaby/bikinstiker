@@ -1293,4 +1293,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get connectionError =>
       'Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi.';
+
+  @override
+  String get sortBy => 'Urutkan';
 }

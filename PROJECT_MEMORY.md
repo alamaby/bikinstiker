@@ -2,11 +2,22 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-08-29
-- **Perubahan terakhir:** Missions error view kini refreshable (RefreshIndicator + tombol retry); Surprise Me bertema: kolom `sticker_presets.surprise_theme` (20 tema musiman) + guidance "Theme requirement" di surprise-me — ide mengikuti domain preset terpilih. Versi `0.23.0+77`.
-- **Verifikasi:** deno surprise-me 15/15; deno generate-sticker 109/109 (regresi); flutter analyze 0 issues; flutter test 179/179; build apk 3 ABI sukses
-- **Blocker aktif:** deploy manual MR5 (`supabase db push` migrasi 20260829 + deploy `surprise-me` & `generate-sticker` + release APK 0.23.0+77). Sisa legacy: FX5 smoke, smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
+- **Perubahan terakhir:** Filter layar Stiker Anda (Riwayat): Status/Gaya/Tanggal/Urutkan kini bottom sheet (bukan dropdown); baris chip pakai Wrap — filter Urutkan yang tadinya terpotong di kanan Tanggal kini selalu terlihat. Versi `0.23.1+78`.
+- **Verifikasi:** flutter analyze 0 issues; flutter test 183/183; build apk 3 ABI sukses
+- **Blocker aktif:** release APK `0.23.1+78` (HF4); deploy manual MR5 (`supabase db push` migrasi 20260829 + deploy `surprise-me` & `generate-sticker`). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-29 | History Filter → Bottom Sheet + Fix Terpotong
+- **Status:** selesai. Murni Flutter, tanpa backend.
+- **Latar:** layar Stiker Anda: filter masih dropdown PopupMenu; Urutkan (kanan Tanggal) tak terlihat di layar ponsel (Row + Spacer overflow).
+- **Keputusan Teknis:**
+  - `FilterChipDropdown<T>` tetap tampil chip "Label: nilai" tapi tap → `showModalBottomSheet` (drag handle + judul + ListTile check-marked + emoji) — pola PresetPickerSheet. Param baru `title` (judul sheet) + `current: T` (nilai terpilih eksplisit, bukan pencocokan label); builder `PopupMenuEntry` → `FilterOption<T>`.
+  - `_FilterBar` Row+Spacer → `Wrap(spacing:8, runSpacing:8)`; Urutkan jadi chip keempat konsisten; `_presetLabel` dihapus; 2 import tak terpakai dibersihkan.
+  - Perilaku locked filter tanggal (plus-only) tidak berubah: chip inert + gembok.
+- **File:** `lib/presentation/screens/history/widgets/history_filter_chips.dart` (refactor), `history_screen.dart` (Wrap + sort chip), `lib/l10n/app_{en,id}.arb` (+sortBy) + generated, `test/history_filter_sheet_test.dart` (NEW, 4 test), `pubspec.yaml` (`0.23.1+78`), TODO.md.
+- **Verifikasi:** analyze 0; test 183/183 (+4); APK 3 ABI.
+- **Proposed commit:** `feat(history): bottom-sheet filters and wrap layout so sort chip is never clipped`
 
 ### 2026-08-29 | Missions Refresh + Themed Surprise-Me
 - **Status:** selesai implementasi. Pending deploy (1 migrasi + 2 edge function).

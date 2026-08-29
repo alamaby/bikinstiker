@@ -1,5 +1,14 @@
 # TODO
 
+## History Filter → Bottom Sheet + Fix Filter Terpotong (2026-08-29)
+
+Layar Stiker Anda: filter Status/Gaya/Tanggal dropdown → bottom sheet; filter Urutkan (kanan Tanggal) terpotong di layar ponsel. Versi `0.23.1+78`.
+
+- [x] **HF1** `history_filter_chips.dart` di-refactor: `FilterOption<T>` + `FilterChipDropdown` tap → bottom sheet (drag handle + judul + check-marked opsi + emoji); param `title`/`current: T`; builder lama `PopupMenuEntry` diganti options. **Done (2026-08-29)**.
+- [x] **HF2** `_FilterBar`: `Row`+`Spacer` → `Wrap(spacing 8, runSpacing 8)` — chip tak muat turun ke baris kedua, Urutkan jadi chip keempat (tidak ada lagi yang terpotong); `_presetLabel` dihapus. **Done (2026-08-29)**.
+- [x] **HF3** l10n `sortBy` EN/ID + gen-l10n; pubspec `0.23.1+78`. Test NEW `history_filter_sheet_test.dart` (4 test). Verifikasi: analyze 0, test 183/183, APK 3 ABI. **Done (2026-08-29)**.
+- [ ] **HF4 (manual)** Release APK `0.23.1+78` (tanpa deploy backend). Smoke: semua 4 filter terlihat di layar sempit, tap → bottom sheet, terpilih bercheck, filter tanggal tetap terkunci utk free.
+
 ## Missions Refresh + Themed Surprise-Me (2026-08-29)
 
 Refresh layar Misi saat error jaringan + Surprise Me bertema preset musiman. Plan: `plans/2026-08-29-missions-refresh-and-themed-surprise-plan.md`. Versi `0.23.0+77`.

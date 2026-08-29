@@ -1288,4 +1288,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get connectionError =>
       'No internet connection. Check your network and try again.';
+
+  @override
+  String get sortBy => 'Sort by';
 }

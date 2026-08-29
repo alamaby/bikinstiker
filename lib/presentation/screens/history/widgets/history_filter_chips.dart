@@ -6,31 +6,55 @@ import '../../../../data/models/sticker_preset.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../blocs/history/history_bloc.dart';
 
+/// One selectable row in a filter bottom sheet.
+class FilterOption<T> {
+  final T value;
+  final String label;
+  final String? emoji;
+  const FilterOption({required this.value, required this.label, this.emoji});
+}
+
+/// Filter chip that opens a bottom-sheet picker (replaces dropdown menus —
+/// better thumb reachability and nothing clips on narrow screens). The chip
+/// itself stays a compact "Label: value" pill.
 class FilterChipDropdown<T> extends StatelessWidget {
   final String label;
-  final String value;
-  final List<PopupMenuEntry<T>> items;
+  final String title;
+  final T current;
+  final List<FilterOption<T>> options;
   final ValueChanged<T> onSelected;
   final bool locked;
 
   const FilterChipDropdown({
     super.key,
     required this.label,
-    required this.value,
-    required this.items,
+    required this.title,
+    required this.current,
+    required this.options,
     required this.onSelected,
     this.locked = false,
   });
+
+  String get _currentLabel {
+    for (final option in options) {
+      if (option.value == current) return option.label;
+    }
+    return options.isNotEmpty ? options.first.label : '';
+  }
 
   @override
   Widget build(BuildContext context) {
     if (locked) {
       return _LockedChip(label: label);
     }
-    return PopupMenuButton<T>(
-      onSelected: onSelected,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      itemBuilder: (_) => items,
+    return GestureDetector(
+      onTap: () => _openFilterSheet<T>(
+        context,
+        title: title,
+        options: options,
+        selected: current,
+        onSelect: onSelected,
+      ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -42,7 +66,7 @@ class FilterChipDropdown<T> extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$label: $value',
+              '$label: $_currentLabel',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
             const SizedBox(width: 4),
@@ -52,6 +76,80 @@ class FilterChipDropdown<T> extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Bottom-sheet option picker (drag handle + title + check-marked rows).
+Future<void> _openFilterSheet<T>(
+  BuildContext context, {
+  required String title,
+  required List<FilterOption<T>> options,
+  required T selected,
+  required ValueChanged<T> onSelect,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (sheetContext) {
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          16 + MediaQuery.paddingOf(sheetContext).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: options
+                    .map((option) => ListTile(
+                          leading: option.emoji != null
+                              ? Text(option.emoji!,
+                                  style: const TextStyle(fontSize: 18))
+                              : null,
+                          title: Text(option.label),
+                          trailing: option.value == selected
+                              ? const Icon(Icons.check_circle,
+                                  color: AppColors.primary)
+                              : null,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          onTap: () {
+                            Navigator.of(sheetContext).pop();
+                            onSelect(option.value);
+                          },
+                        ))
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class _LockedChip extends StatelessWidget {
@@ -85,51 +183,44 @@ class _LockedChip extends StatelessWidget {
   }
 }
 
-List<PopupMenuEntry<String>> buildPresetFilterItems({
+List<FilterOption<String>> buildPresetFilterOptions({
   required List<StickerPreset> presets,
   required AppLocalizations l10n,
 }) {
-  final items = <PopupMenuEntry<String>>[
-    PopupMenuItem(value: '', child: Text(l10n.all)),
+  final options = <FilterOption<String>>[
+    FilterOption(value: '', label: l10n.all),
   ];
   for (final p in presets) {
-    items.add(
-      PopupMenuItem(
+    options.add(
+      FilterOption(
         value: p.id,
-        child: Row(
-          children: [
-            if (p.emoji != null) ...[
-              Text(p.emoji!, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 8),
-            ],
-            Text(localizedPresetLabel(l10n, p)),
-          ],
-        ),
+        label: localizedPresetLabel(l10n, p),
+        emoji: p.emoji,
       ),
     );
   }
-  return items;
+  return options;
 }
 
-List<PopupMenuEntry<HistorySort>> buildSortItems(AppLocalizations l10n) {
+List<FilterOption<HistorySort>> buildSortOptions(AppLocalizations l10n) {
   return HistorySort.values
-      .map((s) => PopupMenuItem(value: s, child: Text(sortLabel(l10n, s))))
+      .map((s) => FilterOption(value: s, label: sortLabel(l10n, s)))
       .toList();
 }
 
-List<PopupMenuEntry<HistoryStatusFilter>> buildStatusFilterItems(
+List<FilterOption<HistoryStatusFilter>> buildStatusFilterOptions(
   AppLocalizations l10n,
 ) {
   return HistoryStatusFilter.values
-      .map((f) => PopupMenuItem(value: f, child: Text(statusFilterLabel(l10n, f))))
+      .map((f) => FilterOption(value: f, label: statusFilterLabel(l10n, f)))
       .toList();
 }
 
-List<PopupMenuEntry<HistoryDateFilter>> buildDateFilterItems(
+List<FilterOption<HistoryDateFilter>> buildDateFilterOptions(
   AppLocalizations l10n,
 ) {
   return HistoryDateFilter.values
-      .map((f) => PopupMenuItem(value: f, child: Text(dateFilterLabel(l10n, f))))
+      .map((f) => FilterOption(value: f, label: dateFilterLabel(l10n, f)))
       .toList();
 }
 

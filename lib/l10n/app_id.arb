@@ -416,5 +416,6 @@
   "presetMidnightNewYearChromeDesc": "Pesta tahun baru chrome glossy",
   "presetYearInReviewScrapbookLabel": "Scrapbook Rekap Tahunan",
   "presetYearInReviewScrapbookDesc": "Refleksi akhir tahun scrapbook",
-  "connectionError": "Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi."
+  "connectionError": "Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi.",
+  "sortBy": "Urutkan"
 }

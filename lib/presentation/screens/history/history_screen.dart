@@ -6,11 +6,9 @@ import 'package:intl/intl.dart';
 
 import '../../../core/di.dart';
 import '../../../core/errors/safe_error_message.dart';
-import '../../../core/localization/preset_localizations.dart';
 import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
-import '../../../data/models/sticker_preset.dart';
 import '../../../data/repositories/sticker_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/history/history_bloc.dart';
@@ -141,30 +139,35 @@ class _FilterBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         children: [
-          Row(
+          // Wrap instead of Row: on narrow screens chips flow to a second
+          // line instead of clipping the rightmost (sort) control.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               FilterChipDropdown<HistoryStatusFilter>(
                 label: l10n.status,
-                value: statusFilterLabel(l10n, state.statusFilter),
-                items: buildStatusFilterItems(l10n),
+                title: l10n.status,
+                current: state.statusFilter,
+                options: buildStatusFilterOptions(l10n),
                 onSelected: (f) => context
                     .read<HistoryBloc>()
                     .add(HistoryStatusFilterChanged(f)),
               ),
-              const SizedBox(width: 8),
               FilterChipDropdown<String>(
                 label: l10n.preset,
-                value: _presetLabel(context, state.presetFilter, presets),
-                items: buildPresetFilterItems(presets: presets, l10n: l10n),
+                title: l10n.preset,
+                current: state.presetFilter ?? '',
+                options: buildPresetFilterOptions(presets: presets, l10n: l10n),
                 onSelected: (id) => context.read<HistoryBloc>().add(
                       HistoryPresetFilterChanged(id.isEmpty ? null : id),
                     ),
               ),
-              const SizedBox(width: 8),
               FilterChipDropdown<HistoryDateFilter>(
                 label: l10n.date,
-                value: dateFilterLabel(l10n, state.dateFilter),
-                items: buildDateFilterItems(l10n),
+                title: l10n.date,
+                current: state.dateFilter,
+                options: buildDateFilterOptions(l10n),
                 onSelected: isPlus
                     ? (f) => context
                         .read<HistoryBloc>()
@@ -172,34 +175,18 @@ class _FilterBar extends StatelessWidget {
                     : (_) => _showPlusOnlySnackBar(context, l10n.dateFilter),
                 locked: !isPlus,
               ),
-              const Spacer(),
-              PopupMenuButton<HistorySort>(
-                onSelected: (s) => context
-                    .read<HistoryBloc>()
-                    .add(HistorySortChanged(s)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                itemBuilder: (_) => buildSortItems(l10n),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      sortLabel(l10n, state.sort),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const Icon(Icons.arrow_drop_down, size: 16),
-                  ],
-                ),
+              FilterChipDropdown<HistorySort>(
+                label: l10n.sortBy,
+                title: l10n.sortBy,
+                current: state.sort,
+                options: buildSortOptions(l10n),
+                onSelected: (s) =>
+                    context.read<HistoryBloc>().add(HistorySortChanged(s)),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          HistorySearchField(
-            enabled: state.status != HistoryStatus.loading,
+          HistorySearchField(            enabled: state.status != HistoryStatus.loading,
             locked: !isPlus,
             onChanged: (q) =>
                 context.read<HistoryBloc>().add(HistorySearchChanged(q)),
@@ -207,21 +194,6 @@ class _FilterBar extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _presetLabel(
-    BuildContext context,
-    String? presetId,
-    List<StickerPreset> presets,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    if (presetId == null || presetId.isEmpty) return l10n.all;
-    try {
-      final preset = presets.firstWhere((p) => p.id == presetId);
-      return localizedPresetLabel(l10n, preset);
-    } catch (_) {
-      return presetId;
-    }
   }
 }
 

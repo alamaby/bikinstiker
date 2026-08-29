@@ -416,5 +416,6 @@
   "presetMidnightNewYearChromeDesc": "Glossy chrome new year party",
   "presetYearInReviewScrapbookLabel": "Year in Review Scrapbook",
   "presetYearInReviewScrapbookDesc": "Scrapbook year-in-review",
-  "connectionError": "No internet connection. Check your network and try again."
+  "connectionError": "No internet connection. Check your network and try again.",
+  "sortBy": "Sort by"
 }

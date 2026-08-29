@@ -2425,6 +2425,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No internet connection. Check your network and try again.'**
   String get connectionError;
+
+  /// No description provided for @sortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get sortBy;
 }
 
 class _AppLocalizationsDelegate

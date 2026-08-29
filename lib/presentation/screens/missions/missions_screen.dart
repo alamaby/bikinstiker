@@ -150,10 +150,43 @@ class _MissionsScreenState extends State<MissionsScreen> {
                     }
                     if (state.status == MissionStatus.error &&
                         state.missions.isEmpty) {
-                      return Center(
-                        child: Text(
-                          safeErrorMessage(l10n, state.errorMessage,
-                              fallback: l10n.error),
+                      // Refreshable error view: pull-to-refresh or the retry
+                      // button re-dispatches the load (the bloc allows
+                      // re-dispatch from error status).
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          context.read<MissionBloc>().add(
+                            MissionLoadRequested(userId),
+                          );
+                        },
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(24),
+                          children: [
+                            const SizedBox(height: 80),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 40,
+                              color: AppColors.error,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              safeErrorMessage(l10n, state.errorMessage,
+                                  fallback: l10n.error),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: AppColors.error),
+                            ),
+                            const SizedBox(height: 16),
+                            Center(
+                              child: FilledButton.icon(
+                                onPressed: () => context
+                                    .read<MissionBloc>()
+                                    .add(MissionLoadRequested(userId)),
+                                icon: const Icon(Icons.refresh, size: 18),
+                                label: Text(l10n.retry),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }

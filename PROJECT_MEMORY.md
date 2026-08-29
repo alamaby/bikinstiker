@@ -1,12 +1,23 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-28
-- **Perubahan terakhir:** Fix "JWT issued at future" saat cold start: gate legal consent kini auto-retry transien (`retryOnTransient`, backoff 500ms→1s ×2) + `safeErrorMessage` kenal marker JWT → pesan koneksi ramah. Versi `0.22.2+76`.
-- **Verifikasi:** flutter analyze 0 issues; flutter test 179/179; build apk 3 ABI sukses
-- **Blocker aktif:** release APK `0.22.2+76` (JW4); deploy manual FX5 (deploy `generate-sticker` + `surprise-me` bila belum). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
+- **Terakhir dikerjakan:** 2026-08-29
+- **Perubahan terakhir:** Missions error view kini refreshable (RefreshIndicator + tombol retry); Surprise Me bertema: kolom `sticker_presets.surprise_theme` (20 tema musiman) + guidance "Theme requirement" di surprise-me — ide mengikuti domain preset terpilih. Versi `0.23.0+77`.
+- **Verifikasi:** deno surprise-me 15/15; deno generate-sticker 109/109 (regresi); flutter analyze 0 issues; flutter test 179/179; build apk 3 ABI sukses
+- **Blocker aktif:** deploy manual MR5 (`supabase db push` migrasi 20260829 + deploy `surprise-me` & `generate-sticker` + release APK 0.23.0+77). Sisa legacy: FX5 smoke, smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-29 | Missions Refresh + Themed Surprise-Me
+- **Status:** selesai implementasi. Pending deploy (1 migrasi + 2 edge function).
+- **Fitur:** (1) Layar Misi saat error jaringan kini refreshable — pull-to-refresh + tombol "Coba lagi" (re-dispatch `MissionLoadRequested`; `_onLoad` tanpa guard, aman dari error status). Temuan: view loaded sudah punya RefreshIndicator — hanya branch error yang gap. (2) Surprise Me bertema: preset musiman kini punya `surprise_theme` (domain subjek/objek/situasi EN, tanpa kosakata style agar lolos stripper); guidance surprise-me + "Theme requirement: MUST be about {theme}… seed is only a twist suggestion". Non-musiman NULL → perilaku lama.
+- **Keputusan Teknis:**
+  - Kolom BARU `surprise_theme`, bukan reuse `reasoning_guidance` — yang latter dipakai `enhancePrompt` generasi normal; memasukkan tema di sana akan memaksa topik pada prompt user biasa.
+  - `loadPreset` +`surprise_theme` ke select/interface (default null) — generate-stiker mengabaikan; hanya surprise-me konsumsi. deploy `generate-sticker` tetap perlu karena loadPreset shared (select kolom baru aman sebelum migrasi jalan? TIDAK — urutan: db push dulu, baru deploy EF; jika EF baru jalan sebelum kolom ada, select error → generasi gagal. Deploy checklist MR5 menjaga urutan).
+  - Tema ditulis menghindari frasa ≥2 kata yang identik segmen style_descriptor (anti `stripStylePhrases` memakan output bertema).
+- **File:** `supabase/migrations/20260829000001_surprise_theme.sql` (NEW), `supabase/functions/generate-sticker/index.ts` (loadPreset), `supabase/functions/surprise-me/{index.ts,index_test.ts}` (+3), `lib/presentation/screens/missions/missions_screen.dart`, `pubspec.yaml` (`0.23.0+77`), `plans/2026-08-29-missions-refresh-and-themed-surprise-plan.md` (NEW), TODO.md.
+- **Verifikasi:** deno 15/15 + 109/109; analyze 0; test 179/179; APK 3 ABI.
+- **Proposed commit:** `feat(missions,surprise-me): refreshable mission errors and themed seasonal surprise ideas`
 
 ### 2026-08-28 | Fix "JWT issued at future" Cold Start (Opsi 1+2)
 - **Status:** selesai. Tanpa perubahan backend — murni Flutter.

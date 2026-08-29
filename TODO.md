@@ -1,5 +1,15 @@
 # TODO
 
+## Missions Refresh + Themed Surprise-Me (2026-08-29)
+
+Refresh layar Misi saat error jaringan + Surprise Me bertema preset musiman. Plan: `plans/2026-08-29-missions-refresh-and-themed-surprise-plan.md`. Versi `0.23.0+77`.
+
+- [x] **MR1** Missions error view: RefreshIndicator + tombol retry (re-dispatch `MissionLoadRequested`; `_onLoad` tanpa guard, aman dari error). **Done (2026-08-29)**.
+- [x] **MR2** Migrasi `20260829000001_surprise_theme.sql`: kolom `sticker_presets.surprise_theme` + 20 tema domain musiman (tanpa kosakata style agar lolos `stripStylePhrases`). **Done (2026-08-29)** — pending deploy.
+- [x] **MR3** `loadPreset` +`surprise_theme` (generate-sticker mengabaikan; hanya surprise-me konsumsi); `buildSurpriseGuidance` +`theme` → "Theme requirement: MUST be about {theme}…"; handler wiring. Deno surprise-me 15/15 (+3), generate-sticker 109/109 (regresi). **Done (2026-08-29)** — pending deploy.
+- [x] **MR4** Verifikasi: analyze 0, test 179/179, APK 3 ABI. **Done (2026-08-29)**.
+- [ ] **MR5 (manual)** Deploy: push submodule → `supabase db push` (migrasi 20260829) → `supabase functions deploy surprise-me` + `supabase functions deploy generate-sticker` → release APK `0.23.0+77` → smoke: (a) matikan jaringan → buka Misi → pull-to-refresh/tombol retry menyala saat online; (b) pilih preset musiman → Surprise Me → ide seputar tema (mis. doodle back-to-school → ide sekolah).
+
 ## Fix "JWT issued at future" saat cold start (2026-08-28)
 
 RCA: skew jam sementara (GoTrue/validator Supabase atau jam perangkat) → gate legal consent menampilkan error screen mentah; retry manual menyembuhkan. Tindakan (opsi 1+2 keputusan owner). Versi `0.22.2+76`.

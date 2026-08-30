@@ -58,8 +58,8 @@ class FilterChipDropdown<T> extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.outline),
+          color: context.surfaceAlt,
+          border: Border.all(color: context.hairline),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -108,7 +108,7 @@ Future<void> _openFilterSheet<T>(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.black26,
+                  color: context.textFaint,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -161,8 +161,8 @@ class _LockedChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.outline.withValues(alpha: 0.5)),
+        color: context.surfaceAlt,
+        border: Border.all(color: context.hairline.withValues(alpha: 0.5)),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -170,13 +170,13 @@ class _LockedChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Colors.black54,
+              color: context.textSecondary,
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.lock_outline, size: 12, color: Colors.black38),
+          Icon(Icons.lock_outline, size: 12, color: context.textFaint),
         ],
       ),
     );

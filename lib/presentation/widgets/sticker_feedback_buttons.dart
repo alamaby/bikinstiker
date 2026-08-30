@@ -166,12 +166,13 @@ class _FeedbackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected ? Colors.white : AppColors.primary;
-    final background = selected ? AppColors.primary : AppColors.surface;
+    final foreground =
+        selected ? Theme.of(context).colorScheme.onPrimary : AppColors.primary;
+    final background = selected ? AppColors.primary : context.surfaceAlt;
     final style = OutlinedButton.styleFrom(
       foregroundColor: foreground,
       backgroundColor: background,
-      side: BorderSide(color: selected ? AppColors.primary : AppColors.outline),
+      side: BorderSide(color: selected ? AppColors.primary : context.hairline),
       padding: label == null
           ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

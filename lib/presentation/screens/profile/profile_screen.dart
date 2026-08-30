@@ -150,13 +150,13 @@ class _ProfileView extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 user!.email!,
-                style: const TextStyle(color: Colors.black54),
+                style: TextStyle(color: context.textSecondary),
               ),
             ),
           const SizedBox(height: 4),
           Text(
             _providerLabel(context, profile.provider),
-            style: const TextStyle(color: Colors.black54),
+            style: TextStyle(color: context.textSecondary),
           ),
           const SizedBox(height: 8),
           TextButton(
@@ -254,9 +254,9 @@ class _ProfileView extends StatelessWidget {
                           l10n.validUntil(
                             _formatDate(subState.subscription!.expiresAt),
                           ),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: context.textSecondary,
                           ),
                         ),
                       if (nextGrantText != null)
@@ -264,9 +264,9 @@ class _ProfileView extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
                             nextGrantText,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black54,
+                              color: context.textSecondary,
                             ),
                           ),
                         ),
@@ -320,9 +320,9 @@ class _ProfileView extends StatelessWidget {
                     ),
                     Text(
                       l10n.creditsRemaining(walletState.balance),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.black54,
+                        color: context.textSecondary,
                       ),
                     ),
                   ],
@@ -376,7 +376,7 @@ class _ProfileView extends StatelessWidget {
                         padding: const EdgeInsets.all(16),
                         child: Text(
                           l10n.noTransactionsYet,
-                          style: const TextStyle(color: Colors.black54),
+                          style: TextStyle(color: context.textSecondary),
                         ),
                       )
                     else
@@ -482,7 +482,7 @@ class _ProfileView extends StatelessWidget {
       ),
       subtitle: Text(
         _formatDateTime(tx.createdAt),
-        style: const TextStyle(fontSize: 11, color: Colors.black54),
+        style: TextStyle(fontSize: 11, color: context.textSecondary),
       ),
       trailing: Text(
         '${isCredit ? '+' : ''}${tx.amount}',
@@ -530,7 +530,7 @@ class _ProfileView extends StatelessWidget {
               context.watch<LocaleCubit>().state.locale.languageCode == 'id'
                   ? l10n.bahasaIndonesia
                   : l10n.english,
-              style: const TextStyle(color: Colors.black54),
+              style: TextStyle(color: context.textSecondary),
             ),
             onTap: () => _showLanguageSheet(context),
           ),

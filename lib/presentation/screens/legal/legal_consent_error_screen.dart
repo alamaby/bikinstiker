@@ -18,7 +18,7 @@ class LegalConsentErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -46,7 +46,7 @@ class LegalConsentErrorScreen extends StatelessWidget {
                           fallback: l10n.consentErrorBody,
                         ),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black87),
+                  style: TextStyle(color: context.textPrimary.withValues(alpha: 0.85)),
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(

@@ -141,7 +141,7 @@ class _AddToPackSheetState extends State<AddToPackSheet>
                 tabAlignment: TabAlignment.start,
                 indicatorColor: AppColors.primary,
                 labelColor: AppColors.primary,
-                unselectedLabelColor: Colors.black54,
+                unselectedLabelColor: context.textSecondary,
                 dividerHeight: 0,
                 tabs: kEmojiCategories.asMap().entries.map((entry) {
                   final cat = entry.value;
@@ -184,7 +184,7 @@ class _AddToPackSheetState extends State<AddToPackSheet>
                     label: Text(emoji, style: const TextStyle(fontSize: 20)),
                     onDeleted: () => _toggleEmoji(emoji),
                     deleteIcon: const Icon(Icons.close, size: 16),
-                    backgroundColor: AppColors.surface,
+                    backgroundColor: context.surfaceAlt,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
                 }).toList(),
@@ -307,9 +307,9 @@ class _AddToPackSheetState extends State<AddToPackSheet>
             decoration: BoxDecoration(
               color: selected
                   ? AppColors.secondary.withValues(alpha: 0.2)
-                  : AppColors.surface,
+                  : context.surfaceAlt,
               border: Border.all(
-                color: selected ? AppColors.secondary : AppColors.outline,
+                color: selected ? AppColors.secondary : context.hairline,
                 width: selected ? 2 : 1,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -389,7 +389,7 @@ class _EmptyOrFullState extends StatelessWidget {
                   ? Icons.folder_off_outlined
                   : Icons.collections_bookmark_outlined,
               size: 64,
-              color: AppColors.outline,
+              color: context.hairline,
             ),
             const SizedBox(height: 16),
             Text(

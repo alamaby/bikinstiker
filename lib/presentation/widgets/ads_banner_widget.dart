@@ -6,6 +6,7 @@ import '../../core/di.dart';
 import '../../core/services/ad_config_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/subscription/subscription_bloc.dart';
+import '../../core/theme/app_theme.dart';
 
 export '../../core/services/ad_config_service.dart' show AdBannerLocation;
 
@@ -115,17 +116,17 @@ class _Placeholder extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: const Center(
+      child: Center(
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.ads_click, size: 16, color: Colors.black38),
+            Icon(Icons.ads_click, size: 16, color: context.textFaint),
             SizedBox(width: 6),
             Text(
               'Advertisement',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.black38,
+                color: context.textFaint,
                 fontWeight: FontWeight.w500,
               ),
             ),

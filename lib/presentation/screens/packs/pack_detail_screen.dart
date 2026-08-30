@@ -220,8 +220,8 @@ if (items.isEmpty)
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.outline)),
+        color: context.surfaceAlt,
+        border: Border(top: BorderSide(color: context.hairline)),
       ),
       child: Row(
         children: [
@@ -239,7 +239,7 @@ onPressed: canExport
               style: ElevatedButton.styleFrom(
                 backgroundColor: canExport
                     ? AppColors.success
-                    : AppColors.outline,
+                    : context.hairline,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
@@ -601,7 +601,7 @@ class _StickerItemTileState extends State<_StickerItemTile> {
           aspectRatio: 1,
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.surfaceAlt,
               borderRadius: BorderRadius.circular(8),
             ),
             child: ClipRRect(
@@ -632,7 +632,7 @@ class _StickerItemTileState extends State<_StickerItemTile> {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black54,
+                color: context.textSecondary,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Center(
@@ -658,7 +658,7 @@ class _StickerItemTileState extends State<_StickerItemTile> {
               icon: const Icon(Icons.close, size: 16),
               onPressed: widget.onRemove,
               style: IconButton.styleFrom(
-                backgroundColor: Colors.black54,
+                backgroundColor: context.textSecondary,
                 foregroundColor: Colors.white,
               ),
             ),
@@ -671,7 +671,7 @@ class _StickerItemTileState extends State<_StickerItemTile> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black54,
+                color: context.textSecondary,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -687,7 +687,7 @@ class _StickerItemTileState extends State<_StickerItemTile> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(
-              color: Colors.black54,
+              color: context.textSecondary,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -734,7 +734,7 @@ class _EmptyItemsState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.image_outlined, size: 64, color: AppColors.outline),
+            Icon(Icons.image_outlined, size: 64, color: context.hairline),
             const SizedBox(height: 16),
             Text(
               l10n.packNoStickersYet,

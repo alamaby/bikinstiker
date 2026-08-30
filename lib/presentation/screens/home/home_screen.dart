@@ -770,8 +770,8 @@ class _CreditsCard extends StatelessWidget {
                                 children: [
                                   Text(
                                     label,
-                                    style: const TextStyle(
-                                      color: Colors.black54,
+                                    style: TextStyle(
+                                      color: context.textSecondary,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -795,9 +795,9 @@ class _CreditsCard extends StatelessWidget {
                               if (isGuest)
                                 Text(
                                   l10n.createAccountForCredits,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.black54,
+                                    color: context.textSecondary,
                                   ),
                                 ),
                             ],
@@ -869,8 +869,8 @@ class _PresetSelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.outline),
+          color: context.surfaceAlt,
+          border: Border.all(color: context.hairline),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -904,14 +904,14 @@ class _PresetSelector extends StatelessWidget {
                     selected == null
                         ? ''
                         : localizedPresetDescription(l10n, selected),
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    style: TextStyle(fontSize: 12, color: context.textSecondary),
                   ),
                 ],
               ),
             ),
             Icon(
               Icons.keyboard_arrow_down,
-              color: enabled ? Colors.black54 : Colors.black26,
+              color: enabled ? context.textSecondary : context.textFaint,
             ),
           ],
         ),
@@ -1276,7 +1276,7 @@ class _GuestResultCta extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           l10n.guestDiscardWarning,
-          style: const TextStyle(fontSize: 11, color: Colors.black54),
+          style: TextStyle(fontSize: 11, color: context.textSecondary),
           textAlign: TextAlign.center,
         ),
       ],
@@ -1442,8 +1442,8 @@ class _PresetSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.outline),
+        color: context.surfaceAlt,
+        border: Border.all(color: context.hairline),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -1452,7 +1452,7 @@ class _PresetSkeleton extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: AppColors.outline.withValues(alpha: 0.3),
+              color: context.hairline.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(6),
             ),
           ),
@@ -1466,7 +1466,7 @@ class _PresetSkeleton extends StatelessWidget {
                   width: 120,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: AppColors.outline.withValues(alpha: 0.3),
+                    color: context.hairline.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -1475,7 +1475,7 @@ class _PresetSkeleton extends StatelessWidget {
                   width: 160,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: AppColors.outline.withValues(alpha: 0.2),
+                    color: context.hairline.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -1498,14 +1498,14 @@ class _EmptyPresetsView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.outline),
+        color: context.surfaceAlt,
+        border: Border.all(color: context.hairline),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.style_outlined, size: 36, color: AppColors.outline),
+          Icon(Icons.style_outlined, size: 36, color: context.hairline),
           const SizedBox(height: 8),
           Text(
             l10n.noStylesAvailable,
@@ -1514,7 +1514,7 @@ class _EmptyPresetsView extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             l10n.pullToRefresh,
-            style: TextStyle(fontSize: 12, color: Colors.black54),
+            style: TextStyle(fontSize: 12, color: context.textSecondary),
           ),
         ],
       ),

@@ -70,22 +70,22 @@ class _HistorySearchFieldState extends State<HistorySearchField> {
               )
             : null,
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: context.surfaceAlt,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.outline),
+          borderSide: BorderSide(color: context.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.outline),
+          borderSide: BorderSide(color: context.hairline),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
+          borderSide: BorderSide(color: context.hairline.withValues(alpha: 0.5)),
         ),
       ),
     );
@@ -105,20 +105,20 @@ class _LockedSearchField extends StatelessWidget {
         enabled: false,
         decoration: InputDecoration(
           hintText: hintText,
-          prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Colors.black38),
+          prefixIcon: Icon(Icons.lock_outline, size: 20, color: context.textFaint),
           filled: true,
-          fillColor: AppColors.surface,
+          fillColor: context.surfaceAlt,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 12,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
+            borderSide: BorderSide(color: context.hairline.withValues(alpha: 0.5)),
           ),
           disabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
+            borderSide: BorderSide(color: context.hairline.withValues(alpha: 0.5)),
           ),
         ),
       ),

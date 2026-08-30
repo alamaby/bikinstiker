@@ -85,7 +85,7 @@ class PresetPickerSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black26,
+                    color: context.textFaint,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -124,9 +124,9 @@ class PresetPickerSheet extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         l10n.seasonalSectionInfo,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.black54,
+                          color: context.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -212,7 +212,7 @@ class PresetPickerSheet extends StatelessWidget {
         trailing: selected
             ? const Icon(Icons.check_circle, color: AppColors.primary)
             : locked
-            ? const Icon(Icons.lock_outline, size: 20, color: Colors.black45)
+            ? Icon(Icons.lock_outline, size: 20, color: context.textFaint)
             : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onTap: () {

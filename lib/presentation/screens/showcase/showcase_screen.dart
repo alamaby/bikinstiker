@@ -155,8 +155,8 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.storefront_outlined,
-                            size: 64, color: AppColors.outline),
+                        Icon(Icons.storefront_outlined,
+                            size: 64, color: context.hairline),
                         const SizedBox(height: 16),
                         Text(l10n.showcaseEmpty,
                             style: Theme.of(context).textTheme.titleMedium),
@@ -277,13 +277,13 @@ class _ListingCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(Icons.thumb_up_outlined,
-                            size: 14, color: AppColors.outline),
+                            size: 14, color: context.hairline),
                         const SizedBox(width: 2),
                         Text('${listing.ratingCount}',
                             style: Theme.of(context).textTheme.bodySmall),
                         const SizedBox(width: 8),
                         Icon(Icons.favorite_border,
-                            size: 14, color: AppColors.outline),
+                            size: 14, color: context.hairline),
                         const SizedBox(width: 2),
                         Text('${listing.favoriteCount}',
                             style: Theme.of(context).textTheme.bodySmall),

@@ -215,10 +215,10 @@ class _EmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.filter_list_off,
                 size: 40,
-                color: Colors.black38,
+                color: context.textFaint,
               ),
               const SizedBox(height: 12),
               Text(
@@ -317,7 +317,7 @@ class _HistoryTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${item.presetName} • ${df.format(item.createdAt.toLocal())}',
-                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                    style: TextStyle(color: context.textSecondary, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
                   _statusFor(l10n),
@@ -352,12 +352,12 @@ class _HistoryTile extends StatelessWidget {
             ListTile(
               leading: Icon(
                 Icons.replay,
-                color: isPlus ? AppColors.primary : Colors.black38,
+                color: isPlus ? AppColors.primary : context.textFaint,
               ),
               title: Text(
                 l10n.regenerateSamePrompt,
                 style: TextStyle(
-                  color: isPlus ? null : Colors.black54,
+                  color: isPlus ? null : context.textSecondary,
                   fontWeight: isPlus ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -367,8 +367,8 @@ class _HistoryTile extends StatelessWidget {
                       style: const TextStyle(fontSize: 12)),
               trailing: isPlus
                   ? null
-                  : const Icon(Icons.lock_outline,
-                      size: 16, color: Colors.black38),
+                  : Icon(Icons.lock_outline,
+                      size: 16, color: context.textFaint),
               onTap: isPlus
                   ? () {
                       Navigator.of(sheetCtx).pop();
@@ -410,10 +410,10 @@ class _Thumb extends StatelessWidget {
   Widget build(BuildContext context) {
     if (path == null || path!.isEmpty) {
       return Container(
-        color: AppColors.surface,
-        child: const Icon(
+        color: context.surfaceAlt,
+        child: Icon(
           Icons.image_not_supported_outlined,
-          color: Colors.black38,
+          color: context.textFaint,
         ),
       );
     }
@@ -422,7 +422,7 @@ class _Thumb extends StatelessWidget {
       builder: (context, snap) {
         if (snap.hasError) {
           return Container(
-            color: AppColors.surface,
+            color: context.surfaceAlt,
             child: const Icon(
               Icons.broken_image_outlined,
               color: AppColors.error,
@@ -432,7 +432,7 @@ class _Thumb extends StatelessWidget {
         final file = snap.data;
         if (file == null) {
           return Container(
-            color: AppColors.surface,
+            color: context.surfaceAlt,
             child: const Center(
               child: SizedBox(
                 height: 18,
@@ -467,8 +467,8 @@ class _StickerPreviewSheet extends StatelessWidget {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: ListView(
@@ -480,7 +480,7 @@ class _StickerPreviewSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black26,
+                    color: context.textFaint,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -504,7 +504,7 @@ class _StickerPreviewSheet extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '${item.presetName} • ${df.format(item.createdAt.toLocal())}',
-                style: const TextStyle(color: Colors.black54, fontSize: 13),
+                style: TextStyle(color: context.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(

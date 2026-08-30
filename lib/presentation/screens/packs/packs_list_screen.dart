@@ -202,7 +202,7 @@ class _PacksListScreenState extends State<PacksListScreen> {
             icon: const Icon(Icons.add),
             label: Text(l10n.newPack),
             backgroundColor: state.isAtCapacity()
-                ? AppColors.outline
+                ? context.hairline
                 : AppColors.secondary,
           );
         },
@@ -228,7 +228,7 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.collections_bookmark_outlined,
               size: 64,
-              color: AppColors.outline,
+              color: context.hairline,
             ),
             const SizedBox(height: 16),
             Text(

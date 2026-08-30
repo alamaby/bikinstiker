@@ -87,7 +87,7 @@ class PackCard extends StatelessWidget {
                     Text(
                       '${pack.stickerCount}/30 stickers',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.onSurface.withValues(alpha: 0.6),
+                        color: context.textPrimary.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -113,20 +113,20 @@ class _PackThumbnail extends StatelessWidget {
       return Image.network(
         url,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _placeholder(),
+        errorBuilder: (context, error, stackTrace) => _placeholder(context),
       );
     }
-    return _placeholder();
+    return _placeholder(context);
   }
 
-  Widget _placeholder() {
+  Widget _placeholder(BuildContext context) {
     return Container(
-      color: AppColors.surface,
+      color: context.surfaceAlt,
       child: Center(
         child: Icon(
           Icons.collections_bookmark,
           size: 48,
-          color: pack.isLocked ? AppColors.outline : AppColors.primary,
+          color: pack.isLocked ? context.hairline : AppColors.primary,
         ),
       ),
     );

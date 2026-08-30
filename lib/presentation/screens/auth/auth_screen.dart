@@ -166,7 +166,7 @@ class _AuthScreenState extends State<AuthScreen>
                         const SizedBox(height: 8),
                         Text(
                           l10n.tagline,
-                          style: const TextStyle(color: Colors.black54),
+                          style: TextStyle(color: context.textSecondary),
                         ),
                         const SizedBox(height: 32),
                         if (_isGuestWall) ...[
@@ -180,7 +180,7 @@ class _AuthScreenState extends State<AuthScreen>
                             controller: _tab,
                             indicatorColor: AppColors.primary,
                             labelColor: AppColors.primary,
-                            unselectedLabelColor: Colors.black54,
+                            unselectedLabelColor: context.textSecondary,
                             tabs: [
                               Tab(text: l10n.signIn),
                               Tab(text: l10n.signUp),
@@ -303,8 +303,8 @@ class _AuthScreenState extends State<AuthScreen>
                               ),
                               child: Text(
                                 l10n.or,
-                                style: const TextStyle(
-                                  color: Colors.black54,
+                                style: TextStyle(
+                                  color: context.textSecondary,
                                 ),
                               ),
                             ),
@@ -391,7 +391,7 @@ class _GuestAuthWallHeader extends StatelessWidget {
                     ? l10n.guestSaveWarning
                     : l10n.guestCreateAccountDesc)
               : l10n.guestSignInDesc,
-          style: const TextStyle(color: Colors.black54),
+          style: TextStyle(color: context.textSecondary),
         ),
       ],
     );
@@ -421,7 +421,7 @@ class _GuestWallWarning extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.guestWallWarning,
-              style: const TextStyle(fontSize: 13, color: Colors.black87),
+              style: TextStyle(fontSize: 13, color: context.textPrimary.withValues(alpha: 0.85)),
             ),
           ),
         ],

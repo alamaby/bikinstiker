@@ -131,7 +131,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: isActive ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : AppColors.outline,
+                  color: isActive ? AppColors.primary : context.hairline,
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -169,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             step.description,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.black54,
+              color: context.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),

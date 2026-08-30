@@ -30,7 +30,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -56,7 +56,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               Text(
                 l10n.languageTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: TextStyle(fontSize: 16, color: context.textSecondary),
               ),
               const SizedBox(height: 40),
               _LanguageOption(
@@ -104,7 +104,7 @@ class _LanguageOption extends StatelessWidget {
     return Material(
       color: selected
           ? AppColors.primary.withValues(alpha: 0.08)
-          : AppColors.surface,
+          : context.surfaceAlt,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -113,7 +113,7 @@ class _LanguageOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           decoration: BoxDecoration(
             border: Border.all(
-              color: selected ? AppColors.primary : AppColors.outline,
+              color: selected ? AppColors.primary : context.hairline,
               width: selected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(14),

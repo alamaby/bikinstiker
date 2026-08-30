@@ -576,9 +576,9 @@ class _SharePromptBanner extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       l10n.shareMissionDesc(minutesLeft.clamp(0, 10)),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.black54,
+                        color: context.textSecondary,
                       ),
                     ),
                   ],
@@ -679,9 +679,9 @@ class _MissionTile extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         localizedMissionDescription(l10n, mission),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Colors.black54,
+                          color: context.textSecondary,
                         ),
                       ),
                     ],
@@ -715,36 +715,36 @@ class _MissionTile extends StatelessWidget {
                 else if (!canAccess)
                   Text(
                     l10n.requiresPlus,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.black38,
+                      color: context.textFaint,
                       fontWeight: FontWeight.w500,
                     ),
                   )
                 else if (awaitingShareClaim)
                   Text(
                     l10n.awaitingLinkClick,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.black54,
+                      color: context.textSecondary,
                       fontWeight: FontWeight.w600,
                     ),
                   )
                 else if (isDailyLimitReached)
                   Text(
                     l10n.dailyLimitReached,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.black38,
+                      color: context.textFaint,
                       fontWeight: FontWeight.w500,
                     ),
                   )
                 else if (cooldownRemaining != null)
                   Text(
                     _formatDuration(cooldownRemaining!),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.black38,
+                      color: context.textFaint,
                       fontWeight: FontWeight.w500,
                     ),
                   )

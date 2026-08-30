@@ -81,7 +81,7 @@ class DailyCheckinCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               localizedMissionDescription(l10n, mission),
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: context.textSecondary),
             ),
             const SizedBox(height: 12),
             // Day boxes row
@@ -128,9 +128,9 @@ class DailyCheckinCard extends StatelessWidget {
                         l10n.nextIn(
                           _formatCooldown(s.cooldownRemainingSeconds),
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.black45,
+                          color: context.textFaint,
                         ),
                       ),
                     ],
@@ -150,9 +150,9 @@ class DailyCheckinCard extends StatelessWidget {
                 else if (!canClaim)
                   Text(
                     l10n.checkedIn,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.black38,
+                      color: context.textFaint,
                       fontWeight: FontWeight.w500,
                     ),
                   )
@@ -265,11 +265,11 @@ class _DayBoxState extends State<_DayBox> {
                 ? AppColors.success.withValues(alpha: 0.18)
                 : (isToday
                       ? AppColors.primary.withValues(alpha: 0.12)
-                      : AppColors.surface),
+                      : context.surfaceAlt),
             border: Border.all(
               color: isToday
                   ? AppColors.primary
-                  : (isCompleted ? AppColors.success : AppColors.outline),
+                  : (isCompleted ? AppColors.success : context.hairline),
               width: isToday ? 2.5 : 1,
             ),
             borderRadius: BorderRadius.circular(10),
@@ -287,8 +287,8 @@ class _DayBoxState extends State<_DayBox> {
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: locked
-                      ? AppColors.outline
-                      : (isCompleted ? AppColors.success : AppColors.onSurface),
+                      ? context.hairline
+                      : (isCompleted ? AppColors.success : context.textPrimary),
                 ),
               ),
             ],

@@ -114,7 +114,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -147,7 +147,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                     controller: _tab,
                     indicatorColor: AppColors.primary,
                     labelColor: AppColors.primary,
-                    unselectedLabelColor: Colors.black54,
+                    unselectedLabelColor: context.textSecondary,
                     dividerHeight: 0,
                     tabs: [
                       Tab(text: l10n.privacyPolicy),
@@ -160,8 +160,8 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-              decoration: const BoxDecoration(
-                color: AppColors.background,
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black12,
@@ -249,7 +249,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
             Text(
               body,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black87),
+              style: TextStyle(color: context.textPrimary.withValues(alpha: 0.85)),
             ),
             const SizedBox(height: 16),
             if (showRetry)
@@ -282,8 +282,8 @@ class _MarkdownDoc extends StatelessWidget {
         h1: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
         h2: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         h3: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-        p: const TextStyle(fontSize: 14, color: Colors.black87),
-        listBullet: const TextStyle(fontSize: 14, color: Colors.black87),
+        p: TextStyle(fontSize: 14, color: context.textPrimary.withValues(alpha: 0.85)),
+        listBullet: TextStyle(fontSize: 14, color: context.textPrimary.withValues(alpha: 0.85)),
         tableHead: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,

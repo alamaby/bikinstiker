@@ -29,8 +29,8 @@ class PackCapacityIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: _isAtCapacity
             ? AppColors.error.withValues(alpha: 0.1)
-            : AppColors.surface,
-        border: Border.all(color: AppColors.outline),
+            : context.surfaceAlt,
+        border: Border.all(color: context.hairline),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -52,7 +52,7 @@ class PackCapacityIndicator extends StatelessWidget {
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: AppColors.outline.withValues(alpha: 0.3),
+            backgroundColor: context.hairline.withValues(alpha: 0.3),
             valueColor: AlwaysStoppedAnimation<Color>(
               _isAtCapacity ? AppColors.error : AppColors.primary,
             ),

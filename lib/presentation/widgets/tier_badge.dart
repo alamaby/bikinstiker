@@ -15,7 +15,7 @@ class TierBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isPlus
             ? AppColors.primary
-            : AppColors.outline.withValues(alpha: 0.2),
+            : context.hairline.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -23,7 +23,9 @@ class TierBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w800,
-          color: isPlus ? Colors.white : Colors.black54,
+          color: isPlus
+              ? Theme.of(context).colorScheme.onPrimary
+              : context.textSecondary,
           letterSpacing: 1,
         ),
       ),

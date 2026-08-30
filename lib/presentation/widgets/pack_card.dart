@@ -61,7 +61,7 @@ class PackCard extends StatelessWidget {
             // Pack name and count
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,

@@ -1,5 +1,15 @@
 # TODO
 
+## Owner Testing Fixes #2 (2026-08-30)
+
+4 temuan owner setelah UI refresh. Versi `0.26.0+82` (menggantikan 0.25.0+81 yang belum dirilis).
+
+- [x] **OT1 (bug stuck)** Onboarding dari Profil (`replay: true`, tanpa `onFinished`) → skip/finish tidak melakukan apa-apa, user terjebak. Fix: `_finish()` fallback `Navigator.pop` bila tanpa callback. **Done**.
+- [x] **OT2 (UI)** PackCard: zona teks hanya ~19px (grid aspect 0.85, gambar 1:1) → nama/count terhimpit dasar card. Fix: aspect → 0.70 + bottom padding 12. **Done**.
+- [x] **OT3 (fitur)** Pemilih tema di Profil (Ikut Sistem/Cerah/Gelap): `ThemeCubit` + persistensi SharedPreferences (`theme_mode`), disuntikkan ke `MaterialApp.themeMode`; sheet Radio-style + l10n EN/ID. **Done**.
+- [x] **OT4 (UX)** Tombol Bagikan di panel hasil disembunyikan (share PNG transparan tampil berlatar hitam); Add to Pack jadi tombol tunggal full-width; helper `_shareSticker` + import dibersihkan. **Done**.
+- [ ] **OT5 (manual, owner)** Release APK `0.26.0+82`; smoke: onboarding dari Profil bisa keluar via Lewati/Buat stiker; pack card tidak terhimpit; pemilih tema bekerja & persisten setelah restart; hasil generate hanya tombol Add to Pack.
+
 ## UI Refresh Tier 1+2 (2026-08-30)
 
 Dark mode + font brand + bottom nav + redesign Home/preset/PackCard. Plan: `plans/2026-08-30-ui-refresh-plan.md`.

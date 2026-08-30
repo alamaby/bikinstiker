@@ -31,6 +31,7 @@ import 'presentation/blocs/sticker_pack/sticker_pack_bloc.dart';
 import 'presentation/blocs/home_prefill/home_prefill_cubit.dart';
 import 'presentation/blocs/surprise_me/surprise_me_cubit.dart';
 import 'presentation/blocs/sticker_gen/sticker_gen_bloc.dart';
+import 'presentation/blocs/theme/theme_cubit.dart';
 import 'presentation/blocs/subscription/subscription_bloc.dart';
 import 'presentation/blocs/wallet/wallet_bloc.dart';
 import 'presentation/blocs/legal_consent/legal_consent_cubit.dart';
@@ -134,19 +135,25 @@ class BikinStikerApp extends StatelessWidget {
               ctx.read<LegalConsentRepository>(),
             ),
           ),
+          BlocProvider(create: (_) => getIt<ThemeCubit>()),
         ],
         child: BlocBuilder<LocaleCubit, LocaleState>(
           builder: (context, localeState) {
-            return MaterialApp(
-              title: 'BikinStiker',
-              locale: localeState.locale,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              theme: AppTheme.light(),
-              darkTheme: AppTheme.dark(),
-              themeMode: ThemeMode.system,
-              debugShowCheckedModeBanner: false,
-              home: const _AuthGate(),
+            return BlocBuilder<ThemeCubit, ThemeMode>(
+              builder: (context, themeMode) {
+                return MaterialApp(
+                  title: 'BikinStiker',
+                  locale: localeState.locale,
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  theme: AppTheme.light(),
+                  darkTheme: AppTheme.dark(),
+                  themeMode: themeMode,
+                  debugShowCheckedModeBanner: false,
+                  home: const _AuthGate(),
+                );
+              },
             );
           },
         ),

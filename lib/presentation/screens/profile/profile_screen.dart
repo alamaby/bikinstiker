@@ -17,6 +17,7 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/credit_transactions/credit_transactions_bloc.dart';
 import '../../blocs/legal_consent/legal_consent_cubit.dart';
 import '../../blocs/locale/locale_cubit.dart';
+import '../../blocs/theme/theme_cubit.dart';
 import '../../blocs/profile/profile_cubit.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
@@ -534,7 +535,80 @@ class _ProfileView extends StatelessWidget {
             ),
             onTap: () => _showLanguageSheet(context),
           ),
+          ListTile(
+            leading: const Icon(Icons.dark_mode_outlined),
+            title: Text(l10n.themeTitle),
+            trailing: Text(
+              switch (context.watch<ThemeCubit>().state) {
+                ThemeMode.light => l10n.themeLight,
+                ThemeMode.dark => l10n.themeDark,
+                _ => l10n.themeSystem,
+              },
+              style: TextStyle(color: context.textSecondary),
+            ),
+            onTap: () => _showThemeSheet(context),
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showThemeSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cubit = context.read<ThemeCubit>();
+    final current = cubit.state;
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                l10n.themeTitle,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.brightness_auto_outlined),
+              title: Text(l10n.themeSystem),
+              trailing: current == ThemeMode.system
+                  ? Icon(Icons.check_circle, color: context.colors.primary)
+                  : null,
+              onTap: () {
+                cubit.setMode(ThemeMode.system);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.light_mode_outlined),
+              title: Text(l10n.themeLight),
+              trailing: current == ThemeMode.light
+                  ? Icon(Icons.check_circle, color: context.colors.primary)
+                  : null,
+              onTap: () {
+                cubit.setMode(ThemeMode.light);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.dark_mode_outlined),
+              title: Text(l10n.themeDark),
+              trailing: current == ThemeMode.dark
+                  ? Icon(Icons.check_circle, color: context.colors.primary)
+                  : null,
+              onTap: () {
+                cubit.setMode(ThemeMode.dark);
+                Navigator.pop(ctx);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

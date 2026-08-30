@@ -39,3 +39,4 @@ Memperindah tampilan aplikasi sesuai audit UI: Tier 1 (dark mode + font brand + 
 
 ## Notes
 - Disiplin ke depan: kode baru wajib pakai helper `context.*` (bukan warna hardcoded) supaya dark mode terjaga; `Colors.black*/Colors.white` dilarang di lib/ kecuali teks di atas warna brand.
+- 2026-08-30 17:20 — Temuan owner pasca-UI refresh (4): onboarding replay stuck (fallback pop), PackCard text-zone (aspect 0.70), pemilih tema Profil (ThemeCubit+prefs, fitur → v0.26.0+82), share button disembunyikan. Verifikasi hijau (analyze 0, test 183/183, APK 3 ABI).

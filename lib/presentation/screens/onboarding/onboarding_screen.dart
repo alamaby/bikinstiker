@@ -60,7 +60,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final repo = getIt<OnboardingRepository>();
       await repo.completeCoreFlow();
     }
-    widget.onFinished?.call();
+    if (widget.onFinished != null) {
+      widget.onFinished!.call();
+      return;
+    }
+    // Replay from the Profile screen: no gate callback — just go back,
+    // otherwise skip/finish leave the user stranded on this screen.
+    if (mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _next() {

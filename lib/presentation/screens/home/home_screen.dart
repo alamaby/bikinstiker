@@ -11,7 +11,6 @@ import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/errors/safe_error_message.dart';
 import '../../../core/localization/preset_localizations.dart';
-import '../../../core/share_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_preset.dart';
 import '../../../data/models/user_subscription.dart';
@@ -999,24 +998,6 @@ class _GenerateButton extends StatelessWidget {
   }
 }
 
-Future<void> _shareSticker(BuildContext context, String signedUrl) async {
-  final l10n = AppLocalizations.of(context);
-  try {
-    await shareStickerImage(signedUrl);
-  } catch (e) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: context.colors.error,
-        content: Text(
-          l10n == null ? 'Failed to share sticker: $e' : l10n.failedToShare(e),
-          style: const TextStyle(color: Colors.white),
-        ),
-      ),
-    );
-  }
-}
-
 class _ResultPanel extends StatelessWidget {
   const _ResultPanel();
 
@@ -1156,37 +1137,20 @@ class _ResultPanel extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: () => _shareSticker(
-                                    context,
-                                    genState.signedUrl!,
-                                  ),
-                                  icon: const Icon(Icons.share, size: 18),
-                                  label: Text(l10n.share),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: FilledButton.tonalIcon(
-                                  onPressed: genState.stickerId != null
-                                      ? () {
-                                          AddToPackSheet.show(
-                                            context,
-                                            genState.stickerId!,
-                                          );
-                                        }
-                                      : null,
-                                  icon: const Icon(
-                                    Icons.collections_bookmark,
-                                    size: 18,
-                                  ),
-                                  label: Text(l10n.addToPack),
-                                ),
-                              ),
-                            ],
+                          FilledButton.tonalIcon(
+                            onPressed: genState.stickerId != null
+                                ? () {
+                                    AddToPackSheet.show(
+                                      context,
+                                      genState.stickerId!,
+                                    );
+                                  }
+                                : null,
+                            icon: const Icon(
+                              Icons.collections_bookmark,
+                              size: 18,
+                            ),
+                            label: Text(l10n.addToPack),
                           ),
                         ],
                         if (isGuest) ...[

@@ -1313,4 +1313,16 @@ class AppLocalizationsId extends AppLocalizations {
   String packStickerCount(int count, int max) {
     return '$count/$max stiker';
   }
+
+  @override
+  String get themeTitle => 'Tema';
+
+  @override
+  String get themeSystem => 'Ikut Sistem';
+
+  @override
+  String get themeLight => 'Cerah';
+
+  @override
+  String get themeDark => 'Gelap';
 }

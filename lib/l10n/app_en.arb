@@ -428,5 +428,9 @@
       "count": { "type": "int" },
       "max": { "type": "int" }
     }
-  }
+  },
+  "themeTitle": "Theme",
+  "themeSystem": "Follow system",
+  "themeLight": "Light",
+  "themeDark": "Dark"
 }

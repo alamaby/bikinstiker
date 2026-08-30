@@ -155,7 +155,7 @@ class _PacksListScreenState extends State<PacksListScreen> {
                               crossAxisCount: 2,
                               mainAxisSpacing: 12,
                               crossAxisSpacing: 12,
-                              childAspectRatio: 0.85,
+                              childAspectRatio: 0.70,
                             ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final pack = state.packs[index];

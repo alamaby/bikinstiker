@@ -428,5 +428,9 @@
       "count": { "type": "int" },
       "max": { "type": "int" }
     }
-  }
+  },
+  "themeTitle": "Tema",
+  "themeSystem": "Ikut Sistem",
+  "themeLight": "Cerah",
+  "themeDark": "Gelap"
 }

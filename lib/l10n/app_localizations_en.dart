@@ -1308,4 +1308,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String packStickerCount(int count, int max) {
     return '$count/$max stickers';
   }
+
+  @override
+  String get themeTitle => 'Theme';
+
+  @override
+  String get themeSystem => 'Follow system';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
 }

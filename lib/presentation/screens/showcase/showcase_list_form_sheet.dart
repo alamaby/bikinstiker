@@ -139,7 +139,7 @@ class _ListFormSheetState extends State<_ListFormSheet> {
                 OutlinedButton.icon(
                   onPressed: _busy ? null : _unlist,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
+                    foregroundColor: context.colors.error,
                   ),
                   icon: const Icon(Icons.storefront),
                   label: Text(l10n.showcaseUnlistShort),
@@ -201,7 +201,7 @@ class _ListFormSheetState extends State<_ListFormSheet> {
       widget.onChanged?.call();
       messenger.showSnackBar(SnackBar(
         content: Text(l10n.showcaseListSuccess),
-        backgroundColor: AppColors.success,
+        backgroundColor: context.colors.tertiary,
       ));
     } on Failure catch (f) {
       setState(() => _busy = false);

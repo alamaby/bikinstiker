@@ -22,11 +22,11 @@ class LegalConsentErrorScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.cloud_off, size: 48, color: AppColors.error),
+                Icon(Icons.cloud_off, size: 48, color: context.colors.error),
                 const SizedBox(height: 16),
                 Text(
                   l10n.consentErrorTitle,

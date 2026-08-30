@@ -81,7 +81,7 @@ class _StickerFeedbackButtonsState extends State<StickerFeedbackButtons> {
       setState(() => _rating = previous);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: AppColors.error,
+          backgroundColor: context.colors.error,
           content: Text(
             safeErrorMessage(AppLocalizations.of(context)!, 'Failed to save feedback: $e'),
             style: const TextStyle(color: Colors.white),
@@ -167,12 +167,12 @@ class _FeedbackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final foreground =
-        selected ? Theme.of(context).colorScheme.onPrimary : AppColors.primary;
-    final background = selected ? AppColors.primary : context.surfaceAlt;
+        selected ? Theme.of(context).colorScheme.onPrimary : context.colors.primary;
+    final background = selected ? context.colors.primary : context.surfaceAlt;
     final style = OutlinedButton.styleFrom(
       foregroundColor: foreground,
       backgroundColor: background,
-      side: BorderSide(color: selected ? AppColors.primary : context.hairline),
+      side: BorderSide(color: selected ? context.colors.primary : context.hairline),
       padding: label == null
           ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

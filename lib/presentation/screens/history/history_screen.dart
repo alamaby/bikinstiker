@@ -72,17 +72,17 @@ class _HistoryView extends StatelessWidget {
           if (state.status == HistoryStatus.failure && state.items.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, color: AppColors.error),
+                    Icon(Icons.error_outline, color: context.colors.error),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         safeErrorMessage(l10n, state.errorMessage,
                             fallback: l10n.failedToLoad),
-                        style: const TextStyle(color: AppColors.error),
+                        style: TextStyle(color: context.colors.error),
                       ),
                     ),
                   ],
@@ -256,16 +256,16 @@ class _HistoryTile extends StatelessWidget {
   final StickerGeneration item;
   const _HistoryTile({required this.item});
 
-  Widget _statusFor(AppLocalizations l10n) {
+  Widget _statusFor(BuildContext context, AppLocalizations l10n) {
     switch (item.status) {
       case StickerStatus.success:
-        return StatusIndicator.success(l10n.success);
+        return StatusIndicator.success(context, l10n.success);
       case StickerStatus.pending:
-        return StatusIndicator.pending(l10n.pending);
+        return StatusIndicator.pending(context, l10n.pending);
       case StickerStatus.failed:
-        return StatusIndicator.error(l10n.failed);
+        return StatusIndicator.error(context, l10n.failed);
       case StickerStatus.unknown:
-        return StatusIndicator.pending(l10n.unknown);
+        return StatusIndicator.pending(context, l10n.unknown);
     }
   }
 
@@ -320,7 +320,7 @@ class _HistoryTile extends StatelessWidget {
                     style: TextStyle(color: context.textSecondary, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
-                  _statusFor(l10n),
+                  _statusFor(context, l10n),
                 ],
               ),
             ),
@@ -352,7 +352,7 @@ class _HistoryTile extends StatelessWidget {
             ListTile(
               leading: Icon(
                 Icons.replay,
-                color: isPlus ? AppColors.primary : context.textFaint,
+                color: isPlus ? context.colors.primary : context.textFaint,
               ),
               title: Text(
                 l10n.regenerateSamePrompt,
@@ -423,9 +423,9 @@ class _Thumb extends StatelessWidget {
         if (snap.hasError) {
           return Container(
             color: context.surfaceAlt,
-            child: const Icon(
+            child: Icon(
               Icons.broken_image_outlined,
-              color: AppColors.error,
+              color: context.colors.error,
             ),
           );
         }
@@ -473,7 +473,7 @@ class _StickerPreviewSheet extends StatelessWidget {
           ),
           child: ListView(
             controller: scrollController,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             children: [
               Center(
                 child: Container(
@@ -520,7 +520,7 @@ class _StickerPreviewSheet extends StatelessWidget {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        backgroundColor: AppColors.error,
+                        backgroundColor: context.colors.error,
                         content: Text(
                           l10n.failedToShare(e),
                           style: const TextStyle(color: Colors.white),

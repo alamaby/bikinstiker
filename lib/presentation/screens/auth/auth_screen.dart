@@ -97,10 +97,10 @@ class _AuthScreenState extends State<AuthScreen>
             if (state.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  backgroundColor: AppColors.error,
+                  backgroundColor: context.colors.error,
                   content: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.white),
+                      Icon(Icons.error_outline, color: Colors.white),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -115,10 +115,10 @@ class _AuthScreenState extends State<AuthScreen>
             } else if (state.infoMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  backgroundColor: AppColors.success,
+                  backgroundColor: context.colors.tertiary,
                   content: Row(
                     children: [
-                      const Icon(Icons.check_circle, color: Colors.white),
+                      Icon(Icons.check_circle, color: Colors.white),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -137,7 +137,7 @@ class _AuthScreenState extends State<AuthScreen>
             return LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(horizontal: 24),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight,
@@ -147,13 +147,13 @@ class _AuthScreenState extends State<AuthScreen>
                       children: [
                         const SizedBox(height: 48),
                         Row(
-                          children: const [
+                          children: [
                             Icon(
                               Icons.auto_awesome,
                               size: 32,
-                              color: AppColors.primary,
+                              color: context.colors.primary,
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
                               'BikinStiker',
                               style: TextStyle(
@@ -178,8 +178,8 @@ class _AuthScreenState extends State<AuthScreen>
                         ] else ...[
                           TabBar(
                             controller: _tab,
-                            indicatorColor: AppColors.primary,
-                            labelColor: AppColors.primary,
+                            indicatorColor: context.colors.primary,
+                            labelColor: context.colors.primary,
                             unselectedLabelColor: context.textSecondary,
                             tabs: [
                               Tab(text: l10n.signIn),
@@ -332,8 +332,8 @@ class _AuthScreenState extends State<AuthScreen>
                                 _isSignUp
                                     ? l10n.alreadyHaveAccount
                                     : l10n.newHere,
-                                style: const TextStyle(
-                                  color: AppColors.primary,
+                                style: TextStyle(
+                                  color: context.colors.primary,
                                 ),
                               ),
                             ),

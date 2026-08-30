@@ -78,7 +78,7 @@ class PackCard extends StatelessWidget {
                           ),
                         ),
                         if (pack.isLocked)
-                          const Icon(
+                          Icon(
                             Icons.lock,
                             size: 16,
                             color: AppColors.warning,
@@ -129,7 +129,7 @@ class _PackThumbnail extends StatelessWidget {
         child: Icon(
           Icons.collections_bookmark,
           size: 48,
-          color: pack.isLocked ? context.hairline : AppColors.primary,
+          color: pack.isLocked ? context.hairline : context.colors.primary,
         ),
       ),
     );

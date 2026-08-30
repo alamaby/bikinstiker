@@ -158,7 +158,7 @@ class PresetPickerSheet extends StatelessWidget {
         crossAxisCount: 3,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        childAspectRatio: 0.92,
+        childAspectRatio: 0.80,
       ),
       itemCount: items.length,
       itemBuilder: (context, i) => _GridTile(

@@ -113,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildTopBar(AppLocalizations l10n) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
           TextButton(
@@ -127,11 +127,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               final isActive = i == _currentPage;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+                margin: EdgeInsets.symmetric(horizontal: 4),
                 width: isActive ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : context.hairline,
+                  color: isActive ? context.colors.primary : context.hairline,
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -144,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildStepPage(_OnboardingStepData step) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -152,10 +152,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Icon(step.icon, size: 56, color: AppColors.primary),
+            child: Icon(step.icon, size: 56, color: context.colors.primary),
           ),
           const SizedBox(height: 40),
           Text(

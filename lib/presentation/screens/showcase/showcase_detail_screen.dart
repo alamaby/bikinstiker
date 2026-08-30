@@ -91,7 +91,7 @@ class _ShowcaseDetailScreenState extends State<ShowcaseDetailScreen> {
                     ? Icons.favorite
                     : Icons.favorite_border,
                 color:
-                    _detail!.viewerFavorited ? AppColors.error : null,
+                    _detail!.viewerFavorited ? context.colors.error : null,
               ),
               onPressed: _busy ? null : _toggleFavorite,
             ),
@@ -516,7 +516,7 @@ class _ShowcaseDetailScreenState extends State<ShowcaseDetailScreen> {
       if (outcome.completed && outcome.packId != null) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(l10n.showcasePurchaseSuccess),
-          backgroundColor: AppColors.success,
+          backgroundColor: context.colors.tertiary,
         ));
         Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (_) => PackDetailScreen(packId: outcome.packId!),

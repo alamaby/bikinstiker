@@ -43,7 +43,7 @@ class DailyCheckinCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -59,20 +59,20 @@ class DailyCheckinCard extends StatelessWidget {
                 const Spacer(),
                 if (s.currentStreak > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.15),
+                      color: context.colors.tertiary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '🔥 ${s.currentStreak}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.success,
+                        color: context.colors.tertiary,
                       ),
                     ),
                   ),
@@ -118,9 +118,9 @@ class DailyCheckinCard extends StatelessWidget {
                     children: [
                       Text(
                         l10n.cycleComplete,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.success,
+                          color: context.colors.tertiary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -259,22 +259,22 @@ class _DayBoxState extends State<_DayBox> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutBack,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
+          margin: EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
             color: isCompleted
-                ? AppColors.success.withValues(alpha: 0.18)
+                ? context.colors.tertiary.withValues(alpha: 0.18)
                 : (isToday
-                      ? AppColors.primary.withValues(alpha: 0.12)
+                      ? context.colors.primary.withValues(alpha: 0.12)
                       : context.surfaceAlt),
             border: Border.all(
               color: isToday
-                  ? AppColors.primary
-                  : (isCompleted ? AppColors.success : context.hairline),
+                  ? context.colors.primary
+                  : (isCompleted ? context.colors.tertiary : context.hairline),
               width: isToday ? 2.5 : 1,
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: EdgeInsets.symmetric(vertical: 10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -288,7 +288,7 @@ class _DayBoxState extends State<_DayBox> {
                   fontWeight: FontWeight.w700,
                   color: locked
                       ? context.hairline
-                      : (isCompleted ? AppColors.success : context.textPrimary),
+                      : (isCompleted ? context.colors.tertiary : context.textPrimary),
                 ),
               ),
             ],

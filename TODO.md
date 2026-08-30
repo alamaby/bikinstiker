@@ -6,6 +6,7 @@ Dark mode + font brand + bottom nav + redesign Home/preset/PackCard. Plan: `plan
 
 - [x] **UIA (Ronde A, v0.24.0+80)** Plus Jakarta Sans bundel; `AppTheme.dark()` + themeMode system; component themes lengkap; sweep 23 file ke helper `context.*`; `Colors.white` selektif. Analyze 0, test 183/183, APK 3 ABI. Commit `3929d6e`. **Done**.
 - [x] **UIB (Ronde B, v0.25.0+81)** MainShell bottom nav (lazy IndexedStack); Home wordmark + kartu kredit gradasi animasi + Lottie sukses; PresetPickerSheet grid 3 kolom; PackCard cached_network_image + i18n; empty states lingkaran. Analyze 0, test 183/183, APK 3 ABI. **Done**.
+- [x] **UIB2 (review fixes)** Sweep `AppColors.primary/error/success` statis → `context.colors.*` di 26 file (dark-contrast); ads placeholder & tint missions theme-aware; preset grid aspect 0.80; StatusIndicator factory +BuildContext; perbaikan const bersarang & paren. Analyze 0, test 183/183, APK 3 ABI. **Done**.
 - [ ] **UIC (manual, owner)** Release APK `0.25.0+81` + smoke visual: mode gelap sistem (semua layar — laporkan residu warna), navigasi 4 tab, guest & plus flow.
 - [ ] **UID (disiplin)** Kode baru wajib helper `context.textSecondary` dsb. (bukan `Colors.black*`/`Colors.white`) — tercatat di header plan UI.
 

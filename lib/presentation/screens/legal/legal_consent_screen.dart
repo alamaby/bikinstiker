@@ -122,14 +122,14 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(24, 24, 24, 4),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
                     child: Text(
                       'BikinStiker',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
+                        color: context.colors.primary,
                       ),
                     ),
                   ),
@@ -145,8 +145,8 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
                   const SizedBox(height: 12),
                   TabBar(
                     controller: _tab,
-                    indicatorColor: AppColors.primary,
-                    labelColor: AppColors.primary,
+                    indicatorColor: context.colors.primary,
+                    labelColor: context.colors.primary,
                     unselectedLabelColor: context.textSecondary,
                     dividerHeight: 0,
                     tabs: [
@@ -240,11 +240,11 @@ class _LegalConsentScreenState extends State<LegalConsentScreen>
   Widget _message(AppLocalizations l10n, String body, {required bool showRetry}) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 40, color: AppColors.error),
+            Icon(Icons.error_outline, size: 40, color: context.colors.error),
             const SizedBox(height: 12),
             Text(
               body,

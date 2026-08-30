@@ -112,9 +112,9 @@ class _Placeholder extends StatelessWidget {
       height: 64,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: context.surfaceAlt,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: context.hairline),
       ),
       child: Center(
         child: Row(

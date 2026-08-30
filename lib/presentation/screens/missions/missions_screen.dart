@@ -72,7 +72,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                     safeErrorMessage(l10n, state.errorMessage,
                         fallback: l10n.claimFailed),
                   ),
-                  backgroundColor: AppColors.error,
+                  backgroundColor: context.colors.error,
                 ),
               );
               Future.delayed(const Duration(seconds: 3), () {
@@ -161,20 +161,20 @@ class _MissionsScreenState extends State<MissionsScreen> {
                         },
                         child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(24),
+                          padding: EdgeInsets.all(24),
                           children: [
                             const SizedBox(height: 80),
-                            const Icon(
+                            Icon(
                               Icons.error_outline,
                               size: 40,
-                              color: AppColors.error,
+                              color: context.colors.error,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               safeErrorMessage(l10n, state.errorMessage,
                                   fallback: l10n.error),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.error),
+                              style: TextStyle(color: context.colors.error),
                             ),
                             const SizedBox(height: 16),
                             Center(
@@ -418,7 +418,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                 child: IgnorePointer(
                   child: Container(
                     alignment: Alignment.center,
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: context.textPrimary.withValues(alpha: 0.04),
                     child: Lottie.asset(
                       'assets/animations/celebration.json',
                       width: 220,
@@ -433,7 +433,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                 child: IgnorePointer(
                   child: Container(
                     alignment: Alignment.center,
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: context.textPrimary.withValues(alpha: 0.04),
                     child: Lottie.asset(
                       'assets/animations/fire-flame.json',
                       width: 200,
@@ -488,10 +488,10 @@ class _MissionsScreenState extends State<MissionsScreen> {
   ) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: AppColors.success,
+        backgroundColor: context.colors.tertiary,
         content: Row(
           children: [
-            const Text('\u{1F389}', style: TextStyle(fontSize: 26)),
+            Text('\u{1F389}', style: TextStyle(fontSize: 26)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -551,16 +551,16 @@ class _SharePromptBanner extends StatelessWidget {
     final expiresAt = prompt.expiresAt;
     final minutesLeft = expiresAt.difference(DateTime.now()).inMinutes;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Material(
-        color: AppColors.primary.withValues(alpha: 0.10),
+        color: context.colors.primary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.link, color: AppColors.primary),
+              Icon(Icons.link, color: context.colors.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -659,7 +659,7 @@ class _MissionTile extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -706,9 +706,9 @@ class _MissionTile extends StatelessWidget {
                 if (isCompleted)
                   Text(
                     l10n.completed,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.success,
+                      color: context.colors.tertiary,
                       fontWeight: FontWeight.w600,
                     ),
                   )

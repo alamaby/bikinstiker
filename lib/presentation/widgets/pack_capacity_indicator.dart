@@ -25,10 +25,10 @@ class PackCapacityIndicator extends StatelessWidget {
         : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _isAtCapacity
-            ? AppColors.error.withValues(alpha: 0.1)
+            ? context.colors.error.withValues(alpha: 0.1)
             : context.surfaceAlt,
         border: Border.all(color: context.hairline),
         borderRadius: BorderRadius.circular(8),
@@ -44,7 +44,7 @@ class PackCapacityIndicator extends StatelessWidget {
                 l10n.packSlotsUsed(activeCount, slotCap),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: _isAtCapacity ? AppColors.error : null,
+                      color: _isAtCapacity ? context.colors.error : null,
                     ),
               ),
             ],
@@ -54,7 +54,7 @@ class PackCapacityIndicator extends StatelessWidget {
             value: progress,
             backgroundColor: context.hairline.withValues(alpha: 0.3),
             valueColor: AlwaysStoppedAnimation<Color>(
-              _isAtCapacity ? AppColors.error : AppColors.primary,
+              _isAtCapacity ? context.colors.error : context.colors.primary,
             ),
           ),
           if (_isAtCapacity) ...[
@@ -63,7 +63,7 @@ class PackCapacityIndicator extends StatelessWidget {
               l10n.packLimitReached,
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.error),
+              ).textTheme.bodySmall?.copyWith(color: context.colors.error),
             ),
           ],
         ],

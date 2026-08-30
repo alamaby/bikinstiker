@@ -82,7 +82,7 @@ class _PacksListScreenState extends State<PacksListScreen> {
                     safeErrorMessage(l10n, state.errorMessage,
                         fallback: l10n.errorOccurred),
                   ),
-                  backgroundColor: AppColors.error,
+                  backgroundColor: context.colors.error,
                 ),
               );
               Future.delayed(const Duration(seconds: 3), () {

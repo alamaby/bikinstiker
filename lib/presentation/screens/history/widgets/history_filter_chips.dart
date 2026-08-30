@@ -70,7 +70,7 @@ class FilterChipDropdown<T> extends StatelessWidget {
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_drop_down, size: 16),
+            Icon(Icons.arrow_drop_down, size: 16),
           ],
         ),
       ),
@@ -131,8 +131,8 @@ Future<void> _openFilterSheet<T>(
                               : null,
                           title: Text(option.label),
                           trailing: option.value == selected
-                              ? const Icon(Icons.check_circle,
-                                  color: AppColors.primary)
+                              ? Icon(Icons.check_circle,
+                                  color: context.colors.primary)
                               : null,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),

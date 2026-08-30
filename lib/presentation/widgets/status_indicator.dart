@@ -16,23 +16,26 @@ class StatusIndicator extends StatelessWidget {
     required this.color,
   });
 
-  factory StatusIndicator.success(String label) => StatusIndicator(
-    icon: Icons.check_circle,
-    label: label,
-    color: AppColors.success,
-  );
+  factory StatusIndicator.success(BuildContext context, String label) =>
+      StatusIndicator(
+        icon: Icons.check_circle,
+        label: label,
+        color: context.colors.tertiary,
+      );
 
-  factory StatusIndicator.error(String label) => StatusIndicator(
-    icon: Icons.error_outline,
-    label: label,
-    color: AppColors.error,
-  );
+  factory StatusIndicator.error(BuildContext context, String label) =>
+      StatusIndicator(
+        icon: Icons.error_outline,
+        label: label,
+        color: context.colors.error,
+      );
 
-  factory StatusIndicator.pending(String label) => StatusIndicator(
-    icon: Icons.hourglass_top,
-    label: label,
-    color: AppColors.primary,
-  );
+  factory StatusIndicator.pending(BuildContext context, String label) =>
+      StatusIndicator(
+        icon: Icons.hourglass_top,
+        label: label,
+        color: context.colors.primary,
+      );
 
   @override
   Widget build(BuildContext context) {

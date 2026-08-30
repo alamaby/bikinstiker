@@ -61,10 +61,10 @@ class _ProfileView extends StatelessWidget {
           if (state is ProfileActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                backgroundColor: AppColors.success,
+                backgroundColor: context.colors.tertiary,
                 content: Row(
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.white),
+                    Icon(Icons.check_circle, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(state.message),
                   ],
@@ -74,7 +74,7 @@ class _ProfileView extends StatelessWidget {
           } else if (state is ProfileError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                backgroundColor: AppColors.error,
+                backgroundColor: context.colors.error,
                 content: Row(
                   children: [
                     const Icon(Icons.error_outline, color: Colors.white),
@@ -173,7 +173,7 @@ class _ProfileView extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 48,
-          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+          backgroundColor: context.colors.primary.withValues(alpha: 0.2),
           backgroundImage: profile.hasAvatar
               ? NetworkImage(
                   '${getIt<SupabaseClient>().storage.from('avatars').getPublicUrl(profile.avatarUrl)}?t=${DateTime.now().millisecondsSinceEpoch}',
@@ -183,10 +183,10 @@ class _ProfileView extends StatelessWidget {
               ? null
               : Text(
                   (profile.displayName ?? 'A')[0].toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: context.colors.primary,
                   ),
                 ),
         ),
@@ -196,9 +196,9 @@ class _ProfileView extends StatelessWidget {
           child: GestureDetector(
             onTap: () => _showAvatarPicker(context, profile),
             child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: context.colors.primary,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -228,7 +228,7 @@ class _ProfileView extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -239,7 +239,7 @@ class _ProfileView extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.workspace_premium, color: AppColors.primary),
+                Icon(Icons.workspace_premium, color: context.colors.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -276,8 +276,8 @@ class _ProfileView extends StatelessWidget {
                 if (!subState.isPlus && !auth.isGuest)
                   Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
+                      gradient: LinearGradient(
+                        colors: [context.colors.primary, AppColors.secondary],
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -309,7 +309,7 @@ class _ProfileView extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.monetization_on, color: Colors.amber),
+                Icon(Icons.monetization_on, color: Colors.amber),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +339,7 @@ class _ProfileView extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -363,7 +363,7 @@ class _ProfileView extends StatelessWidget {
                     child: Text(
                       safeErrorMessage(l10n, state.error,
                           fallback: l10n.failedToLoadTransactions),
-                      style: const TextStyle(color: AppColors.error),
+                      style: TextStyle(color: context.colors.error),
                     ),
                   );
                 }
@@ -467,7 +467,7 @@ class _ProfileView extends StatelessWidget {
   Widget _buildTransactionTile(BuildContext context, dynamic tx) {
     final l10n = AppLocalizations.of(context)!;
     final isCredit = tx.amount > 0;
-    final color = isCredit ? AppColors.success : AppColors.error;
+    final color = isCredit ? context.colors.tertiary : context.colors.error;
     final icon = isCredit
         ? Icons.add_circle_outline
         : Icons.remove_circle_outline;
@@ -563,10 +563,10 @@ class _ProfileView extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.check, color: Colors.transparent),
+              leading: Icon(Icons.check, color: Colors.transparent),
               title: Text(l10n.english),
               trailing: current == 'en'
-                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  ? Icon(Icons.check_circle, color: context.colors.primary)
                   : null,
               onTap: () {
                 cubit.setLocale(const Locale('en'));
@@ -574,10 +574,10 @@ class _ProfileView extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.check, color: Colors.transparent),
+              leading: Icon(Icons.check, color: Colors.transparent),
               title: Text(l10n.bahasaIndonesia),
               trailing: current == 'id'
-                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  ? Icon(Icons.check_circle, color: context.colors.primary)
                   : null,
               onTap: () {
                 cubit.setLocale(const Locale('id'));
@@ -597,7 +597,7 @@ class _ProfileView extends StatelessWidget {
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.help_outline, color: AppColors.primary),
+            leading: Icon(Icons.help_outline, color: context.colors.primary),
             title: Text(l10n.howItWorks),
             subtitle: Text(l10n.howItWorksSubtitle),
             trailing: const Icon(Icons.chevron_right),
@@ -617,14 +617,14 @@ class _ProfileView extends StatelessWidget {
   Widget _buildDangerZone(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Card(
-      color: AppColors.error.withValues(alpha: 0.05),
+      color: context.colors.error.withValues(alpha: 0.05),
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.primary),
+            leading: Icon(Icons.logout, color: context.colors.primary),
             title: Text(
               l10n.logout,
-              style: const TextStyle(color: AppColors.primary),
+              style: TextStyle(color: context.colors.primary),
             ),
             subtitle: Text(
               l10n.signOutDevice,
@@ -647,10 +647,10 @@ class _ProfileView extends StatelessWidget {
           ),
           const Divider(height: 1),
           ListTile(
-            leading: Icon(Icons.delete_forever, color: AppColors.error),
+            leading: Icon(Icons.delete_forever, color: context.colors.error),
             title: Text(
               l10n.deleteAccount,
-              style: TextStyle(color: AppColors.error),
+              style: TextStyle(color: context.colors.error),
             ),
             subtitle: Text(
               l10n.deleteAccountSubtitle,
@@ -822,7 +822,7 @@ class _ProfileView extends StatelessWidget {
             child: Text(l10n.cancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            style: FilledButton.styleFrom(backgroundColor: context.colors.error),
             onPressed: () {
               Navigator.pop(ctx);
               context.read<ProfileCubit>().deleteAccount();

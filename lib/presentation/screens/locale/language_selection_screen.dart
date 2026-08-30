@@ -33,15 +33,15 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 64),
-              const Icon(
+              Icon(
                 Icons.auto_awesome,
                 size: 48,
-                color: AppColors.primary,
+                color: context.colors.primary,
               ),
               const SizedBox(height: 16),
               Text(
@@ -103,17 +103,17 @@ class _LanguageOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? AppColors.primary.withValues(alpha: 0.08)
+          ? context.colors.primary.withValues(alpha: 0.08)
           : context.surfaceAlt,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           decoration: BoxDecoration(
             border: Border.all(
-              color: selected ? AppColors.primary : context.hairline,
+              color: selected ? context.colors.primary : context.hairline,
               width: selected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(14),
@@ -123,7 +123,7 @@ class _LanguageOption extends StatelessWidget {
               Text(label, style: const TextStyle(fontSize: 17)),
               const Spacer(),
               if (selected)
-                const Icon(Icons.check_circle, color: AppColors.primary),
+                Icon(Icons.check_circle, color: context.colors.primary),
             ],
           ),
         ),

@@ -139,8 +139,8 @@ class _AddToPackSheetState extends State<AddToPackSheet>
                 controller: _tab,
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
-                indicatorColor: AppColors.primary,
-                labelColor: AppColors.primary,
+                indicatorColor: context.colors.primary,
+                labelColor: context.colors.primary,
                 unselectedLabelColor: context.textSecondary,
                 dividerHeight: 0,
                 tabs: kEmojiCategories.asMap().entries.map((entry) {
@@ -325,9 +325,9 @@ class _AddToPackSheetState extends State<AddToPackSheet>
   void _addToPack(BuildContext context, StickerPack pack) {
     if (_selectedEmojis.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one emoji'),
-          backgroundColor: AppColors.error,
+        SnackBar(
+          content: const Text('Please select at least one emoji'),
+          backgroundColor: context.colors.error,
         ),
       );
       return;
@@ -349,7 +349,7 @@ class _AddToPackSheetState extends State<AddToPackSheet>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: AppColors.success,
+        backgroundColor: context.colors.tertiary,
       ),
     );
   }

@@ -735,7 +735,7 @@ class _CreditsCard extends StatelessWidget {
                     ? l10n.creditsPlus
                     : l10n.credits;
                 return Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -831,15 +831,15 @@ class _CreditsCard extends StatelessWidget {
                           message: l10n.lowBalance,
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.warning_amber,
-                                color: AppColors.error,
+                                color: context.colors.error,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 l10n.low,
-                                style: const TextStyle(
-                                  color: AppColors.error,
+                                style: TextStyle(
+                                  color: context.colors.error,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -1007,7 +1007,7 @@ Future<void> _shareSticker(BuildContext context, String signedUrl) async {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: AppColors.error,
+        backgroundColor: context.colors.error,
         content: Text(
           l10n == null ? 'Failed to share sticker: $e' : l10n.failedToShare(e),
           style: const TextStyle(color: Colors.white),
@@ -1050,7 +1050,7 @@ class _ResultPanel extends StatelessWidget {
               case StickerGenStatus.success:
                 return Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1064,15 +1064,15 @@ class _ResultPanel extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.check_circle,
-                              color: AppColors.success,
+                              color: context.colors.tertiary,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               l10n.done,
-                              style: const TextStyle(
-                                color: AppColors.success,
+                              style: TextStyle(
+                                color: context.colors.tertiary,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1091,10 +1091,9 @@ class _ResultPanel extends StatelessWidget {
                                         .getCachedImageFile(genState.imageUrl!),
                                     builder: (context, snap) {
                                       if (snap.hasError) {
-                                        return const Center(
-                                          child: Icon(
+                                        return Center(
+                                          child: const Icon(
                                             Icons.broken_image_outlined,
-                                            color: AppColors.error,
                                           ),
                                         );
                                       }
@@ -1112,10 +1111,9 @@ class _ResultPanel extends StatelessWidget {
                                       );
                                     },
                                   )
-                                : const Center(
-                                    child: Icon(
+                                : Center(
+                                    child: const Icon(
                                       Icons.broken_image_outlined,
-                                      color: AppColors.error,
                                     ),
                                   ),
                           ),
@@ -1129,28 +1127,28 @@ class _ResultPanel extends StatelessWidget {
                         ],
                         if (!isGuest) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.08),
+                              color: context.colors.primary.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.lightbulb_outline,
                                   size: 16,
-                                  color: AppColors.primary,
+                                  color: context.colors.primary,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   l10n.nextAddToPack,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: AppColors.primary,
+                                    color: context.colors.primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1222,15 +1220,15 @@ class _ResultPanel extends StatelessWidget {
 
                 return Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        Icon(icon, color: AppColors.error),
+                        Icon(icon, color: context.colors.error),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             msg,
-                            style: const TextStyle(color: AppColors.error),
+                            style: TextStyle(color: context.colors.error),
                           ),
                         ),
                       ],
@@ -1255,17 +1253,17 @@ class _GuestResultCta extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.08),
+            color: context.colors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+            border: Border.all(color: context.colors.primary.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.info_outline,
-                color: AppColors.primary,
+                color: context.colors.primary,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -1364,16 +1362,16 @@ class _RateLimitedCardState extends State<_RateLimitedCard> {
         : l10n.tooManyRequestsWait(_remaining);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        padding: EdgeInsets.fromLTRB(16, 8, 8, 8),
         child: Row(
           children: [
-            const Icon(Icons.timer_off_outlined, color: AppColors.error),
+            Icon(Icons.timer_off_outlined, color: context.colors.error),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(msg, style: const TextStyle(color: AppColors.error)),
+              child: Text(msg, style: TextStyle(color: context.colors.error)),
             ),
             IconButton(
-              icon: const Icon(Icons.close, color: AppColors.error),
+              icon: Icon(Icons.close, color: context.colors.error),
               tooltip: l10n.dismiss,
               onPressed: () {
                 _timer?.cancel();
@@ -1437,16 +1435,16 @@ class _ParallelRequestCardState extends State<_ParallelRequestCard> {
         : l10n.generationInProgress;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        padding: EdgeInsets.fromLTRB(16, 8, 8, 8),
         child: Row(
           children: [
-            const Icon(Icons.hourglass_top, color: AppColors.error),
+            Icon(Icons.hourglass_top, color: context.colors.error),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(msg, style: const TextStyle(color: AppColors.error)),
+              child: Text(msg, style: TextStyle(color: context.colors.error)),
             ),
             IconButton(
-              icon: const Icon(Icons.close, color: AppColors.error),
+              icon: Icon(Icons.close, color: context.colors.error),
               tooltip: l10n.dismiss,
               onPressed: () {
                 _timer?.cancel();
@@ -1573,16 +1571,16 @@ class _PresetErrorView extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 40, color: AppColors.error),
+            Icon(Icons.error_outline, size: 40, color: context.colors.error),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.error),
+              style: TextStyle(color: context.colors.error),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(

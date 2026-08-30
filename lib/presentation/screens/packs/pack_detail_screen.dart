@@ -103,7 +103,7 @@ class _PackDetailScreenState extends State<PackDetailScreen> {
                         safeErrorMessage(l10n, state.errorMessage,
                             fallback: l10n.errorOccurred),
                       ),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: context.colors.error,
                     ),
                   );
                   Future.delayed(const Duration(seconds: 3), () {
@@ -218,7 +218,7 @@ if (items.isEmpty)
   ) {
     final canExport = pack.canExport;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.surfaceAlt,
         border: Border(top: BorderSide(color: context.hairline)),
@@ -230,7 +230,7 @@ if (items.isEmpty)
 onPressed: canExport
                    ? () => _onExportToWhatsApp(context, pack, l10n)
                    : null,
-              icon: const Icon(Icons.send),
+              icon: Icon(Icons.send),
               label: Text(
                 canExport
                     ? l10n.exportToWhatsApp
@@ -238,7 +238,7 @@ onPressed: canExport
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: canExport
-                    ? AppColors.success
+                    ? context.colors.tertiary
                     : context.hairline,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
@@ -288,21 +288,21 @@ onPressed: canExport
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.openingWhatsApp),
-            backgroundColor: AppColors.success,
+            backgroundColor: context.colors.tertiary,
           ),
         );
       case WhatsAppExportNotInstalled():
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.whatsAppNotInstalled),
-            backgroundColor: AppColors.error,
+            backgroundColor: context.colors.error,
           ),
         );
       case WhatsAppExportError(:final message):
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.exportFailed(message)),
-            backgroundColor: AppColors.error,
+            backgroundColor: context.colors.error,
           ),
         );
     }
@@ -399,7 +399,7 @@ onPressed: canExport
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+              style: ElevatedButton.styleFrom(backgroundColor: context.colors.error),
               child: Text(l10n.delete),
             ),
           ],
@@ -437,7 +437,7 @@ onPressed: canExport
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+              style: ElevatedButton.styleFrom(backgroundColor: context.colors.error),
               child: Text(l10n.remove),
             ),
           ],
@@ -470,7 +470,7 @@ class _PackHeader extends StatelessWidget {
             Icon(
               Icons.collections_bookmark,
               size: 32,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -501,7 +501,7 @@ class _PackHeader extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.lock, color: AppColors.warning),
+                Icon(Icons.lock, color: AppColors.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -515,16 +515,16 @@ class _PackHeader extends StatelessWidget {
         ] else if (itemCount >= 3) ...[
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.12),
+              color: context.colors.tertiary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.check_circle,
-                  color: AppColors.success,
+                  color: context.colors.tertiary,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -532,7 +532,7 @@ class _PackHeader extends StatelessWidget {
                   child: Text(
                     l10n.packReadyCallout,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.success,
+                          color: context.colors.tertiary,
                           fontWeight: FontWeight.w600,
                         ),
                   ),

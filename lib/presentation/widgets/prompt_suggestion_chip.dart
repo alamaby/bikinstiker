@@ -43,10 +43,10 @@ class _PromptSuggestionChipState extends State<PromptSuggestionChip> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          const Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+          Icon(Icons.auto_awesome, size: 14, color: context.colors.primary),
           const SizedBox(width: 6),
           Expanded(
             child: GestureDetector(
@@ -54,21 +54,21 @@ class _PromptSuggestionChipState extends State<PromptSuggestionChip> {
                   ? () => widget.onSuggestionSelected(_current)
                   : null,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
+                  color: context.colors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
+                    color: context.colors.primary.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Text(
                   (AppLocalizations.of(context)?.trySuggestion(_current)) ??
                       'Try: "$_current"',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontStyle: FontStyle.italic,
-                    color: AppColors.primary,
+                    color: context.colors.primary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -79,9 +79,9 @@ class _PromptSuggestionChipState extends State<PromptSuggestionChip> {
           const SizedBox(width: 4),
           GestureDetector(
             onTap: _shuffle,
-            child: const Padding(
-              padding: EdgeInsets.all(4),
-              child: Icon(Icons.refresh, size: 18, color: AppColors.primary),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.refresh, size: 18, color: context.colors.primary),
             ),
           ),
         ],

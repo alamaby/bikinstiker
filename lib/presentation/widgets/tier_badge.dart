@@ -11,10 +11,10 @@ class TierBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPlus = tier == SubscriptionTier.plus;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: isPlus
-            ? AppColors.primary
+            ? context.colors.primary
             : context.hairline.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),

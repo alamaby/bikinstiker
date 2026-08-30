@@ -248,7 +248,7 @@ class _ListingCard extends StatelessWidget {
                             style: const TextStyle(fontSize: 10)),
                         visualDensity: VisualDensity.compact,
                         backgroundColor:
-                            AppColors.success.withValues(alpha: 0.85),
+                            context.colors.tertiary.withValues(alpha: 0.85),
                       ),
                     ),
                 ],

@@ -53,7 +53,7 @@ class _PackCreateScreenState extends State<PackCreateScreen> {
             content: Text(
               l10n == null ? 'Failed to create pack: $e' : l10n.failedCreatePack,
             ),
-            backgroundColor: AppColors.error,
+            backgroundColor: context.colors.error,
           ),
         );
         setState(() => _isSubmitting = false);

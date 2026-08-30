@@ -35,6 +35,7 @@ Memperindah tampilan aplikasi sesuai audit UI: Tier 1 (dark mode + font brand + 
 
 ## Progress Log
 - 2026-08-30 14:20 — Ronde A & B selesai, verifikasi hijau, siap release 0.25.0+81.
+- 2026-08-30 16:30 — Code review implementasi: 4 temuan, semua diperbaiki. (1) HIGH dark-contrast: 131 pemakaian `AppColors.primary/error/success` statis → sweep ke `context.colors.*` di 26 file (dark memakai sky-blue/vermillion/green versi terang); (2) MEDIUM `Colors.grey.shade200` placeholder ads & tint missions → theme-aware; (3) MEDIUM preset grid aspect 0.92 → 0.80 (headroom badge+tanggal utk label 2 baris); (4) efek samping sweep: `StatusIndicator` factory butuh BuildContext (4 call site diupdate), beberapa `const` bersarang dirapikan, 1 paren liar diperbaiki. Verifikasi: analyze 0, test 183/183, APK 3 ABI. Residual disengaja: `AppColors.secondary`/`warning` tetap statis (identik kedua tema); shadow `Colors.black12` dipertahankan (semantik shadow).
 
 ## Notes
 - Disiplin ke depan: kode baru wajib pakai helper `context.*` (bukan warna hardcoded) supaya dark mode terjaga; `Colors.black*/Colors.white` dilarang di lib/ kecuali teks di atas warna brand.

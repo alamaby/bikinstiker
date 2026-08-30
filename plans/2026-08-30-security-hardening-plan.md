@@ -29,6 +29,8 @@ Eksekusi hasil analisa keamanan + triage Supabase Advisor (56 fungsi SECURITY DE
 
 ## Progress Log
 - 2026-08-30 11:45 — Migrasi dibuat setelah klasifikasi 56 fungsi + verifikasi guard.
+- 2026-08-30 13:10 — Push #1 + verifikasi curl produksi: internal 4/4 denied, TAPI 35 client + views masih bisa anon → akar: grant efektif dari PUBLIC (REVOKE per-role no-op). Fix: migrasi follow-up `20260830000002_security_hardening_public_closure.sql` (REVOKE anon+PUBLIC; GRANT authenticated+service_role; views tutup PUBLIC).
+- 2026-08-30 13:40 — Push #2 + verifikasi curl penuh: **56/56 fungsi + 11/11 views DENIED untuk anon** (14 internal 42501/PGRST202, 28 client ber-argumen 42501, 9 zero-arg 42501 termasuk 3 yang sebelumnya tereksekusi; kontrol tabel 200 `[]`). Sisa: smoke app owner (role authenticated) + re-run advisor (SH2c).
 
 ## Notes
 - Tanpa perubahan kode app/EF; murni SQL privilege. verify_jwt & app keys tidak tersentuh.

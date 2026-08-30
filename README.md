@@ -1,6 +1,6 @@
 # BikinStiker
 
-AI-powered WhatsApp sticker generator. Users pick a preset style + type a short prompt → the backend builds a strict "die-cut sticker, pure white background" prompt → calls the OpenRouter `sourceful/riverflow-v2-fast` model → atomically deducts credits and returns a freshly generated sticker.
+AI-powered WhatsApp sticker generator. Users pick a preset style + type a short prompt → the backend builds a strict "die-cut sticker on a flat chroma background" prompt → calls a configurable image provider chain → post-processes the result (chroma background removal + white outline) into a transparent 512×512 WebP → atomically deducts credits and returns a freshly generated sticker.
 
 ---
 
@@ -139,6 +139,13 @@ supabase start             # spins up Postgres, Auth, Storage, Studio
 
 After `supabase start` completes, copy the printed `API URL` and `anon key` into `.env`.
 
+> **API keys**: Supabase is replacing the legacy JWT `anon`/`service_role`
+> keys with `sb_publishable_...` / `sb_secret_...` (deprecated end of 2026).
+> The app accepts either — prefer `SUPABASE_PUBLISHABLE_KEY=sb_publishable_...`
+> in `.env` (legacy `SUPABASE_ANON_KEY` still works as a fallback). Locally,
+> `supabase start` only prints the legacy pair; deployed edge functions read
+> the new-style keys first via `supabase/functions/_shared/keys.ts`.
+
 ### Working with the submodule
 
 ```bash
@@ -188,11 +195,11 @@ The function `supabase/functions/generate-sticker/index.ts` does the following o
 1. Authenticates the JWT and resolves `auth.uid()`.
 2. Validates `{ userInput, presetId }`, caps prompt length at 200 chars, rejects unknown presets.
 3. Maps the preset to a concrete style descriptor and builds the strict final prompt:
-   `die-cut sticker, pure white background, thick white border, centered subject, no shadow, high contrast, <style> style. Subject: <userInput>`.
+   `die-cut sticker foreground subject, centered on a perfectly flat solid chroma magenta background, no gradient, no texture, no scenery, high contrast, <style> style. Subject: <userInput>`.
 4. Calls `deduct_credit_for_sticker(p_cost=1, p_preset, p_prompt)`. User is derived from `auth.uid()` inside the RPC. If insufficient → HTTP 402.
-5. Calls OpenRouter `sourceful/riverflow-v2-fast` with `modalities: ["image"]`.
-6. Uploads the resulting bytes to `stickers/{user_id}/{sticker_id}.png` using the **service role** key.
-7. Updates the row with `image_url`, `final_prompt`, and `status='success'`.
+5. Calls the configured image provider chain (OpenRouter, Gemini, Pollinations, or Pixazo). The winning output is post-processed in the Edge Function: the chroma magenta background is removed via an edge-connected flood fill, a white outline is added programmatically, and the result is re-encoded as a transparent 512×512 WebP plus a lossless PNG derivative.
+6. Uploads the WebP and PNG to `stickers/{user_id}/{sticker_id}.{webp,png}` using the **service role** key.
+7. Updates the row with `image_url`, `image_png_path`, `final_prompt`, and `status='success'`.
 8. Returns `{ stickerId, signedUrl, path, finalPrompt }` (signed URL valid 1 hour).
 9. On any failure after step 4, calls `refund_failed_sticker` to mark the row failed, restore the balance, and write a compensating `refund` ledger row.
 

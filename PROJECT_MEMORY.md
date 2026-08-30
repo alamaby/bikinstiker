@@ -1,12 +1,27 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-29
-- **Perubahan terakhir:** Filter layar Stiker Anda (Riwayat): Status/Gaya/Tanggal/Urutkan kini bottom sheet (bukan dropdown); baris chip pakai Wrap — filter Urutkan yang tadinya terpotong di kanan Tanggal kini selalu terlihat. Versi `0.23.1+78`.
-- **Verifikasi:** flutter analyze 0 issues; flutter test 183/183; build apk 3 ABI sukses
-- **Blocker aktif:** release APK `0.23.1+78` (HF4); deploy manual MR5 (`supabase db push` migrasi 20260829 + deploy `surprise-me` & `generate-sticker`). Sisa legacy: smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional).
+- **Terakhir dikerjakan:** 2026-08-30
+- **Perubahan terakhir:** Migrasi Supabase new API keys: helper dual-read `_shared/keys.ts` (JSON `SUPABASE_SECRET_KEYS`/`SUPABASE_PUBLISHABLE_KEYS` → fallback legacy) dipakai 10 edge functions; Flutter terima `SUPABASE_PUBLISHABLE_KEY` ?? `SUPABASE_ANON_KEY`; ping workflow fallback sb_secret; config.toml `verify_jwt=false` admob-ssv & share-redirect. Versi `0.23.2+79`.
+- **Verifikasi:** deno 156 lulus (keys 6, generate-sticker 109, surprise-me 15, list-presets 7, showcase 13+6); flutter analyze 0; flutter test 183/183; build apk 3 ABI
+- **Blocker aktif:** migrasi produksi SK4 (urut: buat sb_secret → deploy 10 EF → release APK → smoke → disable legacy + pantau). Sisa legacy: deploy MR5, FX5 smoke, smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional), SK5 deno-check pre-existing.
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-30 | Migrasi Supabase New API Keys (sb_publishable / sb_secret)
+- **Status:** selesai implementasi. Pending deploy (10 edge functions, tanpa migrasi DB).
+- **Latar:** legacy JWT anon/service_role keys deprecated akhir 2026, diganti `sb_publishable_...`/`sb_secret_...` (bukan JWT; hanya header `apikey`; disable legacy manual & reversible). Platform inject env **plural JSON** ke EF: `SUPABASE_SECRET_KEYS`/`SUPABASE_PUBLISHABLE_KEYS` berdampingan legacy; setelah legacy di-disable legacy vars mati (issue #37648).
+- **Keputusan Owner:** implementasi langsung + strategi dual-read (bukan SDK `@supabase/server`, bukan swap langsung).
+- **Keputusan Teknis:**
+  - Helper `_shared/keys.ts` `resolveSupabaseKeys()/resolveAnonKey()/resolveServiceKey()`: prefer JSON baru (`['default']` → nilai pertama non-kosong; JSON malformed → legacy), fallback `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY`. Nol perubahan logika di 10 function — hanya swap deklarasi.
+  - Fallback legacy WAJIB dipertahankan: `supabase start` lokal masih legacy-only; CI GH bisa keduanya.
+  - verify_jwt: dibiarkan `true` untuk function ter-autentikasi selama transisi (gateway masih verifikasi user-JWT; user token tetap JWT). Saat legacy di-disable, risiko "Invalid JWT" (#41834) → checklist SK4.6 (flip false + deploy; reversible).
+  - Perbaikan discrepancy: `verify_jwt=false` eksplisit untuk admob-ssv & share-redirect (public + verifikasi sendiri; sebelumnya tak ada entry padahal migrasi 20260708000024 mendokumentasikannya).
+  - Flutter: `SUPABASE_PUBLISHABLE_KEY` ?? `SUPABASE_ANON_KEY` (owner `.env` campuran aman). Ping workflow: `${{ secrets.SUPABASE_SECRET_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}`, header apikey saja (key baru ditolak di Authorization Bearer).
+  - 3 test kontrak env-name (H1 guard) diupdate: assert `resolveSupabaseKeys()` di index.ts + nama legacy & `SUPABASE_SECRET_KEYS` di keys.ts.
+- **File:** `supabase/functions/_shared/{keys.ts,keys_test.ts,deno.json}` (NEW), 10 × `functions/*/index.ts`, 3 × `index_test.ts`, `config.toml`, `lib/data/datasources/supabase_client.dart`, `lib/core/constants/env_constants.dart`, `.env.example`, `README.md`, `.github/workflows/ping-supabase.yml`, `pubspec.yaml` (`0.23.2+79`), plan & TODO.
+- **Verifikasi:** deno 156 lulus; analyze 0; test 183/183; APK 3 ABI. Temuan: `deno check` admob-ssv & migrate-guest-stickers gagal pre-existing (WebCrypto typing, terverifikasi via stash) → SK5 backlog.
+- **Proposed commit:** `feat(infra): migrate to supabase publishable/secret api keys with legacy fallback`
 
 ### 2026-08-29 | History Filter → Bottom Sheet + Fix Terpotong
 - **Status:** selesai. Murni Flutter, tanpa backend.

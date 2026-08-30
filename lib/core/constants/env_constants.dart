@@ -8,5 +8,9 @@ class EnvConstants {
 
   static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
 
-  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  /// New-style publishable key (sb_publishable_...) with legacy anon fallback.
+  static String get supabaseAnonKey =>
+      dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ??
+      dotenv.env['SUPABASE_ANON_KEY'] ??
+      '';
 }

@@ -1,5 +1,22 @@
 # TODO
 
+## Migrasi Supabase New API Keys (sb_publishable / sb_secret) (2026-08-30)
+
+Legacy JWT anon/service_role keys deprecated akhir 2026. Strategi dual-read helper — lokal/CI/produksi jalan keduanya. Plan: `plans/2026-08-30-supabase-new-api-keys-plan.md`. Versi `0.23.2+79`.
+
+- [x] **SK1** `_shared/keys.ts` (dual-read: `SUPABASE_SECRET_KEYS`/`SUPABASE_PUBLISHABLE_KEYS` JSON → fallback legacy) + 6 test; 10 edge functions ter-swap; 3 test kontrak env-name diupdate. Deno 156 lulus. **Done (2026-08-30)** — pending deploy.
+- [x] **SK2** config.toml: `verify_jwt=false` eksplisit untuk admob-ssv & share-redirect (public, verifikasi sendiri — perbaiki discrepancy). **Done (2026-08-30)** — ikut deploy.
+- [x] **SK3** Flutter dual-read (`SUPABASE_PUBLISHABLE_KEY` ?? `SUPABASE_ANON_KEY`); `.env.example` + README; ping workflow `SUPABASE_SECRET_KEY || SERVICE_ROLE_KEY` (apikey header saja); pubspec `0.23.2+79`. Verifikasi: analyze 0, test 183/183, APK 3 ABI. **Done (2026-08-30)**.
+- [ ] **SK4 (manual, owner — urut!)** Migrasi produksi:
+  1. Dashboard → Settings → API Keys → buat sb_secret (sb_publishable biasanya sudah ada; `.env.flutter` lokal sudah memakainya).
+  2. Set GitHub secret `SUPABASE_SECRET_KEY` (ping workflow punya fallback ke legacy, aman kapan pun).
+  3. Push submodule → deploy **semua 10** edge functions (`generate-sticker surprise-me list-presets showcase-purchase-copy showcase-preview admob-ssv derive-tray-icon share-redirect create-guest-migration migrate-guest-stickers`) — helper dual-read bekerja dengan env legacy maupun baru.
+  4. Release APK `0.23.2+79`.
+  5. Smoke penuh (generate, surprise, list-presets free/plus, showcase preview+purchase, share link, check-in).
+  6. **Disable legacy keys** di Dashboard → pantau error log edge functions. Bila muncul "Invalid JWT" pada function ter-autentikasi: flip `verify_jwt=false` di config.toml untuk function tsb + deploy ulang (disable legacy reversible — re-activate untuk rollback).
+  7. Setelah stabil: hapus fallback legacy di `_shared/keys.ts` + `.env` bila CLI sudah mendukung key baru.
+- [ ] **SK5 (backlog)** `deno check` pre-existing gagal di admob-ssv (importKey spki typing) & migrate-guest-stickers (crypto.subtle ambiguity std vs WebCrypto) — bereskan terpisah dari migrasi ini.
+
 ## History Filter → Bottom Sheet + Fix Filter Terpotong (2026-08-29)
 
 Layar Stiker Anda: filter Status/Gaya/Tanggal dropdown → bottom sheet; filter Urutkan (kanan Tanggal) terpotong di layar ponsel. Versi `0.23.1+78`.

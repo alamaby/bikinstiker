@@ -8,11 +8,16 @@ class SupabaseBootstrap {
   static Future<void> init() async {
     await dotenv.load(fileName: '.env');
     final url = dotenv.env['SUPABASE_URL'];
-    final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
+    // New-style publishable key (sb_publishable_...) preferred; the legacy
+    // anon key is still accepted during the migration window.
+    final anonKey =
+        dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ??
+        dotenv.env['SUPABASE_ANON_KEY'];
 
     if (url == null || anonKey == null || url.isEmpty || anonKey.isEmpty) {
       throw StateError(
-        'Missing SUPABASE_URL / SUPABASE_ANON_KEY in .env. Copy .env.example.',
+        'Missing SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY (or legacy '
+        'SUPABASE_ANON_KEY) in .env. Copy .env.example.',
       );
     }
 

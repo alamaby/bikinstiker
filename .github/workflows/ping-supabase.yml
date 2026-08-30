@@ -8,29 +8,28 @@ on:
 jobs:
   ping:
     runs-on: ubuntu-latest
+    env:
+      # Prefer the new-style secret key (sb_secret_...); fall back to the
+      # legacy service_role key until it is disabled in the dashboard.
+      SUPABASE_API_KEY: ${{ secrets.SUPABASE_SECRET_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Ping sticker_presets
         run: |
           curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/sticker_presets?select=count&limit=0" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+            -H "apikey: $SUPABASE_API_KEY"
       - name: Ping user_profiles
         run: |
           curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/user_profiles?select=count&limit=0" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+            -H "apikey: $SUPABASE_API_KEY"
       - name: Ping user_wallets
         run: |
           curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/user_wallets?select=count&limit=0" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+            -H "apikey: $SUPABASE_API_KEY"
       - name: Ping sticker_generations
         run: |
           curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/sticker_generations?select=count&limit=0" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+            -H "apikey: $SUPABASE_API_KEY"
       - name: Ping credit_transactions
         run: |
           curl -s -f "${{ secrets.SUPABASE_URL }}/rest/v1/credit_transactions?select=count&limit=0" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+            -H "apikey: $SUPABASE_API_KEY"

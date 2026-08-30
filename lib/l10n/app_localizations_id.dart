@@ -1296,4 +1296,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get sortBy => 'Urutkan';
+
+  @override
+  String get navHome => 'Beranda';
+
+  @override
+  String get navMissions => 'Misi';
+
+  @override
+  String get navPacks => 'Pack';
+
+  @override
+  String get navHistory => 'Riwayat';
+
+  @override
+  String packStickerCount(int count, int max) {
+    return '$count/$max stiker';
+  }
 }

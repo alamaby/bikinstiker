@@ -1,5 +1,14 @@
 # TODO
 
+## UI Refresh Tier 1+2 (2026-08-30)
+
+Dark mode + font brand + bottom nav + redesign Home/preset/PackCard. Plan: `plans/2026-08-30-ui-refresh-plan.md`.
+
+- [x] **UIA (Ronde A, v0.24.0+80)** Plus Jakarta Sans bundel; `AppTheme.dark()` + themeMode system; component themes lengkap; sweep 23 file ke helper `context.*`; `Colors.white` selektif. Analyze 0, test 183/183, APK 3 ABI. Commit `3929d6e`. **Done**.
+- [x] **UIB (Ronde B, v0.25.0+81)** MainShell bottom nav (lazy IndexedStack); Home wordmark + kartu kredit gradasi animasi + Lottie sukses; PresetPickerSheet grid 3 kolom; PackCard cached_network_image + i18n; empty states lingkaran. Analyze 0, test 183/183, APK 3 ABI. **Done**.
+- [ ] **UIC (manual, owner)** Release APK `0.25.0+81` + smoke visual: mode gelap sistem (semua layar — laporkan residu warna), navigasi 4 tab, guest & plus flow.
+- [ ] **UID (disiplin)** Kode baru wajib helper `context.textSecondary` dsb. (bukan `Colors.black*`/`Colors.white`) — tercatat di header plan UI.
+
 ## Security Hardening — Granular Privileges (2026-08-30)
 
 Eksekusi triage advisor: 56 RPC SECURITY DEFINER anon-executable + 11 views terbaca anon. Strategi REVOKE granular (keputusan owner). Plan: `plans/2026-08-30-security-hardening-plan.md`.

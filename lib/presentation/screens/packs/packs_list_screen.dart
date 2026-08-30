@@ -225,10 +225,17 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.collections_bookmark_outlined,
-              size: 64,
-              color: context.hairline,
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: context.surfaceAlt,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.collections_bookmark_outlined,
+                size: 44,
+                color: context.textFaint,
+              ),
             ),
             const SizedBox(height: 16),
             Text(

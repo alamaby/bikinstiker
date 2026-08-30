@@ -17,7 +17,7 @@ class PresetLimitedBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: AppColors.secondary.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
         border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5)),
       ),
       child: Row(
@@ -39,10 +39,11 @@ class PresetLimitedBadge extends StatelessWidget {
   }
 }
 
-/// Bottom-sheet catalog of sticker presets. Seasonal presets are grouped in a
-/// top section with a limited-time header; above-tier presets render as
-/// locked tiles — tapping one shows a Plus hint instead of selecting. Tier
-/// enforcement itself always happens server-side in generate-sticker.
+/// Bottom-sheet catalog of sticker presets as a visual grid. Seasonal presets
+/// are grouped in a top section with a limited-time header; above-tier
+/// presets render as locked tiles — tapping one shows a Plus hint instead of
+/// selecting. Tier enforcement itself always happens server-side in
+/// generate-sticker.
 class PresetPickerSheet extends StatelessWidget {
   final List<StickerPreset> presets;
   final String? selectedId;
@@ -130,10 +131,10 @@ class PresetPickerSheet extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      ...seasonal.map((p) => _buildTile(context, l10n, p)),
-                      const SizedBox(height: 8),
+                      _buildGrid(context, l10n, seasonal),
+                      const SizedBox(height: 12),
                     ],
-                    ...regular.map((p) => _buildTile(context, l10n, p)),
+                    _buildGrid(context, l10n, regular),
                   ],
                 ),
               ),
@@ -144,86 +145,147 @@ class PresetPickerSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildTile(
+  Widget _buildGrid(
     BuildContext context,
     AppLocalizations l10n,
-    StickerPreset p,
+    List<StickerPreset> items,
   ) {
-    final selected = p.id == selectedId;
-    final locked = p.isLockedFor(viewRole);
-    final validUntil = p.validUntil;
-
-    return Opacity(
-      opacity: locked ? 0.55 : 1,
-      child: ListTile(
-        leading: Text(p.emoji ?? '', style: const TextStyle(fontSize: 24)),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                localizedPresetLabel(l10n, p),
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-            ),
-            if (p.isSeasonal) ...[
-              const SizedBox(width: 6),
-              const PresetLimitedBadge(),
-            ],
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              localizedPresetDescription(l10n, p),
-              style: const TextStyle(fontSize: 13),
-            ),
-            if (p.isSeasonal && validUntil != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.hourglass_bottom,
-                    size: 12,
-                    color: AppColors.secondary,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      l10n.seasonalEndsOn(
-                        DateFormat.yMMMd(l10n.localeName)
-                            .format(validUntil.toLocal()),
-                      ),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.secondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-        trailing: selected
-            ? const Icon(Icons.check_circle, color: AppColors.primary)
-            : locked
-            ? Icon(Icons.lock_outline, size: 20, color: context.textFaint)
-            : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 0.92,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, i) => _GridTile(
+        preset: items[i],
+        selected: items[i].id == selectedId,
+        locked: items[i].isLockedFor(viewRole),
         onTap: () {
-          if (locked) {
+          if (items[i].isLockedFor(viewRole)) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.plusOnlyPreset)),
             );
             return;
           }
-          onSelect(p.id);
+          onSelect(items[i].id);
         },
+      ),
+    );
+  }
+}
+
+class _GridTile extends StatelessWidget {
+  final StickerPreset preset;
+  final bool selected;
+  final bool locked;
+  final VoidCallback onTap;
+
+  const _GridTile({
+    required this.preset,
+    required this.selected,
+    required this.locked,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final validUntil = preset.validUntil;
+
+    return Opacity(
+      opacity: locked ? 0.55 : 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadii.medium),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? context.colors.primary.withValues(alpha: 0.10)
+                : context.surfaceAlt,
+            borderRadius: BorderRadius.circular(AppRadii.medium),
+            border: Border.all(
+              color: selected
+                  ? context.colors.primary
+                  : context.hairline.withValues(alpha: 0.7),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(preset.emoji ?? '',
+                        style: const TextStyle(fontSize: 26)),
+                    const SizedBox(height: 6),
+                    Text(
+                      localizedPresetLabel(l10n, preset),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
+                        color: context.textPrimary,
+                      ),
+                    ),
+                    if (preset.isSeasonal) ...[
+                      const SizedBox(height: 4),
+                      const PresetLimitedBadge(),
+                    ],
+                    if (preset.isSeasonal && validUntil != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        DateFormat.yMMMd(l10n.localeName)
+                            .format(validUntil.toLocal()),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (selected)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: context.colors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_rounded,
+                      size: 12,
+                      color: context.colors.onPrimary,
+                    ),
+                  ),
+                )
+              else if (locked)
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Icon(
+                    Icons.lock_outline,
+                    size: 13,
+                    color: context.textFaint,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

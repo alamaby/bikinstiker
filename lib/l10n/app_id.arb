@@ -417,5 +417,16 @@
   "presetYearInReviewScrapbookLabel": "Scrapbook Rekap Tahunan",
   "presetYearInReviewScrapbookDesc": "Refleksi akhir tahun scrapbook",
   "connectionError": "Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi.",
-  "sortBy": "Urutkan"
+  "sortBy": "Urutkan",
+  "navHome": "Beranda",
+  "navMissions": "Misi",
+  "navPacks": "Pack",
+  "navHistory": "Riwayat",
+  "packStickerCount": "{count}/{max} stiker",
+  "@packStickerCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  }
 }

@@ -1291,4 +1291,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sortBy => 'Sort by';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navMissions => 'Missions';
+
+  @override
+  String get navPacks => 'Packs';
+
+  @override
+  String get navHistory => 'History';
+
+  @override
+  String packStickerCount(int count, int max) {
+    return '$count/$max stickers';
+  }
 }

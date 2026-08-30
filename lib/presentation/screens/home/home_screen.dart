@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/presets.dart';
 import '../../../core/constants/prompt_suggestions.dart';
@@ -20,7 +21,6 @@ import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
-import '../../blocs/sticker_pack/sticker_pack_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
 import '../../blocs/surprise_me/surprise_me_cubit.dart';
 import '../../blocs/surprise_me/surprise_me_state.dart';
@@ -35,8 +35,6 @@ import '../../widgets/sticker_feedback_buttons.dart';
 import '../../widgets/surprise_me_button.dart';
 import '../../widgets/tier_badge.dart';
 import '../auth/auth_screen.dart';
-import '../packs/packs_list_screen.dart';
-import '../history/history_screen.dart';
 import '../missions/missions_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -319,9 +317,24 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'BikinStiker',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Bikin',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: context.textPrimary,
+              ),
+            ),
+            const Text(
+              'Stiker',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppColors.secondary,
+              ),
+            ),
+          ],
         ),
         actions: [
           BlocBuilder<AuthBloc, AuthBlocState>(
@@ -334,42 +347,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: _openAuthWall,
                 );
               }
-              return Row(
-                children: [
-                  IconButton(
-                    tooltip: l10n.missions,
-                    icon: const Icon(Icons.emoji_events_outlined),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const MissionsScreen()),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: l10n.myPacks,
-                    icon: const Icon(Icons.collections_bookmark_outlined),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<StickerPackBloc>(),
-                          child: const PacksListScreen(),
-                        ),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: l10n.history,
-                    icon: const Icon(Icons.history),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: l10n.profile,
-                    icon: const Icon(Icons.person_outline),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                    ),
-                  ),
-                ],
+              return IconButton(
+                tooltip: l10n.profile,
+                icon: const Icon(Icons.person_outline),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                ),
               );
             },
           ),
@@ -751,80 +734,119 @@ class _CreditsCard extends StatelessWidget {
                     : subState.isPlus
                     ? l10n.creditsPlus
                     : l10n.credits;
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.bolt,
-                          color: low ? AppColors.error : AppColors.secondary,
-                          size: 32,
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        context.colors.primary.withValues(alpha: 0.14),
+                        AppColors.secondary.withValues(alpha: 0.10),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadii.medium),
+                    border: Border.all(
+                      color: context.colors.primary.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    label,
-                                    style: TextStyle(
-                                      color: context.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  if (!isGuest) ...[
-                                    const SizedBox(width: 6),
-                                    TierBadge(
-                                      tier:
-                                          subState.subscription?.tier ??
-                                          SubscriptionTier.free,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              Text(
-                                walletState.loading ? '…' : '$balance',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              if (isGuest)
+                        child: const Icon(
+                          Icons.bolt,
+                          color: AppColors.secondary,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
                                 Text(
-                                  l10n.createAccountForCredits,
+                                  label,
                                   style: TextStyle(
-                                    fontSize: 11,
                                     color: context.textSecondary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                                if (!isGuest) ...[
+                                  const SizedBox(width: 6),
+                                  TierBadge(
+                                    tier:
+                                        subState.subscription?.tier ??
+                                        SubscriptionTier.free,
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 350),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0, 0.35),
+                                        end: Offset.zero,
+                                      ).animate(animation),
+                                      child: child,
+                                    ),
+                                  ),
+                              child: Text(
+                                walletState.loading ? '…' : '$balance',
+                                key: ValueKey<int>(balance),
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                            if (isGuest)
+                              Text(
+                                l10n.createAccountForCredits,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (low)
+                        Tooltip(
+                          message: l10n.lowBalance,
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber,
+                                color: AppColors.error,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                l10n.low,
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        if (low)
-                          Tooltip(
-                            message: l10n.lowBalance,
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber,
-                                  color: AppColors.error,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  l10n.low,
-                                  style: const TextStyle(
-                                    color: AppColors.error,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
                 );
               },
@@ -1032,6 +1054,14 @@ class _ResultPanel extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Center(
+                          child: Lottie.asset(
+                            'assets/animations/success-sparkle.json',
+                            height: 72,
+                            repeat: false,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
                             const Icon(
@@ -1505,7 +1535,18 @@ class _EmptyPresetsView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.style_outlined, size: 36, color: context.hairline),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: context.surfaceAlt,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.style_outlined,
+              size: 32,
+              color: context.textFaint,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             l10n.noStylesAvailable,

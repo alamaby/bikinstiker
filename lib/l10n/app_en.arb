@@ -417,5 +417,16 @@
   "presetYearInReviewScrapbookLabel": "Year in Review Scrapbook",
   "presetYearInReviewScrapbookDesc": "Scrapbook year-in-review",
   "connectionError": "No internet connection. Check your network and try again.",
-  "sortBy": "Sort by"
+  "sortBy": "Sort by",
+  "navHome": "Home",
+  "navMissions": "Missions",
+  "navPacks": "Packs",
+  "navHistory": "History",
+  "packStickerCount": "{count}/{max} stickers",
+  "@packStickerCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  }
 }

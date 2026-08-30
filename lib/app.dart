@@ -36,11 +36,11 @@ import 'presentation/blocs/wallet/wallet_bloc.dart';
 import 'presentation/blocs/legal_consent/legal_consent_cubit.dart';
 import 'presentation/blocs/legal_consent/legal_consent_state.dart';
 import 'presentation/screens/auth/auth_screen.dart';
-import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/legal/legal_consent_error_screen.dart';
 import 'presentation/screens/legal/legal_consent_screen.dart';
 import 'presentation/screens/locale/language_selection_screen.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
+import 'presentation/screens/shell/main_shell_screen.dart';
 
 class BikinStikerApp extends StatelessWidget {
   const BikinStikerApp({super.key});
@@ -359,7 +359,7 @@ class _AuthGateState extends State<_AuthGate> {
     if (!onboarding.hasCompletedCoreFlow) {
       return OnboardingScreen(onFinished: () => setState(() {}));
     }
-    return const HomeScreen();
+    return const MainShellScreen();
   }
 }
 

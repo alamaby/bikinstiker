@@ -2431,6 +2431,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sort by'**
   String get sortBy;
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navMissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Missions'**
+  String get navMissions;
+
+  /// No description provided for @navPacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Packs'**
+  String get navPacks;
+
+  /// No description provided for @navHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get navHistory;
+
+  /// No description provided for @packStickerCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}/{max} stickers'**
+  String packStickerCount(int count, int max);
 }
 
 class _AppLocalizationsDelegate

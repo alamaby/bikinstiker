@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -22,6 +23,7 @@ class PackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -85,7 +87,7 @@ class PackCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${pack.stickerCount}/30 stickers',
+                      l10n.packStickerCount(pack.stickerCount, 30),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: context.textPrimary.withValues(alpha: 0.6),
                       ),
@@ -110,10 +112,11 @@ class _PackThumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = pack.firstStickerSignedUrl;
     if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
+      return CachedNetworkImage(
+        imageUrl: url,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _placeholder(context),
+        placeholder: (context, url) => _placeholder(context),
+        errorWidget: (context, url, error) => _placeholder(context),
       );
     }
     return _placeholder(context);

@@ -2,11 +2,30 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-08-30
-- **Perubahan terakhir:** Migrasi Supabase new API keys: helper dual-read `_shared/keys.ts` (JSON `SUPABASE_SECRET_KEYS`/`SUPABASE_PUBLISHABLE_KEYS` → fallback legacy) dipakai 10 edge functions; Flutter terima `SUPABASE_PUBLISHABLE_KEY` ?? `SUPABASE_ANON_KEY`; ping workflow fallback sb_secret; config.toml `verify_jwt=false` admob-ssv & share-redirect. Versi `0.23.2+79`.
-- **Verifikasi:** deno 156 lulus (keys 6, generate-sticker 109, surprise-me 15, list-presets 7, showcase 13+6); flutter analyze 0; flutter test 183/183; build apk 3 ABI
-- **Blocker aktif:** migrasi produksi SK4 (urut: buat sb_secret → deploy 10 EF → release APK → smoke → disable legacy + pantau). Sisa legacy: deploy MR5, FX5 smoke, smoke purchase showcase (SSC5), seed pack owner, ToS v2, manual VALIDATE constraint surprise-me, patch credential Cloudflare (opsional), SK5 deno-check pre-existing.
+- **Perubahan terakhir:** Security hardening granular: migrasi `20260830000001` — 21 fungsi internal-only REVOKE (anon+authenticated+PUBLIC, GRANT service_role), 35 fungsi client REVOKE anon saja, 11 analytics views REVOKE SELECT dari client roles, search_path pin ×2. Versi app tetap `0.23.2+79` (murni SQL).
+- **Verifikasi:** review manual 56 signature vs advisor metadata; guard internal terverifikasi (admin_grant_credits=current_user, showcase refund/set_tray/soft_delete/deduct=auth.uid). Verifikasi penuh di tangan owner (SH2: SQL has_*_privilege + curl anon + smoke app).
+- **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-30 | Security Hardening (Advisor Triage, Granular)
+- **Status:** migrasi siap. Pending deploy + verifikasi owner (SH2).
+- **Latar:** analisa keamanan menyeluruh + triage advisor: 56 RPC SECURITY DEFINER anon-executable, 11 SECURITY DEFINER views terbaca anon, 2 search_path mutable. Root cause meluasnya flag: default privileges platform me-re-grant EXECUTE ke anon/authenticated saat setiap `CREATE OR REPLACE` — revoke lama tersilangkan (bukti: complete_mission_for_user di-revoke 20260708000024 tapi tetap ter-flag).
+- **Keputusan Owner:** REVOKE granular per fungsi (eksplisit di katalog), bukan blanket.
+- **Temuan analisa (terverifikasi ke body migrasi):**
+  - AMAN (guard internal): admin_grant_credits (current_user postgres-only), complete_mission_for_user, refund_pending_showcase_purchase (auth.uid+buyer), set_tray_icon, soft_delete_account, deduct_credit_for_sticker, migrate_guest_stickers.
+  - BERCALAH: acquire/release_generation_lock (p_user_id arbitrer, tanpa guard → DoS generasi bila uid diketahui), refund_failed_sticker (tanpa cek kepemilikan → griefing refund), cron/ops tanpa guard (expire_old_credits, downgrade_expired_subscription, grant_monthly_credits, check_and_lock_expired_plus, handle_pack_slot_downgrade, lock_excess_packs), rls_auto_enable ADA DI DB tapi TIDAK ADA di migrasi (dibuat manual — drift; revoke dibatasi dampak, audit menyusul SH3).
+  - Views = agregat bisnis tanpa PII (user_id hanya di CTE) → bocornya intel bisnis, bukan PII.
+  - Fakta kunci: guest = anonymous AUTH user (role `authenticated`) → revoke dari `anon` nol dampak ke alur client; semua EF pakai service-role/user-JWT client.
+- **Keputusan Teknis:**
+  - Klasifikasi 56: 21 internal-only (revoke 3 roles + GRANT service_role; termasuk unlock_packs_on_upgrade & get_preset_cost yang terbukti tanpa caller) vs 35 client (revoke anon saja).
+  - Views: REVOKE SELECT dari anon+authenticated (SQL Editor postgres tak terpengaruh) — dipilih daripada recreate security_invoker (lebih kecil risikonya).
+  - search_path pin via ALTER FUNCTION (handle_user_profile_updated_at, handle_new_user_profile).
+  - SH4 disiplin: migrasi future yang OR REPLACE fungsi daftar SH1 wajib mengulang REVOKE (default privileges re-grant).
+  - Sengaja TIDAK revoke authenticated untuk fungsi client — advisor `authenticated_security_definer_function_executable` ±35 by design (pola repo).
+- **File:** `supabase/migrations/20260830000001_security_hardening.sql` (NEW), `plans/2026-08-30-security-hardening-plan.md` (NEW), TODO.md.
+- **Verifikasi:** signature 56 fungsi dicocokkan persis ke metadata advisor; guard dibaca dari body migrasi. Verifikasi runtime di owner (SH2).
+- **Proposed commit:** `fix(db): granular rpc/view privilege hardening per security advisor triage`
 
 ### 2026-08-30 | Migrasi Supabase New API Keys (sb_publishable / sb_secret)
 - **Status:** selesai implementasi. Pending deploy (10 edge functions, tanpa migrasi DB).

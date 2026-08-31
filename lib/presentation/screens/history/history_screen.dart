@@ -6,11 +6,13 @@ import 'package:intl/intl.dart';
 
 import '../../../core/di.dart';
 import '../../../core/errors/safe_error_message.dart';
-import '../../../core/share_helper.dart';
+import '../../../core/localization/preset_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
+import '../../../data/models/sticker_preset.dart';
 import '../../../data/repositories/sticker_repository.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/history/history_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
@@ -18,6 +20,7 @@ import '../../blocs/subscription/subscription_bloc.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/ads_banner_widget.dart';
 import '../../widgets/status_indicator.dart';
+import '../../widgets/sticker_feedback_buttons.dart';
 import 'widgets/history_filter_chips.dart';
 import 'widgets/history_search_field.dart';
 
@@ -135,58 +138,69 @@ class _FilterBar extends StatelessWidget {
     final isPlus = context.read<SubscriptionBloc>().state.isPlus;
     final presets = context.watch<PresetBloc>().state.presets;
 
+    final filterChips = <Widget>[
+      FilterChipDropdown<HistoryStatusFilter>(
+        label: l10n.status,
+        title: l10n.status,
+        current: state.statusFilter,
+        options: buildStatusFilterOptions(l10n),
+        onSelected: (f) => context
+            .read<HistoryBloc>()
+            .add(HistoryStatusFilterChanged(f)),
+      ),
+      FilterChipDropdown<String>(
+        label: l10n.preset,
+        title: l10n.preset,
+        current: state.presetFilter ?? '',
+        options: buildPresetFilterOptions(presets: presets, l10n: l10n),
+        onSelected: (id) => context.read<HistoryBloc>().add(
+              HistoryPresetFilterChanged(id.isEmpty ? null : id),
+            ),
+      ),
+      FilterChipDropdown<HistoryDateFilter>(
+        label: l10n.date,
+        title: l10n.date,
+        current: state.dateFilter,
+        options: buildDateFilterOptions(l10n),
+        onSelected: isPlus
+            ? (f) => context
+                .read<HistoryBloc>()
+                .add(HistoryDateFilterChanged(f))
+            : (_) => _showPlusOnlySnackBar(context, l10n.dateFilter),
+        locked: !isPlus,
+      ),
+      FilterChipDropdown<HistorySort>(
+        label: l10n.sortBy,
+        title: l10n.sortBy,
+        current: state.sort,
+        options: buildSortOptions(l10n),
+        onSelected: (s) =>
+            context.read<HistoryBloc>().add(HistorySortChanged(s)),
+      ),
+    ];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Wrap instead of Row: on narrow screens chips flow to a second
-          // line instead of clipping the rightmost (sort) control.
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilterChipDropdown<HistoryStatusFilter>(
-                label: l10n.status,
-                title: l10n.status,
-                current: state.statusFilter,
-                options: buildStatusFilterOptions(l10n),
-                onSelected: (f) => context
-                    .read<HistoryBloc>()
-                    .add(HistoryStatusFilterChanged(f)),
-              ),
-              FilterChipDropdown<String>(
-                label: l10n.preset,
-                title: l10n.preset,
-                current: state.presetFilter ?? '',
-                options: buildPresetFilterOptions(presets: presets, l10n: l10n),
-                onSelected: (id) => context.read<HistoryBloc>().add(
-                      HistoryPresetFilterChanged(id.isEmpty ? null : id),
-                    ),
-              ),
-              FilterChipDropdown<HistoryDateFilter>(
-                label: l10n.date,
-                title: l10n.date,
-                current: state.dateFilter,
-                options: buildDateFilterOptions(l10n),
-                onSelected: isPlus
-                    ? (f) => context
-                        .read<HistoryBloc>()
-                        .add(HistoryDateFilterChanged(f))
-                    : (_) => _showPlusOnlySnackBar(context, l10n.dateFilter),
-                locked: !isPlus,
-              ),
-              FilterChipDropdown<HistorySort>(
-                label: l10n.sortBy,
-                title: l10n.sortBy,
-                current: state.sort,
-                options: buildSortOptions(l10n),
-                onSelected: (s) =>
-                    context.read<HistoryBloc>().add(HistorySortChanged(s)),
-              ),
-            ],
+          // Single row with horizontal scroll: every filter stays reachable
+          // without wrapping to a second line on narrow screens.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < filterChips.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 8),
+                  filterChips[i],
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: 8),
-          HistorySearchField(            enabled: state.status != HistoryStatus.loading,
+          HistorySearchField(
+            enabled: state.status != HistoryStatus.loading,
             locked: !isPlus,
             onChanged: (q) =>
                 context.read<HistoryBloc>().add(HistorySearchChanged(q)),
@@ -289,6 +303,7 @@ class _HistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final df = DateFormat.yMMMd().add_jm();
+    final presetLabel = _resolvePresetLabel(context, l10n, item.presetName);
     final tile = Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -316,7 +331,7 @@ class _HistoryTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${item.presetName} • ${df.format(item.createdAt.toLocal())}',
+                    '$presetLabel • ${df.format(item.createdAt.toLocal())}',
                     style: TextStyle(color: context.textSecondary, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
@@ -460,6 +475,9 @@ class _StickerPreviewSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final df = DateFormat.yMMMd().add_jm();
+    final isGuest = context.read<AuthBloc>().state.isGuest;
+    final presetLabel =
+        _resolvePresetLabel(context, l10n, item.presetName);
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       minChildSize: 0.5,
@@ -503,36 +521,16 @@ class _StickerPreviewSheet extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${item.presetName} • ${df.format(item.createdAt.toLocal())}',
+                '$presetLabel • ${df.format(item.createdAt.toLocal())}',
                 style: TextStyle(color: context.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () async {
-                  try {
-                    final repo = getIt<StickerRepository>();
-                    final signedUrl = await repo.signedUrlForPath(
-                      item.imageUrl!,
-                    );
-                    if (signedUrl == null || !context.mounted) return;
-                    await shareStickerImage(signedUrl);
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: context.colors.error,
-                        content: Text(
-                          l10n.failedToShare(e),
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.share),
-                label: Text(l10n.share),
-              ),
-              const SizedBox(height: 8),
+              if (!isGuest) ...[
+                StickerFeedbackButtons(
+                  stickerGenerationId: item.id,
+                ),
+                const SizedBox(height: 12),
+              ],
               FilledButton.tonalIcon(
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -547,6 +545,24 @@ class _StickerPreviewSheet extends StatelessWidget {
       },
     );
   }
+}
+
+/// Resolves a friendly preset label for a history item whose `presetName`
+/// holds a raw preset id. Looks up the matching [StickerPreset] in the
+/// app-level [PresetBloc] to use its server label as the fallback, then
+/// delegates to [localizedPresetLabelById].
+String _resolvePresetLabel(
+  BuildContext context,
+  AppLocalizations l10n,
+  String presetId,
+) {
+  final presets = context.read<PresetBloc>().state.presets;
+  final matched = presets.where((p) => p.id == presetId).firstOrNull;
+  return localizedPresetLabelById(
+    l10n,
+    presetId,
+    serverLabel: matched?.label,
+  );
 }
 
 // ---------------------------------------------------------------------------

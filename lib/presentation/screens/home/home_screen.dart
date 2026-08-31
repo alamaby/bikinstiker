@@ -197,33 +197,84 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(
-          insufficient
-              ? l10n.notEnoughCredits
-              : free
-              ? l10n.surpriseConfirmTitleFree
-              : l10n.surpriseConfirmTitlePaid,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            if (insufficient) ...[
-              Text(l10n.surpriseCostLine),
-              const SizedBox(height: 4),
-              Text(l10n.surpriseTopUpViaMissions),
-            ] else if (free)
-              Text(l10n.surpriseConfirmBodyFree(quota!.freeRemaining))
-            else ...[
-              Text(l10n.surpriseCostLine),
-              const SizedBox(height: 4),
-              Text(
-                quota != null
-                    ? l10n.surpriseConfirmBodyPaid(quota.balance - 1)
-                    : l10n.surpriseCostLine,
+            Icon(
+              insufficient ? Icons.bolt : Icons.casino,
+              color: Theme.of(dialogContext).colorScheme.primary,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                insufficient
+                    ? l10n.notEnoughCredits
+                    : free
+                    ? l10n.surpriseConfirmTitleFree
+                    : l10n.surpriseConfirmTitlePaid,
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
-            ],
+            ),
           ],
+        ),
+        content: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(dialogContext)
+                .colorScheme
+                .primary
+                .withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (insufficient) ...[
+                Text(
+                  l10n.surpriseCostLine,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.surpriseTopUpViaMissions,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ] else if (free)
+                Text(
+                  l10n.surpriseConfirmBodyFree(quota!.freeRemaining),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              else ...[
+                Text(
+                  l10n.surpriseCostLine,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  quota != null
+                      ? l10n.surpriseConfirmBodyPaid(quota.balance - 1)
+                      : l10n.surpriseCostLine,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -1035,14 +1086,6 @@ class _ResultPanel extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(
-                          child: Lottie.asset(
-                            'assets/animations/success-sparkle.json',
-                            height: 72,
-                            repeat: false,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
                             Icon(
@@ -1060,45 +1103,7 @@ class _ResultPanel extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child:
-                                genState.imageUrl != null &&
-                                    genState.imageUrl!.isNotEmpty
-                                ? FutureBuilder<File?>(
-                                    future: getIt<StickerRepository>()
-                                        .getCachedImageFile(genState.imageUrl!),
-                                    builder: (context, snap) {
-                                      if (snap.hasError) {
-                                        return Center(
-                                          child: const Icon(
-                                            Icons.broken_image_outlined,
-                                          ),
-                                        );
-                                      }
-                                      final file = snap.data;
-                                      if (file == null) {
-                                        return const Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        );
-                                      }
-                                      return Image.file(
-                                        file,
-                                        fit: BoxFit.contain,
-                                      );
-                                    },
-                                  )
-                                : Center(
-                                    child: const Icon(
-                                      Icons.broken_image_outlined,
-                                    ),
-                                  ),
-                          ),
-                        ),
+                        _StickerReveal(imageUrl: genState.imageUrl),
                         const SizedBox(height: 12),
                         if (!isGuest && genState.stickerId != null) ...[
                           StickerFeedbackButtons(
@@ -1203,6 +1208,107 @@ class _ResultPanel extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sticker reveal: image with a one-shot sparkle overlay that fades out so the
+// generated sticker is "revealed" underneath. Replaces the old fixed 72px
+// Lottie block that left empty space above the "Done" row.
+// ---------------------------------------------------------------------------
+
+class _StickerReveal extends StatefulWidget {
+  final String? imageUrl;
+  const _StickerReveal({required this.imageUrl});
+
+  @override
+  State<_StickerReveal> createState() => _StickerRevealState();
+}
+
+class _StickerRevealState extends State<_StickerReveal>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _overlayVisible = true;
+
+  // One-shot forward; the sparkle plays once then fades out in its last 30%.
+  static const _fadeStart = 0.7;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() => _overlayVisible = false);
+      }
+    });
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AspectRatio(
+          aspectRatio: 1,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
+                ? FutureBuilder<File?>(
+                    future: getIt<StickerRepository>()
+                        .getCachedImageFile(widget.imageUrl!),
+                    builder: (context, snap) {
+                      if (snap.hasError) {
+                        return const Center(
+                          child: Icon(Icons.broken_image_outlined),
+                        );
+                      }
+                      final file = snap.data;
+                      if (file == null) {
+                        return const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        );
+                      }
+                      return Image.file(file, fit: BoxFit.contain);
+                    },
+                  )
+                : const Center(child: Icon(Icons.broken_image_outlined)),
+          ),
+        ),
+        if (_overlayVisible)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) {
+                  final v = _controller.value.clamp(0.0, 1.0);
+                  final opacity =
+                      v < _fadeStart ? 1.0 : (1.0 - (v - _fadeStart) / (1 - _fadeStart));
+                  return Opacity(
+                    opacity: opacity.clamp(0.0, 1.0),
+                    child: Lottie.asset(
+                      'assets/animations/success-sparkle.json',
+                      controller: _controller,
+                      repeat: false,
+                      fit: BoxFit.contain,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

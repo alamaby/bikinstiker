@@ -2,9 +2,15 @@ import '../../data/models/sticker_preset.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Localizes a DB-driven preset label via its stable id, falling back to the
-/// server-provided English label when no translation key exists yet.
-String localizedPresetLabel(AppLocalizations l10n, StickerPreset preset) {
-  switch (preset.id) {
+/// server-provided English label when no translation key exists yet. Accepts
+/// a raw preset id (as stored in `sticker_generations.preset_name`) so it can
+/// be used from history tiles/sheets without a full [StickerPreset] object.
+String localizedPresetLabelById(
+  AppLocalizations l10n,
+  String presetId, {
+  String? serverLabel,
+}) {
+  switch (presetId) {
     case 'kawaii':
       return l10n.presetKawaiiLabel;
     case 'pixel_art':
@@ -58,8 +64,29 @@ String localizedPresetLabel(AppLocalizations l10n, StickerPreset preset) {
     case 'year_in_review_scrapbook':
       return l10n.presetYearInReviewScrapbookLabel;
     default:
-      return preset.label;
+      // Prefer the server-provided label; otherwise humanize the id so the
+      // UI never shows raw snake_case (e.g. "minimal_line" -> "Minimal Line").
+      return (serverLabel != null && serverLabel.isNotEmpty)
+          ? serverLabel
+          : humanizePresetId(presetId);
   }
+}
+
+/// Localizes a DB-driven preset label via its stable id, falling back to the
+/// server-provided English label when no translation key exists yet.
+String localizedPresetLabel(AppLocalizations l10n, StickerPreset preset) =>
+    localizedPresetLabelById(l10n, preset.id, serverLabel: preset.label);
+
+/// Turns a snake_case preset id into a readable title-cased label, used only
+/// as a last-resort fallback when neither a translation key nor a server
+/// label is available.
+String humanizePresetId(String id) {
+  if (id.isEmpty) return id;
+  final words = id.split('_').where((w) => w.isNotEmpty);
+  return words
+      .map((w) =>
+          w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+      .join(' ');
 }
 
 String localizedPresetDescription(AppLocalizations l10n, StickerPreset preset) {

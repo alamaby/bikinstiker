@@ -1,10 +1,27 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-30
-- **Perubahan terakhir:** Security hardening granular: migrasi `20260830000001` — 21 fungsi internal-only REVOKE (anon+authenticated+PUBLIC, GRANT service_role), 35 fungsi client REVOKE anon saja, 11 analytics views REVOKE SELECT dari client roles, search_path pin ×2. Versi app tetap `0.23.2+79` (murni SQL).
-- **Verifikasi:** review manual 56 signature vs advisor metadata; guard internal terverifikasi (admin_grant_credits=current_user, showcase refund/set_tray/soft_delete/deduct=auth.uid). Verifikasi penuh di tangan owner (SH2: SQL has_*_privilege + curl anon + smoke app).
+- **Terakhir dikerjakan:** 2026-08-31
+- **Perubahan terakhir:** 5 perbaikan UI riwayat + hasil generate + dialog Surprise Me (murni Flutter, tanpa backend). Versi app `0.26.1+83`. Lihat plan `plans/2026-08-31-history-and-result-ui-polish-plan.md`.
+- **Verifikasi:** `flutter pub get` OK; `flutter analyze` 0 issues; `flutter test` 183/183; `flutter build apk --split-per-abi` sukses (3 APK: 21.3/23.2/24.6 MB).
 - **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
+
+## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-08-31 | Riwayat & Result UI Polish (5 poin)
+- **Status:** selesai. Murni Flutter, tanpa backend/migrasi/key ARB baru.
+- **Latar:** Lima temuan UI owner: (1) filter riwayat memakai 2 baris (Wrap); (2) sheet pratinjau riwayat masih punya tombol Bagikan tidak konsisten dengan desain hasil generate; (3) nama preset di tile/sheet masih code (`kawaii`/`back_to_school_doodle`); (4) animasi sukses 72px di atas "Selesai" meninggalkan ruang kosong setelah selesai; (5) tipografi dialog "Ide kejutan gratis" datang polos.
+- **Keputusan Teknis:**
+  - `_FilterBar` (`history_screen.dart`): `Wrap` → `SingleChildScrollView(Axis.horizontal)` + `Row(mainAxisSize.min)` dengan separator `SizedBox(width:8)`; `HistorySearchField` tetap di baris bawah. Semua 4 chip tetap reachable via scroll horizontal tanpa wrap baris kedua.
+  - `preset_localizations.dart`: ekstrak `localizedPresetLabelById(l10n, presetId, {serverLabel})` (menerima raw id seperti `sticker_generations.preset_name`); `localizedPresetLabel(l10n, preset)` jadi 1-baris delegasi. Fallback default: `serverLabel` kalau ada, else helper baru `humanizePresetId(id)` (snake_case → Title Case, mis. `minimal_line` → "Minimal Line") supaya UI tidak pernah tampilkan code mentah.
+  - `_HistoryTile` & `_StickerPreviewSheet`: helper baru `_resolvePresetLabel(context, l10n, presetId)` — look up `StickerPreset` matching via root `PresetBloc` (by `item.presetName` = id preset) lalu `localizedPresetLabelById(..., serverLabel: matched?.label)`. Ganti `${item.presetName}` → `$presetLabel`.
+  - `_StickerPreviewSheet`: hapus `FilledButton.icon(share)` + import `share_helper.dart` (tak terpakai); tambah `StickerFeedbackButtons(stickerGenerationId: item.id)` gated `!isGuest` (mirror `_ResultPanel`), agar desain konsisten dengan hasil generate. Import `auth_bloc.dart` + `sticker_feedback_buttons.dart` + `sticker_preset.dart` + `preset_localizations.dart` ditambahkan ke `history_screen.dart`.
+  - `_ResultPanel` success (`home_screen.dart`): hapus `Center(Lottie success-sparkle height:72)` + `SizedBox(height:4)` di atas baris "Selesai" → baris Done sekarang di paling atas konten card (ruang kosong 72px hilang). Ganti `AspectRatio(image)` → `_StickerReveal(imageUrl)`.
+  - `_StickerReveal` StatefulWidget baru + `SingleTickerProviderStateMixin`: `AnimationController` 900ms forward sekali; `Stack` menumpuk Lottie `success-sparkle` (controller-driven, `fit: BoxFit.contain`, `repeat:false`) di atas image via `Positioned.fill` + `IgnorePointer` + `AnimatedBuilder` — opacity hold 1.0 sampai 70% lalu fade linear ke 0 di 30% terakhir; `addStatusListener(completed)` → `setState(_overlayVisible=false)` agar overlay benar-benar hilang. Efek reveal: stiker ter-reveal di bawah sparkle yang memudar.
+  - Dialog Surprise Me (`home_screen.dart` `_onSurpriseMePressed`): tetap `AlertDialog` tanpa key ARB baru. `title` → `Row[Icon(casino/bolt, primary), Expanded(Text(... w800))]`. `content` → body dibungkus panel tinted (`primary.alpha 0.08`, radius 12, padding 14); free body 16/w600, paid/insufficient primer 15/w600 + sekunder 13.
+- **File:** `lib/core/localization/preset_localizations.dart` (refactor + helper), `lib/presentation/screens/history/history_screen.dart` (filter bar, tile label, preview sheet), `lib/presentation/screens/home/home_screen.dart` (reveal anim, dialog), `pubspec.yaml` (`0.26.0+82` → `0.26.1+83`), `plans/2026-08-31-history-and-result-ui-polish-plan.md` (NEW).
+- **Verifikasi:** analyze 0; test 183/183; APK 3 ABI.
+- **Proposed commit:** `fix(ux): single-row history filters, hide share+add feedback, localized preset label, sticker reveal animation, surprise dialog typography`
 
 ## Riwayat Pekerjaan (terbaru → terlama)
 

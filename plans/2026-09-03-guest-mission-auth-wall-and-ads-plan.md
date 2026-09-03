@@ -36,6 +36,9 @@ Out of scope: perubahan DB RLS/RPC, migrasi kredit guest, perubahan `MissionBloc
 - 2026-09-03 22:13:15 — Plan created. Owner konfirmasi: (1) iklan tetap di Home/Profile juga, (2) reuse l10n.
 - 2026-09-03 22:14:00 — Implementasi M1-M2 dimulai.
 - 2026-09-03 22:20:00 — Implementasi selesai. `flutter analyze` 0 issues, `flutter test` 183/183. File: `lib/presentation/screens/missions/missions_screen.dart`, `lib/presentation/widgets/ads_banner_widget.dart`, `lib/presentation/screens/home/home_screen.dart`.
+- 2026-09-03 22:32:00 — Commit `32e3d32` — `feat(missions): gate guest mission claims to auth wall and show ads for guests`.
+- 2026-09-03 22:35:00 — Review temuan: F1 HIGH (AdsBannerWidget tidak reaktif), F2 MEDIUM (_isGuest rapuh). Plan perbaikan: `plans/2026-09-03-guest-mission-review-fixes-plan.md`.
+- 2026-09-03 22:41:00 — Fix F1+F2 selesai. `flutter analyze` 0 issues, `flutter test` 183/183.
 
 ## Notes
 - Pola `home_screen.dart:357` `_openAuthWall() => push(MaterialPageRoute(AuthScreen guestAuthWall))` di-reuse tanpa infra baru.

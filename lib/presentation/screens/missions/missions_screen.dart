@@ -52,8 +52,6 @@ class _MissionsScreenState extends State<MissionsScreen> {
     );
   }
 
-  bool get _isGuest => context.read<AuthBloc>().state.isGuest;
-
   @override
   void dispose() {
     _ticker?.cancel();
@@ -226,6 +224,8 @@ class _MissionsScreenState extends State<MissionsScreen> {
 
                     final userTier =
                         subState.subscription?.tier ?? SubscriptionTier.free;
+                    final isGuest =
+                        context.watch<AuthBloc>().state.isGuest;
 
                     final dailyLogin = state.missions
                         .where((m) => m.code == 'daily_login')
@@ -277,7 +277,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                   streak: state.streak,
                                   justClaimedDay: _justClaimedDay,
                                   onClaim: () {
-                                    if (_isGuest) {
+                                    if (isGuest) {
                                       _openAuthWall();
                                       return;
                                     }
@@ -343,7 +343,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                   ),
                                   awaitingShareClaim: isAwaitingShareClaim,
                                   onComplete: () {
-                                    if (_isGuest) {
+                                    if (isGuest) {
                                       _openAuthWall();
                                       return;
                                     }
@@ -411,7 +411,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                     mission,
                                   ),
                                   onComplete: () {
-                                    if (_isGuest) {
+                                    if (isGuest) {
                                       _openAuthWall();
                                       return;
                                     }

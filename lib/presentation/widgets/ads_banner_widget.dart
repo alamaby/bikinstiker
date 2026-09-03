@@ -27,49 +27,10 @@ class _AdsBannerWidgetState extends State<AdsBannerWidget> {
   BannerAd? _bannerAd;
   bool _isLoaded = false;
   bool _hasError = false;
-  bool _isEligible = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _syncEligibility();
-    if (_isEligible) {
-      _loadAd();
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final eligible = _computeEligibility();
-    if (eligible != _isEligible) {
-      setState(() {
-        _isEligible = eligible;
-        if (!eligible) {
-          _hasError = true;
-          _bannerAd?.dispose();
-          _bannerAd = null;
-          _isLoaded = false;
-        }
-      });
-      if (eligible && _bannerAd == null) {
-        _hasError = false;
-        _loadAd();
-      }
-    }
-  }
-
-  bool _computeEligibility() {
-    final subState = context.read<SubscriptionBloc>().state;
-    return !subState.isPlus;
-  }
-
-  void _syncEligibility() {
-    final eligible = _computeEligibility();
-    _isEligible = eligible;
-    if (!eligible) {
-      _hasError = true;
-    }
+  void _loadAdIfNeeded() {
+    if (_bannerAd != null || _hasError) return;
+    _loadAd();
   }
 
   void _loadAd() {
@@ -104,19 +65,41 @@ class _AdsBannerWidgetState extends State<AdsBannerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isEligible || _hasError) {
-      return const SizedBox.shrink();
-    }
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+      builder: (context, subState) {
+        final eligible = !subState.isPlus;
 
-    if (!_isLoaded || _bannerAd == null) {
-      return _Placeholder();
-    }
+        if (!eligible) {
+          if (_bannerAd != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _bannerAd?.dispose();
+                setState(() {
+                  _bannerAd = null;
+                  _isLoaded = false;
+                });
+              }
+            });
+          }
+          return const SizedBox.shrink();
+        }
 
-    return Container(
-      height: 64,
-      width: double.infinity,
-      alignment: Alignment.center,
-      child: AdWidget(ad: _bannerAd!),
+        if (_hasError) return const SizedBox.shrink();
+
+        if (!_isLoaded || _bannerAd == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _loadAdIfNeeded();
+          });
+          return _Placeholder();
+        }
+
+        return Container(
+          height: 64,
+          width: double.infinity,
+          alignment: Alignment.center,
+          child: AdWidget(ad: _bannerAd!),
+        );
+      },
     );
   }
 }

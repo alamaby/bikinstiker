@@ -41,8 +41,8 @@ Perbaiki temuan code review pasca `32e3d32` (`feat(missions): gate guest mission
 - [x] R1 — Refactor `AdsBannerWidget` jadi reaktif: `build` pakai `BlocBuilder<SubscriptionBloc, SubscriptionState>`, load/dispose via post-frame, hapus `didChangeDependencies`+`_syncEligibility` pattern lama.
 - [x] R2 — `MissionsScreen`: ganti `_isGuest` getter jadi local `isGuest` di `build` (watch) dan pakai closure capture; hapus getter `State.context.read` yang rapuh.
 - [x] R3 — `flutter analyze` 0 issues + `flutter test` 183/183.
-- [ ] R4 — Update `plans/2026-09-03-guest-mission-auth-wall-and-ads-plan.md` Progress Log.
-- [ ] R5 — Commit `fix(missions,ads): reactive gate and banner eligibility` + push.
+- [x] R4 — Update `plans/2026-09-03-guest-mission-auth-wall-and-ads-plan.md` Progress Log.
+- [x] R5 — Commit `58ac28f` `fix(missions,ads): reactive gate and banner eligibility for guest flow` + push `58ac28f` ke `origin/main`.
 
 ## Risks
 - Refactor `AdsBannerWidget` yang reaktif menambah rebuild tiap `SubscriptionBloc` emit — cost negligible (satu banner per screen).
@@ -52,6 +52,7 @@ Perbaiki temuan code review pasca `32e3d32` (`feat(missions): gate guest mission
 - 2026-09-03 22:35:00 — Plan created dari review commit 32e3d32 (F1 HIGH, F2 MEDIUM, F3-F5 LOW/INFO).
 - 2026-09-03 22:36:00 — Fix dimulai.
 - 2026-09-03 22:41:00 — R1+R2 selesai. `flutter analyze` 0 issues, `flutter test` 183/183.
+- 2026-09-03 22:42:00 — Commit `58ac28f` + push ke `origin/main`. Done.
 
 ## Notes
 - Sengaja tidak ubah `home_screen.dart:541` dan `profile_screen.dart:119` — sudah benar (`BlocBuilder` / tanpa gate). Hanya `AdsBannerWidget` internal yang perlu reaktif.

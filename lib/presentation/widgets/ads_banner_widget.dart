@@ -4,7 +4,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../core/di.dart';
 import '../../core/services/ad_config_service.dart';
-import '../blocs/auth/auth_bloc.dart';
 import '../blocs/subscription/subscription_bloc.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -33,27 +32,44 @@ class _AdsBannerWidgetState extends State<AdsBannerWidget> {
   @override
   void initState() {
     super.initState();
-    _checkEligibility();
+    _syncEligibility();
     if (_isEligible) {
       _loadAd();
     }
   }
 
-  void _checkEligibility() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final authState = context.read<AuthBloc>().state;
-      final subState = context.read<SubscriptionBloc>().state;
-      final eligible = !authState.isGuest && !subState.isPlus;
-      if (mounted) {
-        setState(() {
-          _isEligible = eligible;
-          if (!eligible) {
-            _hasError = true; // won't render
-          }
-        });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final eligible = _computeEligibility();
+    if (eligible != _isEligible) {
+      setState(() {
+        _isEligible = eligible;
+        if (!eligible) {
+          _hasError = true;
+          _bannerAd?.dispose();
+          _bannerAd = null;
+          _isLoaded = false;
+        }
+      });
+      if (eligible && _bannerAd == null) {
+        _hasError = false;
+        _loadAd();
       }
-    });
+    }
+  }
+
+  bool _computeEligibility() {
+    final subState = context.read<SubscriptionBloc>().state;
+    return !subState.isPlus;
+  }
+
+  void _syncEligibility() {
+    final eligible = _computeEligibility();
+    _isEligible = eligible;
+    if (!eligible) {
+      _hasError = true;
+    }
   }
 
   void _loadAd() {

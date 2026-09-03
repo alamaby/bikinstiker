@@ -18,6 +18,7 @@ import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../widgets/ads_banner_widget.dart';
 import '../../widgets/tier_badge.dart';
+import '../auth/auth_screen.dart';
 import 'widgets/daily_checkin_card.dart';
 import 'widgets/mission_section_header.dart';
 
@@ -42,6 +43,16 @@ class _MissionsScreenState extends State<MissionsScreen> {
       if (mounted) setState(() {});
     });
   }
+
+  void _openAuthWall() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AuthScreen(mode: AuthScreenMode.guestAuthWall),
+      ),
+    );
+  }
+
+  bool get _isGuest => context.read<AuthBloc>().state.isGuest;
 
   @override
   void dispose() {
@@ -266,6 +277,10 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                   streak: state.streak,
                                   justClaimedDay: _justClaimedDay,
                                   onClaim: () {
+                                    if (_isGuest) {
+                                      _openAuthWall();
+                                      return;
+                                    }
                                     context.read<MissionBloc>().add(
                                       const MissionDailyCheckinClaimRequested(),
                                     );
@@ -328,6 +343,10 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                   ),
                                   awaitingShareClaim: isAwaitingShareClaim,
                                   onComplete: () {
+                                    if (_isGuest) {
+                                      _openAuthWall();
+                                      return;
+                                    }
                                     if (mission.code == 'share_app_daily') {
                                       context.read<MissionBloc>().add(
                                         MissionShareRequested(
@@ -392,6 +411,10 @@ class _MissionsScreenState extends State<MissionsScreen> {
                                     mission,
                                   ),
                                   onComplete: () {
+                                    if (_isGuest) {
+                                      _openAuthWall();
+                                      return;
+                                    }
                                     context.read<MissionBloc>().add(
                                       MissionCompleteRequested(
                                         userId,

@@ -540,11 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 8),
                               BlocBuilder<SubscriptionBloc, SubscriptionState>(
                                 builder: (context, subState) {
-                                  final isGuest = context
-                                      .read<AuthBloc>()
-                                      .state
-                                      .isGuest;
-                                  final showAd = !isGuest && !subState.isPlus;
+                                  final showAd = !subState.isPlus;
                                   if (!showAd) return const SizedBox.shrink();
                                   return const AdsBannerPlaceholder();
                                 },

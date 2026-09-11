@@ -2,9 +2,23 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-09-11
-- **Perubahan terakhir:** T1–T3 lanjutan fix gambar: bedakan loading vs gagal-null + retry, errorBuilder + auto-purge file korup 1x + purge-sebelum-retry, widget bersama `RetryableCachedImage` + 5 widget test. Versi app `0.26.3+85`.
-- **Verifikasi:** `flutter pub get` OK; `flutter analyze` 0 issues; `flutter test` 192/192 (+5 widget baru); `flutter build apk --split-per-abi` sukses (3 APK: 21.3/23.2/24.6 MB).
+- **Perubahan terakhir:** test purge file korup tanpa loop (seam `RetryableImageBuilder` + provider gagal-cepat). Versi app `0.26.4+86`.
+- **Verifikasi:** `flutter pub get` OK; `flutter analyze` 0 issues; `flutter test` 193/193; `flutter build apk --release --target-platform android-arm64` sukses → deliverable `build/app/outputs/flutter-apk/bikin_stiker-0.26.4+86-release.apk` (23.4 MB, arm64 asli 0.26.4+86).
+- **Peringatan rilis (temuan saat build):** hook rename APK di `android/app/build.gradle.kts:62-107` meng-copy SEMUA `app-*.apk` di folder output (termasuk sisa build lama) dengan versi pubspec saat ini — tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan SUDAH DIHAPUS agar tak salah edar. Opsi follow-up: batasi hook hanya pada APK yang baru dibangun (cek timestamp) atau bersihkan folder output sebelum build.
 - **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
+
+## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-09-11 | Test Purge File Korup Tanpa Loop (lanjutan T1–T3)
+- **Status:** selesai + commit (`0.26.4+86`, APK arm64-v8a).
+- **Latar:** butuh bukti otomatis bahwa file korup → errorBuilder → purge 1x → reload → tidak loop. Kendala env: decode `Image.file` (bytes valid maupun sampah) hang di flutter_tester Windows ini; `await` IO riil deadlock di zona FakeAsync `testWidgets`.
+- **Keputusan Teknis:**
+  - Seam `imageBuilder` diperluas jadi typedef `RetryableImageBuilder(context, file, onError)` — produksi teruskan `onError` asli ke `Image.file` (perilaku identik); test teruskan ke `Image` ber-provider gagal-cepat (`OneFrameImageStreamCompleter(Future.error)`, resolve <1 dtk, tanpa codec).
+  - Test baru mensimulasikan bytes korup: ikon error tampil → `remove(path)` tepat 1x → repo tepat 2x (initial + 1 reload) → `verifyNoMoreInteractions` setelah settling tambahan (bukti tanpa loop) + `resolutions == 2`.
+  - Pelajaran mocktail: `verify().called(n)` hanya menghitung interaksi BELUM terverifikasi — untuk asersi "tetap" pakai `verifyNoMoreInteractions`, bukan verify ulang.
+- **File:** `lib/presentation/widgets/retryable_cached_image.dart` (typedef + ekstrak `_handleImageError`), `test/retryable_cached_image_test.dart` (+1 test, stub lama disesuaikan ke 3 arg).
+- **Verifikasi:** analyze 0; test 193/193 (+1).
+- **Proposed commit:** `test(images): corrupt-file purge coverage with codec-free provider, release 0.26.4+86`
 
 ## Riwayat Pekerjaan (terbaru → terlama)
 

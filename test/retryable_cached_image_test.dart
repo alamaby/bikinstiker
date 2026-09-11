@@ -5,6 +5,7 @@ import 'package:bikin_stiker/core/image_cache.dart';
 import 'package:bikin_stiker/data/repositories/sticker_repository.dart';
 import 'package:bikin_stiker/l10n/app_localizations.dart';
 import 'package:bikin_stiker/presentation/widgets/retryable_cached_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,8 +36,33 @@ Widget _buildTestApp(Widget child) {
   );
 }
 
-Widget _stubImage(BuildContext context, File file) =>
+Widget _stubImage(
+  BuildContext context,
+  File file,
+  ImageErrorWidgetBuilder onError,
+) =>
     Container(key: _stubKey);
+
+/// Image provider that fails immediately without touching any codec.
+/// Proved to resolve fast in this environment's flutter_tester (where real
+/// image decoding never completes), so error paths can be tested.
+class _FailingImageProvider extends ImageProvider<_FailingImageProvider> {
+  int resolutions = 0;
+
+  @override
+  Future<_FailingImageProvider> obtainKey(ImageConfiguration configuration) {
+    resolutions++;
+    return SynchronousFuture<_FailingImageProvider>(this);
+  }
+
+  @override
+  ImageStreamCompleter loadImage(
+      _FailingImageProvider key, ImageDecoderCallback decode) {
+    return OneFrameImageStreamCompleter(
+      Future<ImageInfo>.error(Exception('bad pixels')),
+    );
+  }
+}
 
 void main() {
   late _MockStickerRepository repo;
@@ -147,6 +173,48 @@ void main() {
       // A corrupt cached file must not trap the retry: the stale local
       // entry is removed before reloading.
       verify(() => imageCache.remove(badPath)).called(1);
+    });
+
+    testWidgets(
+        'corrupt file triggers errorBuilder purge, reloads once, no loop',
+        (tester) async {
+      const corruptPath = 'u/corrupt.bin';
+      final failingProvider = _FailingImageProvider();
+      var repoCalls = 0;
+      when(() => repo.getCachedImageFile(any())).thenAnswer((_) async {
+        repoCalls++;
+        // Bytes are irrelevant: the injected provider always fails fast,
+        // simulating undecodable (corrupt) cached bytes without a codec.
+        return File(corruptPath);
+      });
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          RetryableCachedImage(
+            storagePath: corruptPath,
+            imageBuilder: (context, file, onError) => Image(
+              image: failingProvider,
+              errorBuilder: onError,
+            ),
+          ),
+        ),
+      );
+      await settleFrames(tester, 10);
+
+      // Persistent failure settles on the error icon (manually retryable).
+      expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+      // The corrupt entry was purged exactly once...
+      verify(() => imageCache.remove(corruptPath)).called(1);
+      // ...and exactly one reload followed the initial load...
+      verify(() => repo.getCachedImageFile(corruptPath)).called(2);
+      expect(repoCalls, 2);
+      expect(failingProvider.resolutions, 2);
+      // ...with no further looping: settle again, no new interactions.
+      await settleFrames(tester, 10);
+      verifyNoMoreInteractions(imageCache);
+      verifyNoMoreInteractions(repo);
+      expect(repoCalls, 2);
+      expect(failingProvider.resolutions, 2);
     });
   });
 }

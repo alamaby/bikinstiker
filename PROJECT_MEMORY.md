@@ -1,10 +1,39 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-08-31
-- **Perubahan terakhir:** 5 perbaikan UI riwayat + hasil generate + dialog Surprise Me (murni Flutter, tanpa backend). Versi app `0.26.1+83`. Lihat plan `plans/2026-08-31-history-and-result-ui-polish-plan.md`.
-- **Verifikasi:** `flutter pub get` OK; `flutter analyze` 0 issues; `flutter test` 183/183; `flutter build apk --split-per-abi` sukses (3 APK: 21.3/23.2/24.6 MB).
+- **Terakhir dikerjakan:** 2026-09-11
+- **Perubahan terakhir:** T1–T3 lanjutan fix gambar: bedakan loading vs gagal-null + retry, errorBuilder + auto-purge file korup 1x + purge-sebelum-retry, widget bersama `RetryableCachedImage` + 5 widget test. Versi app `0.26.3+85`.
+- **Verifikasi:** `flutter pub get` OK; `flutter analyze` 0 issues; `flutter test` 192/192 (+5 widget baru); `flutter build apk --split-per-abi` sukses (3 APK: 21.3/23.2/24.6 MB).
 - **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
+
+## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-09-11 | Retryable Image T1–T3 (null-state, corrupt-purge, shared widget)
+- **Status:** selesai + commit. Murni Flutter, tanpa backend.
+- **Latar:** tindak lanjut review fix poisoned-cache 0.26.2 — masih ada stuck state: (a) download gagal me-return null → spinner abadi tanpa retry; (b) file korup di cache → `Image.file` tanpa errorBuilder = blank sunyi, dan retry biasa takkan sembuh (L1 hit mengembalikan bytes rusak yang sama selamanya).
+- **Keputusan Teknis:**
+  - Widget bersama BARU `lib/presentation/widgets/retryable_cached_image.dart`: kontrak state — path kosong → ikon statis; waiting → spinner; error/done-null → ikon error + tap retry; bytes tak ter-decode → purge entry sekali + reload otomatis, gagal menetap → ikon error (tetap bisa tap retry). `_retry()` selalu purge L1 dulu (`remove` + `whenComplete(setState)`) agar retry tak pernah terjebak bytes rusak.
+  - Seam `imageBuilder` (default `Image.file` + errorBuilder purge): BUKAN sekadar gaya — `Image.file` decode tak pernah resolve di flutter_tester env ini (bahkan bytes sampah hang; terverifikasi via 3 file probe yang lalu dihapus), dan `await` IO riil di body `testWidgets` deadlock di zona FakeAsync. Semua IO/mock murni sinkron di test; `ImageCacheService` di-mock dan `remove` diverifikasi via mocktail.
+  - Konsumen jadi tipis: `_Thumb` (history, kembali Stateless + `Container(surfaceAlt)`, spinner 18px dipertahankan via `progressSize`) dan `_StickerReveal` (home, overlay sparkle tak tersentuh); 6 import tak terpakai dibersihkan. Perubahan visual disengaja: kasus path-kosong di panel hasil kini ikon image_not_supported (semantik "nothing to load"; kasus ini tak terjadi di praktik karena path selalu ada saat sukses).
+  - Pelajaran durable: (1) JANGAN `await` IO riil di body `testWidgets` — pindah ke mock/sync atau `setUpAll`; (2) JANGAN render image ter-decode di widget test env ini — pakai seam/stub.
+- **File:** `lib/presentation/widgets/retryable_cached_image.dart` (NEW), `lib/presentation/screens/history/history_screen.dart`, `lib/presentation/screens/home/home_screen.dart`, `test/retryable_cached_image_test.dart` (NEW, 5 test: sukses, error→tap→sukses, null→tap→sukses, path kosong tanpa panggil repo, retry purge L1), `pubspec.yaml` (`0.26.2+84` → `0.26.3+85`).
+- **Verifikasi:** analyze 0; test 192/192 (+5); APK 3 ABI sukses.
+- **Proposed commit:** `fix(images): retryable null/error states, purge corrupt cache once, shared cached-image widget`
+
+## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-09-11 | Fix Stiker Tak Tampil Pasca-Generate (poisoned signed-URL cache)
+- **Status:** selesai. Murni Flutter, tanpa backend/migrasi. Keputusan owner: tanpa refund (user konfirmasi stiker kini tampil normal).
+- **Latar:** user lapor stiker hasil generate tidak tampil di halaman generate maupun riwayat (screenshot ikon rusak). Analisa via MCP `supabase-bikinstiker-production` membuktikan server sehat: row `success` + `image_url` terisi, object PNG 409 KB valid di Storage, edge function sign 200 + respons mengandung `path`, GRANT kolom OK. Log membuktikan client TIDAK PERNAH request sign/download image itu (09:45–10:15 UTC) sementara tile lama tampil dari file-cache lokal.
+- **Root cause:** `_signedUrlCache` (`sticker_repository.dart`) meng-cache `Future` termasuk yang GAGAL selama 50 menit — satu kegagalan sign transien di sisi client (~09:45:27, sebelum mencapai server) di-replay sebagai ikon rusak di semua layar tanpa pernah retry ke jaringan. Dikonfirmasi oleh user: stiker tampil normal setelah restart (cache memori hilang).
+- **Keputusan Teknis:**
+  - `signedUrlForPath`: `await entry.future` dalam try/catch — saat gagal, evict entry (cek `identical` agar tak menghapus entry baru) lalu `rethrow`. Hanya sukses yang di-cache; TTL 50 menit tak berubah.
+  - Retry UI: `_Thumb` (history) dan `_StickerReveal` (home) jadi stateful dengan future tersimpan (`didUpdateWidget` reload saat path berubah); ikon error dibungkus `GestureDetector` + `Tooltip(l10n.retry)` ("Coba lagi"/"Retry", tanpa key ARB baru). Efek samping positif: tidak lagi membuat future baru tiap rebuild.
+  - `_fileKey` (`image_cache.dart`): `hashCode.toRadixString(36)` → hex SHA-256 (`crypto`, sudah ada di pubspec). File cache versi lama jadi orphan sampai cap 50 MB meng-evict (didokumentasikan di komentar kode).
+  - Diagnostik: `debugPrint('[StickerImages] …')` saat sign gagal / download non-200 / download error; path dipotong 24 char terakhir (hindari user-id di log) — kegagalan pipeline sunyi inilah yang membuat insiden kemarin butuh forensik log.
+- **File:** `lib/data/repositories/sticker_repository.dart`, `lib/core/image_cache.dart`, `lib/presentation/screens/history/history_screen.dart` (`_Thumb`), `lib/presentation/screens/home/home_screen.dart` (`_StickerReveal`), `test/sticker_signed_url_cache_test.dart` (NEW, 3 test mocktail: gagal-tidak-di-cache + retry sign 2x, sukses tetap di-cache 1x, path kosong tanpa panggil storage), `test/image_cache_test.dart` (+1 test format/stabilitas key sha256), `pubspec.yaml` (`0.26.1+83` → `0.26.2+84`).
+- **Verifikasi:** analyze 0; test 187/187 (+4). APK belum di-build (tidak diminta; smoke build disarankan sebelum rilis).
+- **Proposed commit:** `fix(images): never cache failed signed-url futures, tap-to-retry thumbnails, sha256 cache keys, pipeline diagnostics`
 
 ## Riwayat Pekerjaan (terbaru → terlama)
 

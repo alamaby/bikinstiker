@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -189,7 +190,17 @@ class SupabaseStickerRepository implements StickerRepository {
       DateTime.now(),
     );
     _signedUrlCache[path] = entry;
-    return entry.future;
+    try {
+      return await entry.future;
+    } catch (_) {
+      // Never poison the cache with a failed sign attempt: a single
+      // transient failure (e.g. socket blip) must not replay as a broken
+      // image for the rest of the TTL. Evict so the next call retries.
+      if (identical(_signedUrlCache[path], entry)) {
+        _signedUrlCache.remove(path);
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -207,11 +218,20 @@ class SupabaseStickerRepository implements StickerRepository {
     // L3: network fetch → store locally
     try {
       final res = await http.get(Uri.parse(signedUrl));
-      if (res.statusCode != 200) return null;
+      if (res.statusCode != 200) {
+        debugPrint(
+          '[StickerImages] download failed '
+          '(${res.statusCode}) for ${_shortPath(storagePath)}',
+        );
+        return null;
+      }
       final file = await _imageCache.put(storagePath, res.bodyBytes);
       await _imageCache.enforceMaxSize();
       return file;
-    } catch (_) {
+    } catch (e) {
+      debugPrint(
+        '[StickerImages] download error for ${_shortPath(storagePath)}: $e',
+      );
       return null;
     }
   }
@@ -222,7 +242,16 @@ class SupabaseStickerRepository implements StickerRepository {
           .from(_bucket)
           .createSignedUrl(path, ttlSeconds);
     } catch (e) {
+      debugPrint(
+        '[StickerImages] sign failed for ${_shortPath(path)}: $e',
+      );
       throw GenerationFailure('Failed to create signed URL: $e');
     }
   }
+
+  /// Last 24 chars of a storage path: enough to correlate logs without
+  /// printing the leading user-id segment.
+  static String _shortPath(String storagePath) => storagePath.length <= 24
+      ? storagePath
+      : storagePath.substring(storagePath.length - 24);
 }

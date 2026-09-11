@@ -1,16 +1,12 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/di.dart';
 import '../../../core/errors/safe_error_message.dart';
 import '../../../core/localization/preset_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_generation.dart';
 import '../../../data/models/sticker_preset.dart';
-import '../../../data/repositories/sticker_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/history/history_bloc.dart';
@@ -19,6 +15,7 @@ import '../../blocs/preset/preset_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/ads_banner_widget.dart';
+import '../../widgets/retryable_cached_image.dart';
 import '../../widgets/status_indicator.dart';
 import '../../widgets/sticker_feedback_buttons.dart';
 import 'widgets/history_filter_chips.dart';
@@ -423,42 +420,15 @@ class _Thumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (path == null || path!.isEmpty) {
-      return Container(
-        color: context.surfaceAlt,
-        child: Icon(
-          Icons.image_not_supported_outlined,
-          color: context.textFaint,
-        ),
-      );
-    }
-    return FutureBuilder<File?>(
-      future: getIt<StickerRepository>().getCachedImageFile(path!),
-      builder: (context, snap) {
-        if (snap.hasError) {
-          return Container(
-            color: context.surfaceAlt,
-            child: Icon(
-              Icons.broken_image_outlined,
-              color: context.colors.error,
-            ),
-          );
-        }
-        final file = snap.data;
-        if (file == null) {
-          return Container(
-            color: context.surfaceAlt,
-            child: const Center(
-              child: SizedBox(
-                height: 18,
-                width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          );
-        }
-        return Image.file(file, fit: BoxFit.cover);
-      },
+    return Container(
+      color: context.surfaceAlt,
+      child: RetryableCachedImage(
+        storagePath: path,
+        fit: BoxFit.cover,
+        progressSize: 18,
+        emptyIconColor: context.textFaint,
+        errorIconColor: context.colors.error,
+      ),
     );
   }
 }

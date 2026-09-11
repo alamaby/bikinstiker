@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ImageCacheService {
@@ -26,7 +28,13 @@ class ImageCacheService {
     return dir;
   }
 
-  String _fileKey(String storagePath) => storagePath.hashCode.toRadixString(36);
+  /// Stable content-derived file key. Never use [String.hashCode] here:
+  /// it is only 32-bit (collision-prone across many stickers) and not
+  /// guaranteed stable. Note: keys changed from the old hashCode scheme,
+  /// so files cached by older app versions become orphans until the
+  /// 50 MB size cap evicts them.
+  String _fileKey(String storagePath) =>
+      sha256.convert(utf8.encode(storagePath)).toString();
 
   Future<File?> get(String storagePath) async {
     final dir = await _cacheDir();

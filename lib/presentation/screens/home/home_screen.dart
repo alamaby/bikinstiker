@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,14 +7,12 @@ import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/presets.dart';
 import '../../../core/constants/prompt_suggestions.dart';
-import '../../../core/di.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/errors/safe_error_message.dart';
 import '../../../core/localization/preset_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/sticker_preset.dart';
 import '../../../data/models/user_subscription.dart';
-import '../../../data/repositories/sticker_repository.dart';
 import '../../../data/repositories/surprise_me_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -30,6 +28,7 @@ import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/loading_lottie.dart';
 import '../../widgets/prompt_suggestion_chip.dart';
 import '../../widgets/preset_picker_sheet.dart';
+import '../../widgets/retryable_cached_image.dart';
 import '../../widgets/sticker_feedback_buttons.dart';
 import '../../widgets/surprise_me_button.dart';
 import '../../widgets/tier_badge.dart';
@@ -1260,26 +1259,10 @@ class _StickerRevealState extends State<_StickerReveal>
           aspectRatio: 1,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
-                ? FutureBuilder<File?>(
-                    future: getIt<StickerRepository>()
-                        .getCachedImageFile(widget.imageUrl!),
-                    builder: (context, snap) {
-                      if (snap.hasError) {
-                        return const Center(
-                          child: Icon(Icons.broken_image_outlined),
-                        );
-                      }
-                      final file = snap.data;
-                      if (file == null) {
-                        return const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        );
-                      }
-                      return Image.file(file, fit: BoxFit.contain);
-                    },
-                  )
-                : const Center(child: Icon(Icons.broken_image_outlined)),
+            child: RetryableCachedImage(
+              storagePath: widget.imageUrl,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
         if (_overlayVisible)

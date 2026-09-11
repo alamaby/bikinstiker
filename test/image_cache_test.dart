@@ -62,5 +62,17 @@ void main() {
       final file = await service.get('test.webp');
       expect(await file!.readAsBytes(), [2, 3]);
     });
+
+    test('cache key is a stable 64-char sha256 hex (not hashCode)', () async {
+      await service.put('user-id/sticker-id.png', Uint8List.fromList([9]));
+      final file = await service.get('user-id/sticker-id.png');
+      expect(file, isNotNull);
+      final name = file!.uri.pathSegments.last;
+      expect(name.length, 64);
+      expect(RegExp(r'^[0-9a-f]{64}$').hasMatch(name), isTrue);
+      // Same path resolves to the same key across service instances.
+      final other = ImageCacheService(testOverride: tmpDir);
+      expect((await other.get('user-id/sticker-id.png'))?.path, file.path);
+    });
   });
 }

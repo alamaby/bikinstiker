@@ -2,12 +2,23 @@
 
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-09-11
-- **Perubahan terakhir:** test purge file korup tanpa loop (seam `RetryableImageBuilder` + provider gagal-cepat). Versi app `0.26.4+86`.
-- **Verifikasi:** `flutter pub get` OK; `flutter analyze` 0 issues; `flutter test` 193/193; `flutter build apk --release --target-platform android-arm64` sukses → deliverable `build/app/outputs/flutter-apk/bikin_stiker-0.26.4+86-release.apk` (23.4 MB, arm64 asli 0.26.4+86).
-- **Peringatan rilis (temuan saat build):** hook rename APK di `android/app/build.gradle.kts:62-107` meng-copy SEMUA `app-*.apk` di folder output (termasuk sisa build lama) dengan versi pubspec saat ini — tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan SUDAH DIHAPUS agar tak salah edar. Opsi follow-up: batasi hook hanya pada APK yang baru dibangun (cek timestamp) atau bersihkan folder output sebelum build.
+- **Perubahan terakhir:** perbaiki hook rename APK Gradle (filter timestamp + hapus sisa basi). Versi app tetap `0.26.4+86` (tanpa perubahan kode aplikasi).
+- **Verifikasi:** uji fungsi hook via APK dummy basi (timestamp kemarin) + build arm64 → dummy TERHAPUS (tidak di-rename), fresh `bikin_stiker-0.26.4+86-release.apk` (23.4 MB, arm64) ter-copy benar. Hook Gradle terkompilasi (build sukses).
+- **Peringatan rilis (insiden build, SUDAH DIPERBAIKI):** hook rename APK di `android/app/build.gradle.kts` dulu meng-copy SEMUA `app-*.apk` (termasuk sisa build lama) — tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan sudah dihapus saat itu. Kini: hanya APK yang lebih baru dari task-start (slack 30 dtk) yang di-rename; sisa basi dihapus (+sidecar .sha1/.sha256); arsip versi lama tak tersentuh.
 - **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-09-11 | Fix Hook Rename APK (timestamp filter + hapus sisa basi)
+- **Status:** selesai + terverifikasi build, belum commit. Tanpa bump versi (skrip build, tanpa perubahan perilaku aplikasi).
+- **Latar:** follow-up insiden salah-label APK (sisa 0.26.3 di-copy sebagai 0.26.4+86). Kedua opsi diterapkan sekaligus karena komplementer dalam satu hook.
+- **Keputusan Teknis (`android/app/build.gradle.kts`):**
+  - `doFirst` mencatat `buildStartMs`; `doLast` hanya me-rename APK dengan `lastModified >= buildStartMs − 30 dtk` (slack untuk granularitas timestamp FS).
+  - Sisa `app-*.apk` yang lebih tua DIHAPUS (+sidecar `.sha1`/`.sha256`) dengan log `Deleting stale APK leftover`, bukan di-rename. Arsip versi lama (prefix nama pubspec) tak tersentuh.
+- **Verifikasi fungsi:** tanam `app-stale-probe-release.apk` dummy (timestamp −1 hari) + build arm64 → dummy hilang tanpa versi mislabel; fresh `bikin_stiker-0.26.4+86-release.apk` (timestamp baru) ter-copy; build Gradle sukses (hook terkompilasi).
+- **File:** `android/app/build.gradle.kts` (hook saja).
+- **Proposed commit:** `fix(build): only rename freshly built APKs, delete stale leftovers`
+- **Counter:** jendela slack 30 dtk masih bisa salah-label bila dua build versi beda dalam <30 dtk — risiko diterima (skenario nyaris mustahil manual; CI serial).
 
 ### 2026-09-11 | Test Purge File Korup Tanpa Loop (lanjutan T1–T3)
 - **Status:** selesai + commit (`0.26.4+86`, APK arm64-v8a).

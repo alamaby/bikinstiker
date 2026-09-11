@@ -59,18 +59,29 @@ flutter {
     source = "../.."
 }
 
-// Post-build hook: copy generated APKs in build/app/outputs/flutter-apk/
-// and create a renamed copy named {name}-{version}-{descriptor}.apk.
-// Both the original and renamed copy are kept.
+// Post-build hook: copy freshly generated APKs in
+// build/app/outputs/flutter-apk/ to a renamed copy named
+// {name}-{version}-{descriptor}.apk. Both the original and renamed copy
+// are kept.
 //   - name/version are read from pubspec.yaml at the project root.
 //   - descriptor preserves the build type (release/debug/profile) and, when
 //     `flutter build apk --split-per-abi` is used, the target ABI
 //     (e.g. arm64-v8a-release).
-//   - The hook is idempotent: already-renamed outputs (matching the
-//     pubspec name prefix) are skipped on repeated builds.
+//   - Safety: only APKs produced by THIS build (lastModified >= task start,
+//     minus a small slack for filesystem timestamp granularity) are
+//     renamed. Stale `app-*.apk` leftovers from previous builds are deleted
+//     instead (with their .sha1/.sha256 sidecars), so they can never be
+//     mislabeled with the current version (incident 2026-09-11: stale 0.26.3
+//     binaries were copied as 0.26.4+86). Already-renamed outputs (pubspec
+//     name prefix) are left untouched as the release archive.
 gradle.projectsEvaluated {
     listOf("assembleRelease", "assembleDebug", "assembleProfile").forEach { taskName ->
-        tasks.findByName(taskName)?.doLast {
+        val task = tasks.findByName(taskName) ?: return@forEach
+        var buildStartMs = 0L
+        task.doFirst {
+            buildStartMs = System.currentTimeMillis()
+        }
+        task.doLast {
             val apkDir = file("${layout.buildDirectory.get().asFile}/outputs/flutter-apk")
             if (!apkDir.exists()) return@doLast
 
@@ -93,9 +104,21 @@ gradle.projectsEvaluated {
                 return@doLast
             }
 
+            // Slack for coarse filesystem timestamp granularity (e.g. FAT 2s).
+            val freshnessSlackMs = 30_000L
             apkDir.listFiles { f -> f.extension == "apk" }?.forEach apkLoop@{ apk ->
                 // Skip files that are already renamed (start with pubspec name)
                 if (apk.name.startsWith("$pubspecName-")) return@apkLoop
+                // Stale leftover from a previous build: delete instead of
+                // renaming, so it can never be mislabeled as this version.
+                if (apk.lastModified() < buildStartMs - freshnessSlackMs) {
+                    logger.lifecycle("Deleting stale APK leftover: ${apk.name}")
+                    apk.delete()
+                    listOf("sha1", "sha256").forEach { ext ->
+                        file("${apkDir}/${apk.name}.$ext").takeIf { it.exists() }?.delete()
+                    }
+                    return@apkLoop
+                }
                 val descriptor = apk.nameWithoutExtension.removePrefix("app-")
                 val newName = "$pubspecName-$pubspecVersion-$descriptor.apk"
                 val target = file("${apkDir}/$newName")

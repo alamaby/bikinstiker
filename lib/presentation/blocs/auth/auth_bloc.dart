@@ -321,9 +321,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         ),
       );
     } on Failure catch (f) {
+      // Guest-wall sign-in failure must NOT downgrade to unauthenticated:
+      // the anonymous session is still alive, and unauthenticated triggers
+      // _AuthGate to spawn a fresh anonymous user (new userId -> consent
+      // re-check -> thrown back to LegalConsentScreen, wall auto-pops and
+      // the "email already registered" snackbar is lost).
+      final fallbackStatus = e.isGuestAuthWall
+          ? AuthStatus.guest
+          : AuthStatus.unauthenticated;
       emit(
         state.copyWith(
-          status: AuthStatus.unauthenticated,
+          status: fallbackStatus,
           errorMessage: f.message,
         ),
       );
@@ -369,9 +377,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         );
       }
     } on Failure catch (f) {
+      // Same as _onSignIn: a failed guest upgrade must stay `guest`.
+      // Downgrading to `unauthenticated` makes _AuthGate spawn a fresh
+      // anonymous user (new userId -> consent re-check for a subject that
+      // never accepted -> bounced to LegalConsentScreen). See _onSignIn.
+      final fallbackStatus = e.upgradeGuest
+          ? AuthStatus.guest
+          : AuthStatus.unauthenticated;
       emit(
         state.copyWith(
-          status: AuthStatus.unauthenticated,
+          status: fallbackStatus,
           errorMessage: f.message,
         ),
       );

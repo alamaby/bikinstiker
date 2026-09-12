@@ -1,13 +1,25 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-09-11
-- **Perubahan terakhir:** perbaiki hook rename APK Gradle (filter timestamp + hapus sisa basi). Versi app tetap `0.26.4+86` (tanpa perubahan kode aplikasi).
-- **Verifikasi:** uji fungsi hook via APK dummy basi (timestamp kemarin) + build arm64 → dummy TERHAPUS (tidak di-rename), fresh `bikin_stiker-0.26.4+86-release.apk` (23.4 MB, arm64) ter-copy benar. Hook Gradle terkompilasi (build sukses).
+- **Terakhir dikerjakan:** 2026-09-12
+- **Perubahan terakhir:** fix signup email existing dari guest wall yang mental ke legal consent. Versi app `0.26.5+87`.
+- **Verifikasi:** analyze 0; test 197/197 (+4 regression); APK 3 ABI sukses (arm64 23.2 MB, armeabi 21.3 MB, x86_64 24.6 MB).
 - **Peringatan rilis (insiden build, SUDAH DIPERBAIKI):** hook rename APK di `android/app/build.gradle.kts` dulu meng-copy SEMUA `app-*.apk` (termasuk sisa build lama) — tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan sudah dihapus saat itu. Kini: hanya APK yang lebih baru dari task-start (slack 30 dtk) yang di-rename; sisa basi dihapus (+sidecar .sha1/.sha256); arsip versi lama tak tersentuh.
 - **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
 
 ## Riwayat Pekerjaan (terbaru → terlama)
+
+### 2026-09-12 | Fix Guest-Wall Signup Existing-User Bounce ke Legal Consent
+- **Status:** selesai + terverifikasi build.
+- **Latar:** user lapor input email existing ke form sign up → dilempar ke form legal acceptance tanpa pesan error yang jelas.
+- **Root cause:** signup existing dari guest wall gagal di `updateUser`, tapi `AuthBloc._onSignUp` emit `unauthenticated` — `_AuthGate` merespons dengan spawn akun anonim BARU (userId baru → consent re-check `requiresAcceptance=true` untuk subject baru → render `LegalConsentScreen`). Wall ikut ke-pop (pop saat `guest`) sehingga snackbar error hilang.
+- **Keputusan Teknis:**
+  - `AuthBloc._onSignUp` gagal + `upgradeGuest:true` → tetap `guest`; `_onSignIn` gagal + `isGuestAuthWall:true` → tetap `guest` (sesi anonim masih hidup). Non-wall tetap `unauthenticated` seperti semula — mirror pola `AuthGoogleSignInRequested` (`fallbackStatus = upgradeGuest ? guest : unauthenticated`).
+  - `AuthScreen` guest wall hanya auto-pop saat `authenticated` (sukses), bukan saat `guest` — gagal wall kini tetap terbuka + snackbar error terlihat.
+- **File:** `lib/presentation/blocs/auth/auth_bloc.dart`, `lib/presentation/screens/auth/auth_screen.dart`, `test/auth_bloc_guest_wall_test.dart` (NEW, 4 test bloc_test+mocktail), `pubspec.yaml` (`0.26.4+86` → `0.26.5+87`).
+- **Verifikasi:** analyze 0; test 197/197; APK 3 ABI.
+- **Proposed commit:** `fix(auth): keep guest session on wall signup failure, don't bounce to legal consent`
+- **Counter:** status `guest` optimistis ini bisa basi bila sesi anonim ternyata sudah mati server-side — `_onUserChanged` via `authChanges` akan mengoreksi ke status real. Pesan exact Supabase ("already registered" vs "duplicate") perlu konfirmasi log produksi.
 
 ### 2026-09-11 | Fix Hook Rename APK (timestamp filter + hapus sisa basi)
 - **Status:** selesai + terverifikasi build, belum commit. Tanpa bump versi (skrip build, tanpa perubahan perilaku aplikasi).

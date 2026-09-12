@@ -87,8 +87,13 @@ class _AuthScreenState extends State<AuthScreen>
               p.errorMessage != n.errorMessage ||
               p.infoMessage != n.infoMessage,
           listener: (context, state) {
-            if (state.status == AuthStatus.authenticated ||
-                state.status == AuthStatus.guest) {
+            // Pop the guest wall ONLY on success (`authenticated`).
+            // A failed wall attempt stays `guest` (anonymous session is
+            // intact) and must keep the wall open so the error snackbar
+            // below remains visible. Popping on `guest` silently discarded
+            // the error and — before the AuthBloc fallback fix — exposed
+            // the legal-consent gate for a freshly spawned anonymous user.
+            if (state.status == AuthStatus.authenticated) {
               if (_isGuestWall && mounted) {
                 Navigator.of(context).pop();
                 return;

@@ -1,13 +1,26 @@
 # Project Memory - BikinStiker
 
 ## Status Saat Ini
-- **Terakhir dikerjakan:** 2026-09-12
-- **Perubahan terakhir:** fix signup email existing dari guest wall yang mental ke legal consent. Versi app `0.26.5+87`.
-- **Verifikasi:** analyze 0; test 197/197 (+4 regression); APK 3 ABI sukses (arm64 23.2 MB, armeabi 21.3 MB, x86_64 24.6 MB).
-- **Peringatan rilis (insiden build, SUDAH DIPERBAIKI):** hook rename APK di `android/app/build.gradle.kts` dulu meng-copy SEMUA `app-*.apk` (termasuk sisa build lama) — tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan sudah dihapus saat itu. Kini: hanya APK yang lebih baru dari task-start (slack 30 dtk) yang di-rename; sisa basi dihapus (+sidecar .sha1/.sha256); arsip versi lama tak tersentuh.
+- **Terakhir dikerjakan:** 2026-09-15
+- **Perubahan terakhir:** Migrasi `flutter_markdown` (discontinued) → `flutter_markdown_plus ^1.0.12`; versi app `0.26.6+88`. analyze 0; test 198/198; APK 3 ABI sukses.
+- **Verifikasi:** analyze 0; test 198/198; APK split-per-abi 3 ABI sukses (2026-09-15); AAB release 50.1 MB terverifikasi signed non-debug (2026-09-12).
+- **Peringatan rilis (insiden build, SUDAH DIPERBAIKI):** hook rename APK di `android/app/build.gradle.kts` dulu meng-copy SEMUA `app-*.apk` (termasuk sisa build lama) - tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan sudah dihapus saat itu. Kini: hanya APK yang lebih baru dari task-start (slack 30 dtk) yang di-rename; sisa basi dihapus (+sidecar .sha1/.sha256); arsip versi lama tak tersentuh.
 - **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
 
-## Riwayat Pekerjaan (terbaru → terlama)
+## Riwayat Pekerjaan (terbaru  terlama)
+
+### 2026-09-15 | Migrasi flutter_markdown → flutter_markdown_plus
+- **Status:** selesai + terverifikasi (analyze/test/build).
+- **Latar:** `flutter_markdown 0.7.7+1` discontinued (30 Mei 2025) - changelog terakhirnya hanya menandai discontinued. Pengganti resmi `flutter_markdown_plus` oleh Foresight Mobile (verified publisher, skor pub 160/160).
+- **Keputusan Teknis:**
+  - Opsi A (drop-in fork) dipilih ketimbang hapus dependency render manual: API `Markdown`/`MarkdownStyleSheet` identik, pemakaian proyek hanya dasar (tanpa `onTapLink`/`bulletBuilder`/LaTeX/custom builder) sehingga breaking change historis tak terdampak.
+  - `pubspec.yaml`: `flutter_markdown: ^0.7.7+1` → `flutter_markdown_plus: ^1.0.12`; versi app `0.26.5+87` → `0.26.6+88` (patch maintenance).
+  - `legal_consent_screen.dart:6`: import diganti; tidak ada perubahan kode lain di file itu.
+  - Tambah regression test widget `test/markdown_render_test.dart` (heading, bullet list, tabel gaya legal) + verifikasi `Table` widget muncul.
+- **File:** `pubspec.yaml`, `pubspec.lock`, `lib/presentation/screens/legal/legal_consent_screen.dart`, `test/markdown_render_test.dart` (NEW), `plans/2026-09-15-migrate-flutter-markdown-to-plus.md` (NEW), `PROJECT_MEMORY.md`.
+- **Verifikasi:** analyze 0 issue; test 198/198 (197 lama + 1 baru); APK split-per-abi 3 ABI sukses.
+- **Proposed commit:** `fix(deps): migrate flutter_markdown to flutter_markdown_plus (discontinued)`
+- **Counter:** maintainer non-Google (startup kecil, golden test sempat di-disable); uji visual di device nyata belum dijalankan - hanya widget test render. Risiko diterima karena pemakaian sangat sederhana.
 
 ### 2026-09-12 | Fix Guest-Wall Signup Existing-User Bounce ke Legal Consent
 - **Status:** selesai + terverifikasi build.

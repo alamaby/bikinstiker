@@ -1,0 +1,16 @@
+# Copy to android/key.properties and fill in real values.
+# This file (key.properties) is gitignored — never commit credentials.
+#
+# Generate the upload keystore once with:
+#   keytool -genkey -v -keystore android/app/upload-keystore.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# storeFile is resolved relative to android/app/ (Gradle module root).
+# Keep the .jks file at android/app/upload-keystore.jks (next to the module)
+# so that the relative path below — and the GitHub Actions workflows —
+# stay consistent.
+
+storeFile=upload-keystore.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME

@@ -3,15 +3,17 @@
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-09-15
 - **Perubahan terakhir:** Migrasi `flutter_markdown` (discontinued) → `flutter_markdown_plus ^1.0.12`; versi app `0.26.6+88`. analyze 0; test 198/198; APK 3 ABI sukses.
-- **Verifikasi:** analyze 0; test 198/198; APK split-per-abi 3 ABI sukses (2026-09-15); AAB release 50.1 MB terverifikasi signed non-debug (2026-09-12).
-- **Peringatan rilis (insiden build, SUDAH DIPERBAIKI):** hook rename APK di `android/app/build.gradle.kts` dulu meng-copy SEMUA `app-*.apk` (termasuk sisa build lama) - tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan sudah dihapus saat itu. Kini: hanya APK yang lebih baru dari task-start (slack 30 dtk) yang di-rename; sisa basi dihapus (+sidecar .sha1/.sha256); arsip versi lama tak tersentuh.
+- **Verifikasi:** analyze 0; test 198/198; **AAB release sukses** (50.1 MB, build 2026-09-12) signed CN=Alam Aby Bashit (bukan debug), merged manifest targetSdk 36 + AD_ID + StickerContentProvider + AdMob prod ID utuh; AAB bersih dari secret `.env`. APK split-per-abi 3 ABI sukses (2026-09-15).
+- **Temuan keamanan (SUDAH DIPERBAIKI):** `.env` ter-bundle verbatim ke AAB memuat `CLOUDFLARE_API_TOKEN` produksi → dihapus dari `.env` (client tak pernah pakai). Sisa: rotasi token bila AAB lama pernah dibagikan.
+- **Blocker rilis Play:** upload ke Closed testing (12 tester × 14 hari) + lengkapi Data safety/App content/listing + deploy landing page (assetlinks) + verifikasi App Links device.
+- **Peringatan rilis (insiden build, SUDAH DIPERBAIKI):** hook rename APK di `android/app/build.gradle.kts` dulu meng-copy SEMUA `app-*.apk` (termasuk sisa build lama) — tiga file `bikin_stiker-0.26.4+86-{arm64-v8a,armeabi-v7a,x86_64}` terbukti byte-identical dengan APK basi 0.26.3 dan sudah dihapus saat itu. Kini: hanya APK yang lebih baru dari task-start (slack 30 dtk) yang di-rename; sisa basi dihapus (+sidecar .sha1/.sha256); arsip versi lama tak tersentuh.
 - **Blocker aktif:** deploy SH2 (`supabase db push` migrasi hardening + verifikasi). Sisa legacy: deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit rls_auto_enable.
 
-## Riwayat Pekerjaan (terbaru  terlama)
+## Riwayat Pekerjaan (terbaru → terlama)
 
 ### 2026-09-15 | Migrasi flutter_markdown → flutter_markdown_plus
-- **Status:** selesai + terverifikasi (analyze/test/build).
-- **Latar:** `flutter_markdown 0.7.7+1` discontinued (30 Mei 2025) - changelog terakhirnya hanya menandai discontinued. Pengganti resmi `flutter_markdown_plus` oleh Foresight Mobile (verified publisher, skor pub 160/160).
+- **Status:** selesai + terverifikasi (analyze/test/build). Belum commit.
+- **Latar:** `flutter_markdown 0.7.7+1` discontinued (30 Mei 2025) — changelog terakhirnya hanya menandai discontinued. Pengganti resmi `flutter_markdown_plus` oleh Foresight Mobile (verified publisher, skor pub 160/160).
 - **Keputusan Teknis:**
   - Opsi A (drop-in fork) dipilih ketimbang hapus dependency render manual: API `Markdown`/`MarkdownStyleSheet` identik, pemakaian proyek hanya dasar (tanpa `onTapLink`/`bulletBuilder`/LaTeX/custom builder) sehingga breaking change historis tak terdampak.
   - `pubspec.yaml`: `flutter_markdown: ^0.7.7+1` → `flutter_markdown_plus: ^1.0.12`; versi app `0.26.5+87` → `0.26.6+88` (patch maintenance).
@@ -20,7 +22,23 @@
 - **File:** `pubspec.yaml`, `pubspec.lock`, `lib/presentation/screens/legal/legal_consent_screen.dart`, `test/markdown_render_test.dart` (NEW), `plans/2026-09-15-migrate-flutter-markdown-to-plus.md` (NEW), `PROJECT_MEMORY.md`.
 - **Verifikasi:** analyze 0 issue; test 198/198 (197 lama + 1 baru); APK split-per-abi 3 ABI sukses.
 - **Proposed commit:** `fix(deps): migrate flutter_markdown to flutter_markdown_plus (discontinued)`
-- **Counter:** maintainer non-Google (startup kecil, golden test sempat di-disable); uji visual di device nyata belum dijalankan - hanya widget test render. Risiko diterima karena pemakaian sangat sederhana.
+- **Counter:** maintainer non-Google (startup kecil, golden test sempat di-disable); uji visual di device nyata belum dijalankan — hanya widget test render. Risiko diterima karena pemakaian sangat sederhana.
+
+### 2026-09-12 | Play Store Release Hardening (AAB, key sama Bagistruk)
+- **Status:** selesai implementasi + AAB lokal terverifikasi. Pending upload Console (manual owner).
+- **Latar:** siapkan rilis Play; owner putuskan pakai key yang sama dengan Bagistruk, jalur Closed test 12 tester × 14 hari, versi lanjut `0.26.5+87`, AdMob baru.
+- **Temuan:** tiga keystore (bagistruk, bikinstiker, waktu-sejak) **byte-identical** SHA-256 `75797589...` → tidak perlu copy. `.env` sudah memuat AdMob App ID produksi `ca-app-pub-4082765898994990~3724794026` (publisher sama Bagistruk) tapi manifest masih Test ID. Landing page `bikin-stiker-landing-page` sudah punya route privacy/terms + `.well-known/assetlinks.json` (fingerprint masih kosong).
+- **Keputusan Teknis:**
+  - `android/app/build.gradle.kts`: `hasReleaseSigning` guard + fallback debug (clone segar/CI debug tak pecah; CI rilis fail-fast via verify signing), pin `compileSdk=36`/`targetSdk=36`, `isMinifyEnabled/isShrinkResources=true` + `proguard-rules.pro` (keep `io.flutter.**`, salin Bagistruk).
+  - `AndroidManifest.xml`: +`ACCESS_NETWORK_STATE`, +`AD_ID` (wajib untuk `google_mobile_ads` + disclosure Console), `allowBackup=false`/`fullBackupContent=false`; AdMob App ID → produksi `...3724794026`.
+  - `key.properties.example` (placeholder, path `upload-keystore.jks` relatif `android/app/` — pertahankan layout Bikinstiker, beda dari Bagistruk yang `../`).
+  - `playstore.yml`: workflow_dispatch, baca versi dari pubspec default, decode `KEYSTORE_BASE64` → `android/app/upload-keystore.jks`, tulis `.env` dari secrets/vars, build AAB, verify bukan debug key, upload artifact. Upload Play otomatis di-comment sampai service account siap.
+  - `assetlinks.json` di landing page diisi SHA-256 upload key (publik, aman).
+  - **Fix keamanan:** `.env` ter-bundle verbatim ke AAB (hash identik) memuat `CLOUDFLARE_API_TOKEN` produksi → 2 baris CLOUDFLARE_* dihapus dari `.env` (backup temp); client tak pernah membaca keduanya (server baca dari DB). `.env.example` diperkuat dengan peringatan.
+- **File:** `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml`, `android/app/proguard-rules.pro` (NEW), `android/key.properties.example` (NEW), `.github/workflows/playstore.yml` (NEW), `.env` (hapus secret), `.env.example`, `plans/2026-09-12-bikinstiker-play-store-release-plan.md` (NEW), `bikin-stiker-landing-page/public/.well-known/assetlinks.json`.
+- **Verifikasi:** analyze 0; test 197/197; `flutter build appbundle --release` 50.1 MB; `jarsigner` jar verified + CN=Alam Aby Bashit (DEBUG_KEY=False); merged manifest targetSdk 36, AD_ID, provider, AdMob prod ID OK; AAB bersih dari CLOUDFLARE/SERVICE_ROLE/OPENROUTER.
+- **Proposed commit:** `chore(android): harden Play release signing, target sdk 36, minify, ads id, and AAB workflow`
+- **Counter:** `assetlinks.json` di landing repo terpisah — belum di-deploy Vercel; App Links hanya terverifikasi setelah host live. Nilai `storeFile` Bikinstiker beda dari Bagistruk (`upload-keystore.jks` vs `../upload-keystore.jks`) — workflow sudah disesuaikan, tapi dokumentasi lintas repo bisa membingungkan.
 
 ### 2026-09-12 | Fix Guest-Wall Signup Existing-User Bounce ke Legal Consent
 - **Status:** selesai + terverifikasi build.

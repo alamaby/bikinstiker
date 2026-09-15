@@ -8,15 +8,22 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Load android/key.properties for release signing. The file is gitignored;
+// see key.properties.example for the expected schema. Falls back to debug
+// signing when the file is absent (e.g. CI debug builds, fresh clones).
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+val hasReleaseSigning = keystoreProperties.getProperty("storeFile") != null
 
 android {
     namespace = "com.alamaby.bikin_stiker"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned to Android 16 (API 36) — Play requires targetSdk 35+ from Aug 2025
+    // and is expected to require 36 from Aug 2026. Pinning explicitly also
+    // avoids surprises when bumping the Flutter SDK.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -29,28 +36,42 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.alamaby.bikin_stiker"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
-            storePassword = keystoreProperties.getProperty("storePassword")
+        if (hasReleaseSigning) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // When key.properties is absent we fall back to debug signing so
+            // `flutter run --release` still works locally. Play Store uploads
+            // MUST use the release keystore — CI verifies the AAB is not
+            // debug-signed. See android/key.properties.example and
+            // plans/2026-09-12-bikinstiker-play-store-release-plan.md.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

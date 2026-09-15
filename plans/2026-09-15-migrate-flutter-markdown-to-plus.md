@@ -11,7 +11,7 @@ Ganti dependency `flutter_markdown` (discontinued, versi terakhir `0.7.7+1`) den
 - Bump versi `0.26.5+87` -> `0.26.6+88` (maintenance/patch).
 - Regenerate `pubspec.lock`.
 - Verifikasi: analyze, test, build APK split-per-abi, smoke render tab Privacy/Terms EN+ID.
-- Update `PROJECT_MEMORY.md`.
+- Update memori proyek (`.memory/` aktif; `PROJECT_MEMORY.md` kini arsip).
 
 ## Milestones
 1. Persist plan + bump versi.
@@ -29,7 +29,7 @@ Ganti dependency `flutter_markdown` (discontinued, versi terakhir `0.7.7+1`) den
 - [x] `flutter test` (198/198, +1 test widget baru)
 - [x] `flutter build apk --split-per-abi` (3 ABI sukses)
 - [x] Smoke test render dokumen legal via widget test (heading/list/tabel EN; dokumen ID dicek `legal_documents_test.dart`)
-- [x] Update `PROJECT_MEMORY.md`
+- [x] Update memori proyek (`.memory/2026-09-15/162123-migrate-flutter-markdown-to-plus.md`)
 
 ## Risks
 - Maintainer bukan Google lagi (Foresight Mobile, proyek kecil). Mitigasi: skor pub 160/160, rilis patch rutin, pemakaian kita sederhana (tanpa `onTapLink`/`bulletBuilder`/LaTeX/custom builder).

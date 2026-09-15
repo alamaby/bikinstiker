@@ -4,7 +4,7 @@
 
 When rules conflict, apply this order (highest priority first):
 1. An explicit, one-off instruction from the user in the current conversation.
-2. Project-specific guidance in `PROJECT_MEMORY.md`.
+2. Project-specific guidance in `.memory/README.md`, or the legacy `PROJECT_MEMORY.md` when the new format is absent.
 3. The standing rules in this document.
 
 If a conflict is non-obvious or high-stakes, flag it to the user instead of silently picking one side.
@@ -64,14 +64,37 @@ When generating diagrams (flowcharts, ER diagrams, architecture diagrams, sequen
 
 ## 5. Project Memory
 
-- Before starting a task, read `PROJECT_MEMORY.md` if it exists.
-- After completing a significant change, update `PROJECT_MEMORY.md` with:
-  - the feature/bug that was worked on
-  - key files that were changed
-  - technical decisions made
-  - verification commands recommended to the user
-  - a proposed commit message
-- Keep the history sorted chronologically, most recent entry at the top.
+### Discovery and Precedence
+
+- Before starting a task, look for `.memory/README.md` at the project root.
+- If it exists, read it first and treat `.memory/` as the active memory source. Read only entries relevant to the current task, using index links, filenames, and keyword search instead of loading full history.
+- If `.memory/README.md` does not exist, read legacy `PROJECT_MEMORY.md` when present.
+- If both exist, `.memory/` is active and `PROJECT_MEMORY.md` is a read-only historical archive unless project-specific instructions explicitly say otherwise.
+
+### Active Format
+
+- Store each significant task in `.memory/YYYY-MM-DD/HHmmss-kebab-case-topic.md`, using the project's local timezone.
+- Use one entry per task, not one file per day. Add a short unique suffix if concurrent agents could produce the same filename.
+- Each entry must record the task or problem, key files changed, technical or business decisions, assumptions or risks, blockers or unresolved items, verification performed or recommended, a one-line Conventional Commit proposal, and related plans/specs/issues when relevant.
+- Do not create entries for trivial reads, explanations, formatting-only changes, or work that produced no durable project knowledge.
+
+### Memory Index
+
+- `.memory/README.md` is a concise current-state summary and navigation index, not a duplicate activity log.
+- Maintain its last-updated timestamp, format version, current state, active decisions, open items/blockers, legacy archive link, and at most 20 recent entry links.
+- Preserve entry files after they leave `Recent Entries`; never delete history merely to bound the index.
+
+### Post-Task Update
+
+- After a significant change, create one timestamped entry and update `.memory/README.md` only when current state, active decisions, open items, or recent links changed.
+- Re-read target files immediately before editing when concurrent agents may be active. Preserve memory written by users or other agents.
+- Once `.memory/` is initialized, do not append new entries to `PROJECT_MEMORY.md`.
+
+### Legacy Migration
+
+- When only `PROJECT_MEMORY.md` exists, initialize `.memory/README.md`, retain the legacy file in place, link it as historical memory, and extract only still-active decisions, blockers, and current state.
+- Do not split or rewrite complete legacy history unless the user explicitly requests full migration.
+- Write all subsequent significant-task entries in the active format.
 
 ## 6. MCP Database (Read-Only)
 

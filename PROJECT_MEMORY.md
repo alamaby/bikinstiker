@@ -1,5 +1,8 @@
 # Project Memory - BikinStiker
 
+> **ARCHIVED (2026-09-15):** Memori aktif sudah pindah ke `.memory/` (lihat `.memory/README.md`).
+> File ini dipertahankan sebagai arsip historis dan **read-only** — jangan tambah entri baru di sini.
+
 ## Status Saat Ini
 - **Terakhir dikerjakan:** 2026-09-15
 - **Perubahan terakhir:** Migrasi `flutter_markdown` (discontinued) → `flutter_markdown_plus ^1.0.12`; versi app `0.26.6+88`. analyze 0; test 198/198; APK 3 ABI sukses.

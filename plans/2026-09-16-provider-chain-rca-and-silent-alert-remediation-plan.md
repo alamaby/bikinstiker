@@ -83,8 +83,19 @@ tidak pernah terdeteksi.
 - [x] **Konfirmasi definitif RCA:** `supabase secrets list` menunjukkan `RESEND_API_KEY` / `OPERATOR_ALERT_TO` / `OPERATOR_ALERT_FROM` **tidak pernah ada** — guard lama `return` senyap pada setiap insiden.
 - [x] Verifikasi produksi: `image_generation_active_configs_health` menunjukkan Cloudflare + cerebras `gemma-4-31b` sudah `is_active=false`.
 - [ ] **Smoke test end-to-end:** jalankan satu generation nyata, lalu pastikan `operator_alerts` terisi bila ada insiden dan `prompt_enhancement_logs` tidak lagi habis ke fallback.
-- [ ] **Opsional:** provisioning Resend (set 3 secret) untuk kanal email; tanpa itu insiden tetap tercatat di `operator_alerts`.
+- [x] **Opsional:** kanal email Resend - `OPERATOR_ALERT_FROM` ditetapkan ke `BikinStiker Alerts <updates@alamaby.com>` di `.env.example` (kode membaca dari env; tidak ada alamat hardcoded).
 - [x] **Catatan operasional:** jangan pernah `UPDATE ... SET is_active = TRUE` secara massal per-provider saat patch kredensial — model known-bad (mis. Cerebras archived) akan ikut aktif kembali.
+
+### Fase 6 — Provisioning kanal email Resend (blocked)
+- [x] Telusuri kebutuhan Resend: akun + domain terverifikasi (DKIM/SPF) + API key + 4 secret.
+- [x] Konfirmasi `alamaby.com` **terdaftar & aktif** (NS `nsid1-4.rumahweb.*` + `ns1/ns2.vercel-dns.com`; expires 2027-05-18).
+- [x] Tetapkan `from` = `BikinStiker Alerts <updates@alamaby.com>` di `.env.example` (kode membaca dari env, tidak ada alamat hardcoded).
+- [x] Verifikasi record Resend via `Deno.resolveDns` ke 1.1.1.1 (bypass interceptor AdGuard lokal yang mem-polnusi `Resolve-DnsName`): `send.alamaby.com` MX/TXT, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` → **semuanya NO RECORD**.
+- [x] Konfirmasi `supabase secrets set` belum bisa dijalankan (CLI masih `401 Unauthorized`).
+- [ ] **Manual (pemilik):** daftar resend.com → Add Domain `alamaby.com` → tambahkan record DKIM/SPF yang diberikan Resend di DNS (rumahweb atau Vercel; pastikan NS yang benar-benar otoritatif).
+- [ ] **Manual (pemilik):** buat API key (`re_...`, permission *Sending access*).
+- [ ] **Manual (pemilik):** `supabase login` lalu set 4 secret (perintah ada di `.env.example` baris 124-127). **Tidak perlu redeploy.**
+- [ ] **Opsional:** tambah record `_dmarc` untuk deliverability.
 
 ## Risks
 
@@ -103,6 +114,8 @@ tidak pernah terdeteksi.
 - 2026-09-16 13:05:00 — Remediasi kedua: guard recipient kosong (`OPERATOR_ALERT_TO=" , "`) kini berisik dan tidak lagi mengonsumsi slot dedupe (dipindah setelah validasi recipient). Simulasi dampak migrasi dijalankan baca-saja terhadap produksi: 2 baris tersentuh, sisa 4 default + 2 reasoning aktif (ollama + openrouter). Semua suite fungsi hijau.
 - 2026-09-16 13:55:00 — Migrasi `20260916000001` dikonfirmasi **sudah ter-apply** di produksi (`schema_migrations` + `image_generation_active_configs_health`). `supabase secrets list` membuktikan tiga env alert tidak pernah ada → RCA alert tervalidasi definitif. Sesuai keputusan pemilik, ditambahkan **DB alert sink**: migrasi `20260916065125_operator_alert_sink.sql` (tabel + view + RLS deny-all) di-apply via MCP; `operator_alerts.ts` di-refactor agar DB write selalu terjadi lebih dulu, email jadi kanal kedua opsional; `queueOperatorAlert` menerima `service` eksplisit. generate-sticker 134/134, surprise-me 15/15, semua suite hijau. Produksi **belum** menjalankan kode baru — edge function masih versi lama (diverifikasi lewat `get_edge_function`), deploy menunggu `supabase login` pemilik.
 - 2026-09-16 14:17:04 — Pemilik deploy kedua edge function (`generate-sticker` v38, `surprise-me` v6) dan patch kredensial Ollama + Cerebras. Verifikasi kode live: 12/12 marker baru PRESENT, marker lama ABSENT. **Regresi ditemukan**: backfill key Cerebras ikut `SET is_active = TRUE` massal sehingga `gemma-4-31b` (archived) aktif kembali; diperbaiki lewat migrasi `20260916071704_deactivate_archived_cerebras_model.sql` (ter-apply). File migrasi lokal di-rename agar versinya cocok dengan `schema_migrations` (`...065125`, `...071704`) sehingga `db push` berikutnya tidak menganggapnya migrasi baru.
+- 2026-09-16 15:10:00 — Investigasi provisioning Resend (Fase 6). Ditemukan `bikinstiker.com`/`bikinstiker.app` (dipakai repo) **belum terdaftar sama sekali** (rdap 404 + NXDOMAIN, dikalibrasi terhadap `google.com`/`example.com`/`itunes.app` yang RESOLVED). Sebagai gantinya `from` ditetapkan ke `updates@alamaby.com` karena `alamaby.com` terdaftar & aktif (NS rumahweb + Vercel, expires 2027-05-18). Record Resend di `alamaby.com` diverifikasi via `Deno.resolveDns` langsung ke 1.1.1.1 (resolver OS ter-intercept AdGuard dan mengembalikan data palsu): `send.alamaby.com`, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` semuanya NO RECORD → domain belum ditambahkan ke Resend. `.env.example` diperbarui (from address + catatan verifikasi domain + "tidak perlu redeploy"). Blocker: `supabase secrets set` masih butuh `supabase login`.
+- Catatan koreksi: dugaan awal bahwa `fetch` tidak mengirim `User-Agent` (Resend menolak dengan 403 code 1010) **terbukti salah** lewat uji lokal — Deno `fetch` otomatis mengirim `User-Agent: Deno/2.9.6`. Tidak ada perubahan kode untuk itu.
 
 ## Notes
 

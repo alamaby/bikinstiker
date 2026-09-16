@@ -93,7 +93,17 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
   **Pelajaran:** jangan `UPDATE ... SET is_active = TRUE` massal per-provider saat patch kredensial.
 - Cloudflare default (`@cf/black-forest-labs/flux-1-schnell`) masih nonaktif; aktifkan hanya setelah
   `base_url` (account id real) + `api_key` dipatch dalam satu UPDATE.
-- Opsional: provisioning Resend untuk kanal email; tanpa itu insiden tetap tercatat di `operator_alerts`.
+- **Resend (Fase 6, blocked):** `OPERATOR_ALERT_FROM` ditetapkan ke
+  `BikinStiker Alerts <updates@alamaby.com>`. `alamaby.com` terdaftar & aktif (NS rumahweb + Vercel).
+  Record Resend belum ada — diverifikasi via `Deno.resolveDns` ke 1.1.1.1 (resolver OS ter-intercept
+  AdGuard): `send.alamaby.com`, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` = NO RECORD.
+  Langkah pemilik: daftar resend.com → verify domain → API key → `supabase login` → set 4 secret
+  (tidak perlu redeploy).
+- **Catatan domain:** `bikinstiker.com` / `bikinstiker.app` (dipakai repo untuk HTTP-Referer dan
+  App Links) **belum terdaftar sama sekali** (rdap 404 + NXDOMAIN). Ini juga memblokir App Links
+  `assetlinks.json` dan landing page — bukan hanya Resend.
+- **Koreksi:** dugaan bahwa Deno `fetch` tidak mengirim `User-Agent` (Resend 403 code 1010) salah —
+  diuji lokal, Deno otomatis mengirim `User-Agent: Deno/2.9.6`. Tidak ada perubahan kode.
 
 ## Commit Proposal
 

@@ -17,6 +17,12 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
 - `supabase/migrations/20260916000001_remediate_provider_chain_rca.sql` (NEW, applied)
 - `supabase/migrations/20260916065125_operator_alert_sink.sql` (NEW, applied)
 - `supabase/migrations/20260916071704_deactivate_archived_cerebras_model.sql` (NEW, applied)
+- `supabase/migrations/20260916152819_repoint_domain_to_alamaby.sql` (NEW, applied)
+- `supabase/functions/share-redirect/index.ts`
+- `android/app/src/main/AndroidManifest.xml`
+- `ios/Runner/Runner.entitlements`
+- `lib/core/services/share_mission_service.dart`
+- `.env.example`
 - `plans/2026-09-16-provider-chain-rca-and-silent-alert-remediation-plan.md` (NEW)
 
 ## Decisions
@@ -69,23 +75,40 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
 
 ## Verification
 
-- `deno check index.ts` bersih untuk `generate-sticker` dan `surprise-me`.
+- `deno check index.ts` bersih untuk `generate-sticker`, `surprise-me`, dan `share-redirect`.
 - `deno test`: generate-sticker **134/134**, surprise-me **15/15**; `_shared` 6, `list-presets` 7,
   `showcase-preview` 6, `showcase-purchase-copy` 13 semuanya lulus.
+- `flutter analyze`: 0 issues. `flutter test`: **198/198**.
 - 22 tes baru: warn-saat-secret-kosong, deteksi berbasis `errorType`, `safeAlertText` sintetis,
   dedupe release-on-failure / keep-on-success, recipient kosong (warn + tidak konsumsi slot),
   `partitionRunnableConfigs` (4 kasus), DB sink (`recordOperatorAlert` 5 kasus, `sanitizeStoredError` 2,
   `dispatchOperatorAlert` 2).
 - Simulasi dampak migrasi via query baca-saja: hanya 1 baris Cloudflare + 1 baris Cerebras
   tersentuh; sisa aktif 4 default + 2 reasoning (ollama, openrouter).
-- Produksi: migrasi `20260916000001`, `20260916065125` & `20260916071704` **ter-apply** (dikonfirmasi
-  via `supabase_migrations.schema_migrations` + `information_schema.columns`). Edge function sudah
-  dideploy oleh pemilik: `generate-sticker` **v38**, `surprise-me` **v6**; verifikasi `get_edge_function`
-  menunjukkan 12/12 marker kode baru PRESENT dan marker lama ABSENT.
+- Produksi: migrasi `20260916000001`, `20260916065125`, `20260916071704`, `20260916152819` **ter-apply**.
+  Edge function sudah dideploy oleh pemilik: `generate-sticker` **v38**, `surprise-me` **v6**;
+  verifikasi `get_edge_function` menunjukkan 12/12 marker kode baru PRESENT dan marker lama ABSENT.
+- Migrasi domain terverifikasi: `request_share_token` `has_new_domain=true` / `has_old_domain=false`;
+  6/6 baris `http_referer` menunjuk host baru.
+
+## Domain Migration to `bikinstiker.alamaby.com`
+
+- `bikinstiker.com`/`bikinstiker.app` **tidak terdaftar** (RDAP 404 + NXDOMAIN, dikalibrasi terhadap
+  `google.com`/`example.com`/`itunes.app`). Pemilik mengarahkan ke `bikinstiker.alamaby.com`
+  (**live**: A → Vercel `64.29.17.x`, HTTP 200, landing page "BikinStiker - AI-Powered Sticker Creator").
+- **Dieksekusi (Fase 7):** `generate-sticker` 3 default HTTP-Referer; `share-redirect`
+  `APP_CLAIM_PATH`+`LANDING_FALLBACK`; `request_share_token()` `share_url` + 6 override
+  `request_options.http_referer` di DB (migrasi `20260916152819`, **ter-apply**); `android:host`
+  App Link; `applinks:` iOS entitlement; https allowlist `share_mission_service.dart`.
+- **TIDAK diubah (bukan domain):** custom scheme `bikinstiker://`, bundle ID `com.bikinstiker.bikin`,
+  OAuth redirect `io.supabase.bikinstiker://` (+ `additional_redirect_urls` di `config.toml`).
+- `share_mission_service.dart` sengaja tetap menerima `bikinstiker.com` di https allowlist untuk
+  kompatibilitas link lama (token berlaku 10 menit, tapi share lama bisa masih beredar).
 
 ## Blockers / Unresolved
 
-- ~~Deploy edge function~~ **Selesai** (v38 / v6).
+- ~~Deploy edge function~~ **Selesai** (v38 / v6), tetapi **Fase 7 menuntut redeploy ulang**
+  `generate-sticker`, `surprise-me`, dan `share-redirect` (perubahan domain belum live).
 - **Regresi pasca-patch kredensial (sudah diperbaiki)**: backfill key Cerebras memakai
   `SET is_active = TRUE` massal untuk semua row cerebras, sehingga `gemma-4-31b` (archived)
   aktif kembali pada p2. Migrasi `20260916071704` menonaktifkannya lagi. Rantai reasoning final:
@@ -93,18 +116,18 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
   **Pelajaran:** jangan `UPDATE ... SET is_active = TRUE` massal per-provider saat patch kredensial.
 - Cloudflare default (`@cf/black-forest-labs/flux-1-schnell`) masih nonaktif; aktifkan hanya setelah
   `base_url` (account id real) + `api_key` dipatch dalam satu UPDATE.
-- **Resend (Fase 6, blocked):** `OPERATOR_ALERT_FROM` ditetapkan ke
-  `BikinStiker Alerts <updates@alamaby.com>`. `alamaby.com` terdaftar & aktif (NS rumahweb + Vercel).
-  Record Resend belum ada — diverifikasi via `Deno.resolveDns` ke 1.1.1.1 (resolver OS ter-intercept
-  AdGuard): `send.alamaby.com`, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` = NO RECORD.
-  Langkah pemilik: daftar resend.com → verify domain → API key → `supabase login` → set 4 secret
-  (tidak perlu redeploy).
-- **Catatan domain:** `bikinstiker.com` / `bikinstiker.app` (dipakai repo untuk HTTP-Referer dan
-  App Links) **belum terdaftar sama sekali** (rdap 404 + NXDOMAIN). Ini juga memblokir App Links
-  `assetlinks.json` dan landing page — bukan hanya Resend.
+- **App Links belum terverifikasi:** `https://bikinstiker.alamaby.com/.well-known/assetlinks.json`
+  masih **404** (dicek langsung). Tanpa itu `android:autoVerify` gagal dan link https tidak membuka app.
+  Perlu host `assetlinks.json` + `apple-app-site-association` di Vercel (repo landing page terpisah).
+- **Resend (Fase 6, blocked):** `OPERATOR_ALERT_FROM` = `BikinStiker Alerts <updates@bikinstiker.alamaby.com>`.
+  Record Resend belum ada — diverifikasi via `Deno.resolveDns` ke 1.1.1.1 (resolver OS Windows
+  ter-intercept AdGuard dan mengembalikan TXT palsu, jadi `Resolve-DnsName` tidak bisa dipercaya):
+  `send.bikinstiker.alamaby.com` MX/TXT, `resend._domainkey.bikinstiker.alamaby.com`,
+  `_dmarc.bikinstiker.alamaby.com` = **NO RECORD**. Langkah pemilik: daftar resend.com → Add Domain →
+  API key → `supabase login` → set 4 secret (tidak perlu redeploy).
 - **Koreksi:** dugaan bahwa Deno `fetch` tidak mengirim `User-Agent` (Resend 403 code 1010) salah —
   diuji lokal, Deno otomatis mengirim `User-Agent: Deno/2.9.6`. Tidak ada perubahan kode.
 
 ## Commit Proposal
 
-`fix(providers): persist operator alerts to DB sink and alert on silent email no-op`
+`feat(domain): migrate app links and share URLs to bikinstiker.alamaby.com`

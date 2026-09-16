@@ -11,7 +11,7 @@ import '../../data/models/share_token.dart';
 ///
 /// 1. Outbound: request a single-use share token from the server, then open
 ///    the native share sheet with the resulting link baked into the text.
-/// 2. Inbound: surface deep-link opens (`bikinstiker.com/share-claimed/...`
+/// 2. Inbound: surface deep-link opens (`bikinstiker.alamaby.com/share-claimed/...`
 ///    via Universal/App Links or `bikinstiker://share-claimed/...` via the
 ///    custom URL scheme) so the MissionBloc can convert the click into a
 ///    completed mission and a success UI.
@@ -118,10 +118,15 @@ class ShareMissionService {
   /// Accepts both the https host (Universal/App Links) and the custom URL
   /// scheme bikinstiker://... which serves as a fallback on platforms
   /// without domain association set up.
+  ///
+  /// `bikinstiker.com` is kept in the https allowlist only for backward
+  /// compatibility with links minted before the domain moved; the canonical
+  /// host is `bikinstiker.alamaby.com`.
   ShareClaimResult? _maybeBuildClaim(Uri uri) {
     final isHttpsClaim =
         uri.scheme == 'https' &&
-        uri.host == 'bikinstiker.com' &&
+        (uri.host == 'bikinstiker.alamaby.com' ||
+            uri.host == 'bikinstiker.com') &&
         uri.pathSegments.isNotEmpty &&
         (uri.pathSegments.first == 'share-claimed' ||
             uri.pathSegments.first == 'r');

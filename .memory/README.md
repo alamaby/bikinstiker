@@ -22,8 +22,10 @@ Format version: 1
 ## Open Items / Blockers
 - **Smoke test end-to-end (2026-09-16):** jalankan satu generation nyata; pastikan `prompt_enhancement_logs` tidak lagi jatuh ke fallback dan `operator_alerts` terisi bila ada insiden.
 - **Cloudflare default:** masih nonaktif; aktifkan hanya setelah `base_url` (account id real) + `api_key` dipatch dalam satu UPDATE.
-- **Opsional (2026-09-16):** kanal email Resend — `from` = `updates@alamaby.com`; `alamaby.com` terdaftar tapi record Resend (DKIM/SPF) belum ada. Butuh: verify domain di resend.com → API key → `supabase login` → set 4 secret.
-- **Domain belum ada (2026-09-16):** `bikinstiker.com` / `bikinstiker.app` (HTTP-Referer + App Links `assetlinks.json` + landing page) **belum terdaftar** (rdap 404 + NXDOMAIN). Perlu dibeli sebelum App Links bisa diverifikasi di device.
+- **Opsional (2026-09-16):** kanal email Resend — `from` = `updates@bikinstiker.alamaby.com`; record Resend (DKIM/SPF) belum ada. Butuh: verify domain di resend.com → API key → `supabase login` → set 4 secret.
+- **Redeploy diperlukan (2026-09-16):** `generate-sticker`, `surprise-me`, `share-redirect` — perubahan domain (Fase 7) belum live di produksi.
+- **Domain berpindah ke `bikinstiker.alamaby.com` (2026-09-16):** `bikinstiker.com`/`bikinstiker.app` tidak pernah terdaftar; semua referensi (edge function HTTP-Referer, `share-redirect`, `request_share_token()`, 6 override `http_referer` di DB, Android App Link, iOS entitlement, Flutter host check) diarahkan ke host baru. Custom scheme `bikinstiker://` & bundle ID `com.bikinstiker.bikin` **tidak** diubah. Migrasi `20260916152819` ter-apply; **edge function belum dideploy ulang**.
+- **App Links belum terverifikasi:** `.well-known/assetlinks.json` di host baru masih 404 — perlu di-host di Vercel (repo landing page terpisah).
 - **Utang teknis alert:** dedupe per-isolate (bisa spam setelah cold start); `prompt_enhancement_logs.sticker_generation_id` selalu `null`; `operator_alerts` belum ada retensi/purge.
 - **Jangan:** `UPDATE ... SET is_active = TRUE` massal per-provider saat patch kredensial — model known-bad ikut aktif (lihat regresi `gemma-4-31b` 2026-09-16).
 - **Rilis Play:** upload ke Closed testing (12 tester × 14 hari), lengkapi Data safety / App content / listing, deploy landing page (assetlinks), verifikasi App Links di device.

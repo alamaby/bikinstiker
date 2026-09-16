@@ -69,8 +69,7 @@ tidak pernah terdeteksi.
 - [x] `failoverWillContinue` surprise-me dihitung benar (sisa config dalam pass ini, atau masih ada pass kedua).
 - [x] 9 tes baru untuk DB sink + sanitize + dispatch.
 
-### Fase 4c — Deploy & regresi pasca-patch kredensial
-- [x] Edge function terdeploy: `generate-sticker` **v38**, `surprise-me` **v6** (dikonfirmasi via `list_edge_functions`).
+### Fase 4c — Deploy & regresi pasca-patch kredensial- [x] Edge function terdeploy: `generate-sticker` **v38**, `surprise-me` **v6** (dikonfirmasi via `list_edge_functions`).
 - [x] Verifikasi kode live: 12/12 marker baru PRESENT, marker lama ABSENT (via `get_edge_function`).
 - [x] Patch kredensial Ollama + Cerebras dikerjakan pemilik.
 - [x] **Regresi terdeteksi & diperbaiki**: UPDATE backfill key Cerebras ikut `SET is_active = TRUE` ke semua row cerebras, sehingga `gemma-4-31b` (archived) aktif kembali. Migrasi `20260916071704_deactivate_archived_cerebras_model.sql` di-apply untuk menonaktifkannya lagi.
@@ -89,13 +88,27 @@ tidak pernah terdeteksi.
 ### Fase 6 — Provisioning kanal email Resend (blocked)
 - [x] Telusuri kebutuhan Resend: akun + domain terverifikasi (DKIM/SPF) + API key + 4 secret.
 - [x] Konfirmasi `alamaby.com` **terdaftar & aktif** (NS `nsid1-4.rumahweb.*` + `ns1/ns2.vercel-dns.com`; expires 2027-05-18).
-- [x] Tetapkan `from` = `BikinStiker Alerts <updates@alamaby.com>` di `.env.example` (kode membaca dari env, tidak ada alamat hardcoded).
-- [x] Verifikasi record Resend via `Deno.resolveDns` ke 1.1.1.1 (bypass interceptor AdGuard lokal yang mem-polnusi `Resolve-DnsName`): `send.alamaby.com` MX/TXT, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` → **semuanya NO RECORD**.
+- [x] Konfirmasi `bikinstiker.alamaby.com` **live** (A → Vercel, HTTP 200, landing page "BikinStiker - AI-Powered Sticker Creator").
+- [x] Tetapkan `from` = `BikinStiker Alerts <updates@bikinstiker.alamaby.com>` di `.env.example`.
+- [x] Verifikasi record Resend via `Deno.resolveDns` ke 1.1.1.1 (bypass interceptor AdGuard lokal yang mem-polnusi `Resolve-DnsName`): `send.bikinstiker.alamaby.com` MX/TXT, `resend._domainkey.bikinstiker.alamaby.com`, `_dmarc.bikinstiker.alamaby.com` → **semuanya NO RECORD**.
 - [x] Konfirmasi `supabase secrets set` belum bisa dijalankan (CLI masih `401 Unauthorized`).
-- [ ] **Manual (pemilik):** daftar resend.com → Add Domain `alamaby.com` → tambahkan record DKIM/SPF yang diberikan Resend di DNS (rumahweb atau Vercel; pastikan NS yang benar-benar otoritatif).
+- [ ] **Manual (pemilik):** daftar resend.com → Add Domain `bikinstiker.alamaby.com` → tambahkan record DKIM/SPF di DNS.
 - [ ] **Manual (pemilik):** buat API key (`re_...`, permission *Sending access*).
 - [ ] **Manual (pemilik):** `supabase login` lalu set 4 secret (perintah ada di `.env.example` baris 124-127). **Tidak perlu redeploy.**
 - [ ] **Opsional:** tambah record `_dmarc` untuk deliverability.
+
+### Fase 7 — Migrasi domain ke `bikinstiker.alamaby.com`
+- [x] Petakan semua referensi: `bikinstiker.com`/`bikinstiker.app` (mati) vs custom scheme `bikinstiker://` & bundle ID `com.bikinstiker.bikin` (**bukan** domain — tidak disentuh).
+- [x] `generate-sticker/index.ts`: 3 default HTTP-Referer → `https://bikinstiker.alamaby.com`.
+- [x] `share-redirect/index.ts`: `APP_CLAIM_PATH` + `LANDING_FALLBACK` → host baru.
+- [x] Migrasi `20260916152819_repoint_domain_to_alamaby.sql` (**ter-apply**): `request_share_token()` `share_url` → host baru; 6 baris `image_generation_configs.request_options.http_referer` (override yang menutupi default kode) → host baru. Terverifikasi: `has_new_domain=true`, `has_old_domain=false`, 6/6 config ter-update.
+- [x] `AndroidManifest.xml`: `android:host` App Link → `bikinstiker.alamaby.com`.
+- [x] `ios/Runner/Runner.entitlements`: `applinks:` → `bikinstiker.alamaby.com`.
+- [x] `share_mission_service.dart`: https allowlist host baru **plus `bikinstiker.com`** untuk kompatibilitas link lama; custom scheme `bikinstiker://` tidak berubah.
+- [x] Verifikasi: `deno check` bersih; deno test 134/134; `flutter analyze` 0; `flutter test` 198/198.
+- [ ] **Manual (pemilik):** redeploy `generate-sticker`, `surprise-me` (impor dari generate-sticker), dan `share-redirect`.
+- [ ] **Manual (pemilik):** host `assetlinks.json` + `apple-app-site-association` di `bikinstiker.alamaby.com/.well-known/` (saat ini 404) agar App Links terverifikasi.
+- [ ] **Manual (pemilik):** daftarkan subdomain baru di Supabase Auth redirect allowlist bila perlu.
 
 ## Risks
 
@@ -116,6 +129,7 @@ tidak pernah terdeteksi.
 - 2026-09-16 14:17:04 — Pemilik deploy kedua edge function (`generate-sticker` v38, `surprise-me` v6) dan patch kredensial Ollama + Cerebras. Verifikasi kode live: 12/12 marker baru PRESENT, marker lama ABSENT. **Regresi ditemukan**: backfill key Cerebras ikut `SET is_active = TRUE` massal sehingga `gemma-4-31b` (archived) aktif kembali; diperbaiki lewat migrasi `20260916071704_deactivate_archived_cerebras_model.sql` (ter-apply). File migrasi lokal di-rename agar versinya cocok dengan `schema_migrations` (`...065125`, `...071704`) sehingga `db push` berikutnya tidak menganggapnya migrasi baru.
 - 2026-09-16 15:10:00 — Investigasi provisioning Resend (Fase 6). Ditemukan `bikinstiker.com`/`bikinstiker.app` (dipakai repo) **belum terdaftar sama sekali** (rdap 404 + NXDOMAIN, dikalibrasi terhadap `google.com`/`example.com`/`itunes.app` yang RESOLVED). Sebagai gantinya `from` ditetapkan ke `updates@alamaby.com` karena `alamaby.com` terdaftar & aktif (NS rumahweb + Vercel, expires 2027-05-18). Record Resend di `alamaby.com` diverifikasi via `Deno.resolveDns` langsung ke 1.1.1.1 (resolver OS ter-intercept AdGuard dan mengembalikan data palsu): `send.alamaby.com`, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` semuanya NO RECORD → domain belum ditambahkan ke Resend. `.env.example` diperbarui (from address + catatan verifikasi domain + "tidak perlu redeploy"). Blocker: `supabase secrets set` masih butuh `supabase login`.
 - Catatan koreksi: dugaan awal bahwa `fetch` tidak mengirim `User-Agent` (Resend menolak dengan 403 code 1010) **terbukti salah** lewat uji lokal — Deno `fetch` otomatis mengirim `User-Agent: Deno/2.9.6`. Tidak ada perubahan kode untuk itu.
+- 2026-09-16 15:28:19 — Pemilik mengarahkan ke domain terdaftar: `bikinstiker.alamaby.com`. Diverifikasi live (A → Vercel `64.29.17.x`, HTTP 200, landing page BikinStiker). Dieksekusi **Fase 7** — migrasi semua referensi domain mati: 3 default HTTP-Referer di `generate-sticker/index.ts`, `APP_CLAIM_PATH`+`LANDING_FALLBACK` di `share-redirect/index.ts`, `request_share_token()` `share_url` + 6 override `http_referer` di DB (migrasi `20260916152819`, **ter-apply**), `android:host` App Link, `applinks:` iOS entitlement, dan https allowlist `share_mission_service.dart`. Custom scheme `bikinstiker://`, bundle ID `com.bikinstiker.bikin`, dan `io.supabase.bikinstiker://` OAuth redirect sengaja **tidak** diubah (bukan domain). Verifikasi: deno check bersih, deno test 134/134, flutter analyze 0, flutter test 198/198. Sisa: redeploy `generate-sticker`/`surprise-me`/`share-redirect`, host `.well-known/assetlinks.json` (masih 404), dan verifikasi `bikinstiker.alamaby.com` di Resend (record DKIM/SPF masih NO RECORD).
 
 ## Notes
 

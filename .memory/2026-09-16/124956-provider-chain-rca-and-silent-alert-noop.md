@@ -119,12 +119,15 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
 - **App Links belum terverifikasi:** `https://bikinstiker.alamaby.com/.well-known/assetlinks.json`
   masih **404** (dicek langsung). Tanpa itu `android:autoVerify` gagal dan link https tidak membuka app.
   Perlu host `assetlinks.json` + `apple-app-site-association` di Vercel (repo landing page terpisah).
-- **Resend (Fase 6, blocked):** `OPERATOR_ALERT_FROM` = `BikinStiker Alerts <updates@bikinstiker.alamaby.com>`.
-  Record Resend belum ada — diverifikasi via `Deno.resolveDns` ke 1.1.1.1 (resolver OS Windows
-  ter-intercept AdGuard dan mengembalikan TXT palsu, jadi `Resolve-DnsName` tidak bisa dipercaya):
-  `send.bikinstiker.alamaby.com` MX/TXT, `resend._domainkey.bikinstiker.alamaby.com`,
-  `_dmarc.bikinstiker.alamaby.com` = **NO RECORD**. Langkah pemilik: daftar resend.com → Add Domain →
-  API key → `supabase login` → set 4 secret (tidak perlu redeploy).
+- **Resend (Fase 6, blocked):** `OPERATOR_ALERT_FROM` = `BikinStiker Alerts <updates@alamaby.com>`
+  (**domain root `alamaby.com`** — yang terdaftar di Resend; **bukan** subdomain app host
+  `bikinstiker.alamaby.com`). Record Resend belum ada — diverifikasi via `Deno.resolveDns` ke 1.1.1.1
+  (resolver OS Windows ter-intercept AdGuard dan mengembalikan TXT palsu, jadi `Resolve-DnsName`
+  tidak bisa dipercaya): `send.alamaby.com` MX/TXT, `resend._domainkey.alamaby.com`,
+  `_dmarc.alamaby.com` = **NO RECORD**. Langkah pemilik: daftar resend.com → Add Domain `alamaby.com`
+  → API key → `supabase login` → set 4 secret (tidak perlu redeploy).
+  **Catatan:** app host (`bikinstiker.alamaby.com`) dan email sender domain (`alamaby.com`) sengaja
+  berbeda — app host dipakai untuk App Links/share, root dipakai untuk email.
 - **Koreksi:** dugaan bahwa Deno `fetch` tidak mengirim `User-Agent` (Resend 403 code 1010) salah —
   diuji lokal, Deno otomatis mengirim `User-Agent: Deno/2.9.6`. Tidak ada perubahan kode.
 

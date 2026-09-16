@@ -89,10 +89,10 @@ tidak pernah terdeteksi.
 - [x] Telusuri kebutuhan Resend: akun + domain terverifikasi (DKIM/SPF) + API key + 4 secret.
 - [x] Konfirmasi `alamaby.com` **terdaftar & aktif** (NS `nsid1-4.rumahweb.*` + `ns1/ns2.vercel-dns.com`; expires 2027-05-18).
 - [x] Konfirmasi `bikinstiker.alamaby.com` **live** (A → Vercel, HTTP 200, landing page "BikinStiker - AI-Powered Sticker Creator").
-- [x] Tetapkan `from` = `BikinStiker Alerts <updates@bikinstiker.alamaby.com>` di `.env.example`.
-- [x] Verifikasi record Resend via `Deno.resolveDns` ke 1.1.1.1 (bypass interceptor AdGuard lokal yang mem-polnusi `Resolve-DnsName`): `send.bikinstiker.alamaby.com` MX/TXT, `resend._domainkey.bikinstiker.alamaby.com`, `_dmarc.bikinstiker.alamaby.com` → **semuanya NO RECORD**.
+- [x] Tetapkan `from` = `BikinStiker Alerts <updates@alamaby.com>` di `.env.example` (domain root yang terdaftar di Resend; bukan subdomain app host).
+- [x] Verifikasi record Resend via `Deno.resolveDns` ke 1.1.1.1 (bypass interceptor AdGuard lokal yang mem-polnusi `Resolve-DnsName`): `send.alamaby.com` MX/TXT, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` → **semuanya NO RECORD** (domain belum ditambahkan ke Resend).
 - [x] Konfirmasi `supabase secrets set` belum bisa dijalankan (CLI masih `401 Unauthorized`).
-- [ ] **Manual (pemilik):** daftar resend.com → Add Domain `bikinstiker.alamaby.com` → tambahkan record DKIM/SPF di DNS.
+- [ ] **Manual (pemilik):** daftar resend.com → Add Domain `alamaby.com` → tambahkan record DKIM/SPF di DNS.
 - [ ] **Manual (pemilik):** buat API key (`re_...`, permission *Sending access*).
 - [ ] **Manual (pemilik):** `supabase login` lalu set 4 secret (perintah ada di `.env.example` baris 124-127). **Tidak perlu redeploy.**
 - [ ] **Opsional:** tambah record `_dmarc` untuk deliverability.
@@ -144,3 +144,7 @@ tidak pernah terdeteksi.
   sehingga "belum dikonfigurasi" tak terbedakan dari "terkirim".
 - Keputusan sadar: **tidak** menambah constraint NOT NULL/CHECK pada `api_key` (karena
   `pollinations` sah tanpa key); guardrail diletakkan sebagai partial index + guard runtime.
+- **Dua domain, dua peran (disengaja):** `bikinstiker.alamaby.com` = host aplikasi (App
+  Links/Universal Links, `/r/<token>`, landing page, HTTP-Referer). `alamaby.com` (root) = domain
+  pengirim email operator (`updates@alamaby.com`) dan satu-satunya yang didaftarkan di Resend.
+  Memisahkan reputasi pengiriman dari host aplikasi; jangan disatukan tanpa alasan kuat.

@@ -22,7 +22,7 @@ Format version: 1
 ## Open Items / Blockers
 - **Smoke test end-to-end (2026-09-16):** jalankan satu generation nyata; pastikan `prompt_enhancement_logs` tidak lagi jatuh ke fallback dan `operator_alerts` terisi bila ada insiden.
 - **Cloudflare default:** masih nonaktif; aktifkan hanya setelah `base_url` (account id real) + `api_key` dipatch dalam satu UPDATE.
-- **Opsional (2026-09-16):** kanal email Resend — `from` = `updates@bikinstiker.alamaby.com`; record Resend (DKIM/SPF) belum ada. Butuh: verify domain di resend.com → API key → `supabase login` → set 4 secret.
+- **Opsional (2026-09-16):** kanal email Resend — `from` = `updates@alamaby.com` (domain root, yang terdaftar di Resend; **bukan** subdomain app host). Record Resend (DKIM/SPF) belum ada. Butuh: verify domain `alamaby.com` di resend.com → API key → `supabase login` → set 4 secret.
 - **Redeploy diperlukan (2026-09-16):** `generate-sticker`, `surprise-me`, `share-redirect` — perubahan domain (Fase 7) belum live di produksi.
 - **Domain berpindah ke `bikinstiker.alamaby.com` (2026-09-16):** `bikinstiker.com`/`bikinstiker.app` tidak pernah terdaftar; semua referensi (edge function HTTP-Referer, `share-redirect`, `request_share_token()`, 6 override `http_referer` di DB, Android App Link, iOS entitlement, Flutter host check) diarahkan ke host baru. Custom scheme `bikinstiker://` & bundle ID `com.bikinstiker.bikin` **tidak** diubah. Migrasi `20260916083003` ter-apply; **edge function belum dideploy ulang**.
 - **App Links belum terverifikasi:** `.well-known/assetlinks.json` di host baru masih 404 — perlu di-host di Vercel (repo landing page terpisah).

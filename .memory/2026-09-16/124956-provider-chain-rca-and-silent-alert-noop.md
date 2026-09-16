@@ -17,7 +17,7 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
 - `supabase/migrations/20260916000001_remediate_provider_chain_rca.sql` (NEW, applied)
 - `supabase/migrations/20260916065125_operator_alert_sink.sql` (NEW, applied)
 - `supabase/migrations/20260916071704_deactivate_archived_cerebras_model.sql` (NEW, applied)
-- `supabase/migrations/20260916152819_repoint_domain_to_alamaby.sql` (NEW, applied)
+- `supabase/migrations/20260916083003_repoint_domain_to_alamaby.sql` (NEW, applied)
 - `supabase/functions/share-redirect/index.ts`
 - `android/app/src/main/AndroidManifest.xml`
 - `ios/Runner/Runner.entitlements`
@@ -85,7 +85,7 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
   `dispatchOperatorAlert` 2).
 - Simulasi dampak migrasi via query baca-saja: hanya 1 baris Cloudflare + 1 baris Cerebras
   tersentuh; sisa aktif 4 default + 2 reasoning (ollama, openrouter).
-- Produksi: migrasi `20260916000001`, `20260916065125`, `20260916071704`, `20260916152819` **ter-apply**.
+- Produksi: migrasi `20260916000001`, `20260916065125`, `20260916071704`, `20260916083003` **ter-apply**.
   Edge function sudah dideploy oleh pemilik: `generate-sticker` **v38**, `surprise-me` **v6**;
   verifikasi `get_edge_function` menunjukkan 12/12 marker kode baru PRESENT dan marker lama ABSENT.
 - Migrasi domain terverifikasi: `request_share_token` `has_new_domain=true` / `has_old_domain=false`;
@@ -98,7 +98,7 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
   (**live**: A → Vercel `64.29.17.x`, HTTP 200, landing page "BikinStiker - AI-Powered Sticker Creator").
 - **Dieksekusi (Fase 7):** `generate-sticker` 3 default HTTP-Referer; `share-redirect`
   `APP_CLAIM_PATH`+`LANDING_FALLBACK`; `request_share_token()` `share_url` + 6 override
-  `request_options.http_referer` di DB (migrasi `20260916152819`, **ter-apply**); `android:host`
+  `request_options.http_referer` di DB (migrasi `20260916083003`, **ter-apply**); `android:host`
   App Link; `applinks:` iOS entitlement; https allowlist `share_mission_service.dart`.
 - **TIDAK diubah (bukan domain):** custom scheme `bikinstiker://`, bundle ID `com.bikinstiker.bikin`,
   OAuth redirect `io.supabase.bikinstiker://` (+ `additional_redirect_urls` di `config.toml`).

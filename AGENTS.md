@@ -203,3 +203,13 @@ Additional information.
 - If the user modifies an existing plan, update the same file.
 - If the user requests a new plan, create a new Markdown file.
 - Plans must always remain in Markdown format (`.md`).
+
+## 8. Supabase CLI Helper
+
+- Untuk `supabase db push` / `supabase functions deploy <name>` SELALU pakai wrapper:
+  `& "scripts/supabase-with-token.ps1" db push`
+  `& "scripts/supabase-with-token.ps1" functions deploy surprise-me`
+- Token `SUPABASE_ACCESS_TOKEN` (prefix `sbp_`) HANYA dari `.env.local`. Jangan pernah taruh di `.env` (`pubspec.yaml:62` membundle `.env` ke APK/AAB).
+- Dilarang: `Get-Content .env.local`, `cat .env.local`, `echo $env:SUPABASE_ACCESS_TOKEN`, `grep -r sbp_|sb_secret`, atau mencetak token ke chat/log. Log hanya boleh `token loaded (N chars, redacted)`.
+- Verifikasi aman: `& "scripts/supabase-with-token.ps1" --DryRun functions deploy surprise-me`.
+- `.env*` sudah gitignored (`.gitignore:122-124`); `supabase/.env.local` juga ignored.

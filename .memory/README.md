@@ -1,6 +1,6 @@
 # Project Memory - BikinStiker
 
-Last updated: 2026-09-16 14:25:00
+Last updated: 2026-09-19 09:00:00
 Format version: 1
 
 ## Current State
@@ -25,10 +25,11 @@ Format version: 1
 - **Opsional (2026-09-16):** kanal email Resend — `from` = `updates@alamaby.com` (domain root, yang terdaftar di Resend; **bukan** subdomain app host). Record Resend (DKIM/SPF) belum ada. Butuh: verify domain `alamaby.com` di resend.com → API key → `supabase login` → set 4 secret.
 - **Redeploy diperlukan (2026-09-16):** `generate-sticker`, `surprise-me`, `share-redirect` — perubahan domain (Fase 7) belum live di produksi.
 - **Domain berpindah ke `bikinstiker.alamaby.com` (2026-09-16):** `bikinstiker.com`/`bikinstiker.app` tidak pernah terdaftar; semua referensi (edge function HTTP-Referer, `share-redirect`, `request_share_token()`, 6 override `http_referer` di DB, Android App Link, iOS entitlement, Flutter host check) diarahkan ke host baru. Custom scheme `bikinstiker://` & bundle ID `com.bikinstiker.bikin` **tidak** diubah. Migrasi `20260916083003` ter-apply; **edge function belum dideploy ulang**.
-- **App Links belum terverifikasi:** `.well-known/assetlinks.json` di host baru masih 404 — perlu di-host di Vercel (repo landing page terpisah).
+- **App Links fallback (2026-09-16):** tanpa `assetlinks.json` (plan landing 2026-09-14 dipertahankan; keputusan user #4) — share pakai `bikinstiker://` + tombol Play Store. Open item lama "host assetlinks di Vercel" **batal**.
 - **Utang teknis alert:** dedupe per-isolate (bisa spam setelah cold start); `prompt_enhancement_logs.sticker_generation_id` selalu `null`; `operator_alerts` belum ada retensi/purge.
 - **Jangan:** `UPDATE ... SET is_active = TRUE` massal per-provider saat patch kredensial — model known-bad ikut aktif (lihat regresi `gemma-4-31b` 2026-09-16).
-- **Rilis Play:** upload ke Closed testing (12 tester × 14 hari), lengkapi Data safety / App content / listing, deploy landing page (assetlinks), verifikasi App Links di device.
+- **Rilis Play:** upload ke Closed testing (12 tester × 14 hari), lengkapi Data safety / App content / listing, deploy landing page tersinkron (privacy/terms/pricing faktual + badge Roadmap, kontak alam.aby.b@gmail.com), verifikasi share fallback di device.
+- **Landing sudah push, belum deploy (2026-09-16):** commit `89407e8` di `bikin-stiker-landing-page` ter-push ke `main`; butuh deploy Vercel (pastikan `SUPABASE_PROJECT_REF` riil ter-set) + uji live `/en|id/privacy|terms|pricing`.
 - **Backend (SH2):** `supabase db push` migrasi hardening + verifikasi.
 - **Legacy tersisa:** deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit `rls_auto_enable`.
 - **Rotasi token:** rotasi `CLOUDFLARE_API_TOKEN` bila AAB lama (yang memuat secret) sempat dibagikan.
@@ -38,6 +39,8 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-09-19 09:00:00 - surprise-me-pool-expansion](2026-09-19/090000-surprise-me-pool-expansion.md)
+- [2026-09-16 15:05:00 - landing-sync-privacy-terms-pricing](2026-09-16/150500-landing-sync-privacy-terms-pricing.md)
 - [2026-09-16 12:49:56 - provider-chain-rca-and-silent-alert-noop](2026-09-16/124956-provider-chain-rca-and-silent-alert-noop.md)
 - [2026-09-15 16:21:23 - init-memory-directory](2026-09-15/162123-init-memory-directory.md)
 - [2026-09-15 16:21:23 - migrate-flutter-markdown-to-plus](2026-09-15/162123-migrate-flutter-markdown-to-plus.md)

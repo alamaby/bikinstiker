@@ -153,10 +153,11 @@ class _AuthScreenState extends State<AuthScreen>
                         const SizedBox(height: 48),
                         Row(
                           children: [
-                            Icon(
-                              Icons.auto_awesome,
-                              size: 32,
-                              color: context.colors.primary,
+                            Image.asset(
+                              'assets/images/app-logo.png',
+                              width: 64,
+                              height: 64,
+                              semanticLabel: 'BikinStiker logo',
                             ),
                             const SizedBox(width: 8),
                             Text(

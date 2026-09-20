@@ -1,10 +1,10 @@
 # Project Memory - BikinStiker
 
-Last updated: 2026-09-20 14:50:00
+Last updated: 2026-09-20 19:10:00
 Format version: 1
 
 ## Current State
-- **Current work:** History Regenerate black-screen fix — impl selesai. Analyze 0; test 208/208 (termasuk 2 test baru history_regenerate). Versi bumped ke 0.26.9+91. Belum deploy manual verifikasi device.
+- **Current work:** App Logo Rollout V2 — T1–T3 done (gitignore, archive legacy, Android/iOS icons overwritten, version bump 0.26.10+92, in-app PNG wired to auth header, APK+AAB clean 50.1MB, draft excluded from bundle). T4 blocked (landing repo not local), T5 owner manual.
 - **Track:** BikinStiker - AI-powered WhatsApp sticker generator (Flutter).
 - **Verified:** analyze 0; test 198/198; APK 3 ABI (2026-09-15). AAB release 50.1 MB signed non-debug + merged manifest targetSdk 36 / AD_ID / StickerContentProvider / AdMob prod ID bersih dari secret `.env` (2026-09-12).
 - **Working tree:** `supabase/` (submodule) termodifikasi — `operator_alerts.ts`, `generate-sticker/index.ts` + test, `surprise-me/index.ts`, 3 migrasi baru (`20260916000001_remediate_provider_chain_rca`, `20260916065125_operator_alert_sink`, `20260916071704_deactivate_archived_cerebras_model`); memori + plan baru; belum commit.
@@ -39,6 +39,7 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-09-20 19:10:00 - app-logo-rollout](2026-09-20/191000-app-logo-rollout.md)
 - [2026-09-20 14:50:00 - history-regenerate-black-screen-fix](2026-09-20/145000-history-regenerate-black-screen-fix.md)
 - [2026-09-20 12:00:00 - logout-fix](2026-09-20/120000-logout-fix.md)
 - [2026-09-20 10:30:00 - surprise-me-wide-eyed-fix](2026-09-20/103000-surprise-me-wide-eyed-fix.md)

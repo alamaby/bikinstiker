@@ -158,3 +158,6 @@ Desktop.ini
 *.keystore
 *.p12
 *.p8
+
+# Draft logo source-only (V2 PNG with shadow) — never commit; production masters are derived
+assets/images/draft-app-logo-1.png

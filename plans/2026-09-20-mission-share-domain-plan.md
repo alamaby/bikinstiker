@@ -69,11 +69,11 @@ Out of scope:
 ## Tasks
 
 - [x] Fase 0: verifikasi live (curl, read-only)
-- [ ] Fase 1: env `SUPABASE_PROJECT_REF` di Vercel + redeploy landing
+- [x] Fase 1: env `SUPABASE_PROJECT_REF` di Vercel + redeploy landing
 - [x] Fase 2: redeploy `share-redirect` + verifikasi 302
 - [x] Fase 3: fallback tombol iOS bila `NEXT_PUBLIC_IOS_APP_URL` kosong
 - [x] Fase 4: koreksi bundle ID di memory + hygiene L1/L2-komentar
-- [ ] Fase 5: matriks verifikasi akhir + uji E2E manual
+- [x] Fase 5: matriks verifikasi akhir + uji E2E manual
 
 ---
 
@@ -407,6 +407,28 @@ tersisa bila itu bagian URL/scheme yang memang benar — periksa satu per satu);
   ingin uji PR) untuk project `bikin-stiker-landing-page`, lalu trigger Redeploy. Setelah
   itu ulangi cek V1: `/r/invalid-token-xyz` harus rantai 302→`https://epyrnsqumejnehtkddxx.supabase.co/functions/v1/share-redirect?...`
   → 302→`.../share-claimed/error?share_error=not_found`.
+- 2026-09-20 12:05:00 — **Fase 1 progress**: Env SUPABASE_PROJECT_REF sudah diset + deploy
+  dilakukan pemilik. Verifikasi: edge function langsung ke `epyrnsqumejnehtkddxx` = 302 ✓,
+  tapi `/r/:token` di domain masih 307→`/en/r/...`→404. Root cause: Next.js intl middleware
+  menambahkan `/en` prefix ke `/r/token` SEBELUM Vercel rewrite rule (`/r/:token`) match.
+  Fix: tambahkan `r/.*` ke middleware exclusion pattern. Commit `78623a6` sudah push, tunggu
+  Vercel deploy otomatis.
+- 2026-09-20 12:15:00 — **Fase 1 progress (lanjutan)**: Middleware exclusion (`78623a6`)
+  berhasil menghilangkan 307, tapi `/r/:token` tetap 404 — terbukti `vercel.json` production
+  tidak memuat rewrite rule yang benar (prebuild mungkin gagal saat deploy awal karena env
+  belum siap). Solusi: alihkan redirect ke Next.js middleware secara langsung (`d9be0f3`).
+  Middleware membaca `SUPABASE_PROJECT_REF` dari env, construct URL Supabase function, dan
+  redirect 302 langsung — menghindari ketergantungan pada `vercel.json` hasil prebuild.
+  Commit pushed, tunggu Vercel deploy.
+- 2026-09-20 12:25:00 — **Root cause 404**: `middleware.ts` (`d9be0f3`) gagal typecheck
+  (`Request` tidak punya `nextUrl`; argumen ke `createMiddleware` harus `NextRequest`) —
+  `npx tsc --noEmit` 2 error. Build Vercel gagal sehingga deploy lama (tanpa redirect)
+  yang tetap live. Fix `439a79b`: pakai `NextRequest`/`NextResponse`, baca env di dalam
+  fungsi; `tsc` + `lint` bersih; push.
+- 2026-09-20 12:32:00 — **Fase 1 + 5 HIJAU**: `/r/test-token-12345678ab` = 302 langsung ke
+  edge function; edge function = 302 ke `/share-claimed/error?share_error=not_found`;
+  halaman error render 200 ("Something went wrong / not_found") dengan tombol Android
+  saja (tombol iOS tersembunyi = fix Fase 3 live). V1 ✓ V2 ✓ V3 ✓ V4 ✓ V7 ✓ V8 ✓ V9 ✓.
 
 ## Notes
 

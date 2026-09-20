@@ -107,8 +107,16 @@ tidak pernah terdeteksi.
 - [x] `share_mission_service.dart`: https allowlist host baru **plus `bikinstiker.com`** untuk kompatibilitas link lama; custom scheme `bikinstiker://` tidak berubah.
 - [x] Verifikasi: `deno check` bersih; deno test 134/134; `flutter analyze` 0; `flutter test` 198/198.
 - [ ] **Manual (pemilik):** redeploy `generate-sticker`, `surprise-me` (impor dari generate-sticker), dan `share-redirect`.
-- [ ] **Manual (pemilik):** host `assetlinks.json` + `apple-app-site-association` di `bikinstiker.alamaby.com/.well-known/` (saat ini 404) agar App Links terverifikasi.
+- [ ] **Manual (pemilik):** host `assetlinks.json` + `apple-app-site-association` di `bikinstiker.alamaby.com/.well-known/`. Status live: `apple-app-site-association` 200 dengan `appIDs` masih kosong; `assetlinks.json` masih 404. Tanpa `assetlinks.json`, App Links Android belum terverifikasi.
 - [ ] **Manual (pemilik):** daftarkan subdomain baru di Supabase Auth redirect allowlist bila perlu.
+
+### Fase 7b — Aktifkan kembali `assetlinks.json` di repo landing
+- [x] Periksa repo sibling: `C:\Works\github.com\alamaby\bikin-stiker-landing-page` memang menangani hostname tersebut; `apple-app-site-association` masih ada, tetapi template/generasi `assetlinks.json` sengaja dihapus pada `8a32816`.
+- [ ] **Manual (pemilik):** salin fingerprint **SHA-256 App Signing dari Play Console** — Release → Setup → App signing — bukan hanya upload key dan bukan debug key.
+- [ ] Implementasi: pulihkan `public/.well-known/assetlinks.json` (atau template + prebuild) untuk package `com.alamaby.bikin_stiker` dengan fingerprint tersebut.
+- [ ] Deploy Vercel lalu pastikan URL persis mengembalikan HTTP 200 dan JSON tanpa redirect/login:
+  `https://bikinstiker.alamaby.com/.well-known/assetlinks.json`
+- [ ] Verifikasi Android dengan APK/AAB Play build; jika perlu, barengi dengan iOS `TEAM_ID` + bundle ID yang benar.
 
 ## Risks
 
@@ -130,6 +138,7 @@ tidak pernah terdeteksi.
 - 2026-09-16 15:10:00 — Investigasi provisioning Resend (Fase 6). Ditemukan `bikinstiker.com`/`bikinstiker.app` (dipakai repo) **belum terdaftar sama sekali** (rdap 404 + NXDOMAIN, dikalibrasi terhadap `google.com`/`example.com`/`itunes.app` yang RESOLVED). Sebagai gantinya `from` ditetapkan ke `updates@alamaby.com` karena `alamaby.com` terdaftar & aktif (NS rumahweb + Vercel, expires 2027-05-18). Record Resend di `alamaby.com` diverifikasi via `Deno.resolveDns` langsung ke 1.1.1.1 (resolver OS ter-intercept AdGuard dan mengembalikan data palsu): `send.alamaby.com`, `resend._domainkey.alamaby.com`, `_dmarc.alamaby.com` semuanya NO RECORD → domain belum ditambahkan ke Resend. `.env.example` diperbarui (from address + catatan verifikasi domain + "tidak perlu redeploy"). Blocker: `supabase secrets set` masih butuh `supabase login`.
 - Catatan koreksi: dugaan awal bahwa `fetch` tidak mengirim `User-Agent` (Resend menolak dengan 403 code 1010) **terbukti salah** lewat uji lokal — Deno `fetch` otomatis mengirim `User-Agent: Deno/2.9.6`. Tidak ada perubahan kode untuk itu.
 - 2026-09-16 15:28:19 — Pemilik mengarahkan ke domain terdaftar: `bikinstiker.alamaby.com`. Diverifikasi live (A → Vercel `64.29.17.x`, HTTP 200, landing page BikinStiker). Dieksekusi **Fase 7** — migrasi semua referensi domain mati: 3 default HTTP-Referer di `generate-sticker/index.ts`, `APP_CLAIM_PATH`+`LANDING_FALLBACK` di `share-redirect/index.ts`, `request_share_token()` `share_url` + 6 override `http_referer` di DB (migrasi `20260916083003`, **ter-apply**), `android:host` App Link, `applinks:` iOS entitlement, dan https allowlist `share_mission_service.dart`. Custom scheme `bikinstiker://`, bundle ID `com.bikinstiker.bikin`, dan `io.supabase.bikinstiker://` OAuth redirect sengaja **tidak** diubah (bukan domain). Verifikasi: deno check bersih, deno test 134/134, flutter analyze 0, flutter test 198/198. Sisa: redeploy `generate-sticker`/`surprise-me`/`share-redirect`, host `.well-known/assetlinks.json` (masih 404), dan verifikasi `bikinstiker.alamaby.com` di Resend (record DKIM/SPF masih NO RECORD).
+- 2026-09-16 17:07:58 +07:00 — Klarifikasi “host assetlinks”: Android memerlukan file asosiasi persis di `https://bikinstiker.alamaby.com/.well-known/assetlinks.json`; saat ini URL itu **404**, jadi autoVerify belum bisa lolos. Repo landing sibling memang ada (`bikin-stiker-landing-page`), dan keputusan sebelumnya sengaja menghapus pembuatan `assetlinks.json` (`8a32816`) karena fingerprint belum tersedia. AASA iOS tersedia (HTTP 200) tetapi `appIDs` masih kosong di produksi. Blokir implementasi sekarang: fingerprint **SHA-256 App Signing dari Play Console**, bukan hanya upload key bila Play App Signing aktif.
 
 ## Notes
 

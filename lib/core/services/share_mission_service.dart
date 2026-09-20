@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:app_links/app_links.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -104,8 +105,7 @@ class ShareMissionService {
     } catch (e) {
       // app_links can throw on platforms without deep-link support; we still
       // emit no events rather than failing the whole service.
-      // ignore: avoid_print
-      print('ShareMissionService: failed to start deep link listener: $e');
+      debugPrint('ShareMissionService: failed to start deep link listener: $e');
     }
   }
 
@@ -122,6 +122,9 @@ class ShareMissionService {
   /// `bikinstiker.com` is kept in the https allowlist only for backward
   /// compatibility with links minted before the domain moved; the canonical
   /// host is `bikinstiker.alamaby.com`.
+  /// NOTE: '/r/' never reaches the app as a deep link; it is consumed by the
+  /// share-redirect edge function and rewritten to /share-claimed/[id]. The
+  /// branch is retained for parsing safety only.
   ShareClaimResult? _maybeBuildClaim(Uri uri) {
     final isHttpsClaim =
         uri.scheme == 'https' &&

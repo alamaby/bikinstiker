@@ -100,8 +100,8 @@ di produksi, lalu jawab kenapa alert email operator tidak pernah terkirim.
   `APP_CLAIM_PATH`+`LANDING_FALLBACK`; `request_share_token()` `share_url` + 6 override
   `request_options.http_referer` di DB (migrasi `20260916083003`, **ter-apply**); `android:host`
   App Link; `applinks:` iOS entitlement; https allowlist `share_mission_service.dart`.
-- **TIDAK diubah (bukan domain):** custom scheme `bikinstiker://`, bundle ID `com.bikinstiker.bikin`,
-  OAuth redirect `io.supabase.bikinstiker://` (+ `additional_redirect_urls` di `config.toml`).
+- **TIDAK diubah (bukan domain):** custom scheme `bikinstiker://`, OAuth redirect `io.supabase.bikinstiker://` (+ `additional_redirect_urls` di `config.toml`).
+- ~~Bundle ID~~ **Koreksi (2026-09-20):** memory & pbxproj lama menulis `com.bikinstiker.bikin` / `com.bikinstiker.bikinStiker` — salah. Benar = `com.alamaby.bikin_stiker` (sesuai `android/app/build.gradle.kts` + Play URL di `share-redirect/index.ts` + `.env.example`). Sudah dikoreksi di pbxproj & catatan memory.
 - `share_mission_service.dart` sengaja tetap menerima `bikinstiker.com` di https allowlist untuk
   kompatibilitas link lama (token berlaku 10 menit, tapi share lama bisa masih beredar).
 

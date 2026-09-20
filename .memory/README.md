@@ -1,6 +1,6 @@
 # Project Memory - BikinStiker
 
-Last updated: 2026-09-20 10:30:00
+Last updated: 2026-09-20 11:45:00
 Format version: 1
 
 ## Current State
@@ -24,7 +24,7 @@ Format version: 1
 - **Cloudflare default:** masih nonaktif; aktifkan hanya setelah `base_url` (account id real) + `api_key` dipatch dalam satu UPDATE.
 - **Opsional (2026-09-16):** kanal email Resend — `from` = `updates@alamaby.com` (domain root, yang terdaftar di Resend; **bukan** subdomain app host). Record Resend (DKIM/SPF) belum ada. Butuh: verify domain `alamaby.com` di resend.com → API key → `supabase login` → set 4 secret.
 - **Redeploy diperlukan (2026-09-16):** `generate-sticker`, `surprise-me`, `share-redirect` — perubahan domain (Fase 7) belum live di produksi.
-- **Domain berpindah ke `bikinstiker.alamaby.com` (2026-09-16):** `bikinstiker.com`/`bikinstiker.app` tidak pernah terdaftar; semua referensi (edge function HTTP-Referer, `share-redirect`, `request_share_token()`, 6 override `http_referer` di DB, Android App Link, iOS entitlement, Flutter host check) diarahkan ke host baru. Custom scheme `bikinstiker://` & bundle ID `com.bikinstiker.bikin` **tidak** diubah. Migrasi `20260916083003` ter-apply; **edge function belum dideploy ulang**.
+- **Domain berpindah ke `bikinstiker.alamaby.com` (2026-09-16):** `bikinstiker.com`/`bikinstiker.app` tidak pernah terdaftar; semua referensi (edge function HTTP-Referer, `share-redirect`, `request_share_token()`, 6 override `http_referer` di DB, Android App Link, iOS entitlement, Flutter host check) diarahkan ke host baru. Custom scheme `bikinstiker://` & bundle ID `com.alamaby.bikin_stiker` (koreksi 2026-09-20; sebelumnya salah tulis `com.bikinstiker.bikin`/`com.bikinstiker.bikinStiker` di memory & pbxproj). Migrasi `20260916083003` ter-apply; edge function `share-redirect` **sudah dideploy ulang** v7 (2026-09-20).
 - **App Links fallback (2026-09-16):** tanpa `assetlinks.json` (plan landing 2026-09-14 dipertahankan; keputusan user #4) — share pakai `bikinstiker://` + tombol Play Store. Open item lama "host assetlinks di Vercel" **batal**.
 - **Utang teknis alert:** dedupe per-isolate (bisa spam setelah cold start); `prompt_enhancement_logs.sticker_generation_id` selalu `null`; `operator_alerts` belum ada retensi/purge.
 - **Jangan:** `UPDATE ... SET is_active = TRUE` massal per-provider saat patch kredensial — model known-bad ikut aktif (lihat regresi `gemma-4-31b` 2026-09-16).

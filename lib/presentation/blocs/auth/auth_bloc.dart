@@ -82,12 +82,14 @@ class AuthBlocState extends Equatable {
   final User? user;
   final String? errorMessage;
   final String? infoMessage;
+  final bool explicitSignOut;
 
   const AuthBlocState({
     this.status = AuthStatus.unknown,
     this.user,
     this.errorMessage,
     this.infoMessage,
+    this.explicitSignOut = false,
   });
 
   bool get isGuest => user?.isAnonymous == true;
@@ -101,6 +103,7 @@ class AuthBlocState extends Equatable {
     Object? user = _undefined,
     Object? errorMessage = _undefined,
     Object? infoMessage = _undefined,
+    bool? explicitSignOut,
   }) => AuthBlocState(
     status: status ?? this.status,
     user: identical(user, _undefined) ? this.user : user as User?,
@@ -110,10 +113,11 @@ class AuthBlocState extends Equatable {
     infoMessage: identical(infoMessage, _undefined)
         ? this.infoMessage
         : infoMessage as String?,
+    explicitSignOut: explicitSignOut ?? this.explicitSignOut,
   );
 
   @override
-  List<Object?> get props => [status, user?.id, errorMessage, infoMessage];
+  List<Object?> get props => [status, user?.id, errorMessage, infoMessage, explicitSignOut];
 }
 
 // ----------------- Bloc -----------------
@@ -156,6 +160,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         status: AuthStatus.submitting,
         errorMessage: null,
         infoMessage: null,
+        explicitSignOut: false,
       ),
     );
     try {
@@ -231,6 +236,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         user: e.user,
         errorMessage: null,
         infoMessage: null,
+        explicitSignOut: e.user == null ? state.explicitSignOut : false,
       ),
     );
   }
@@ -244,6 +250,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         status: AuthStatus.submitting,
         errorMessage: null,
         infoMessage: null,
+        explicitSignOut: false,
       ),
     );
     try {
@@ -277,6 +284,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         status: AuthStatus.submitting,
         errorMessage: null,
         infoMessage: null,
+        explicitSignOut: false,
       ),
     );
     try {
@@ -306,6 +314,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         status: AuthStatus.submitting,
         errorMessage: null,
         infoMessage: null,
+        explicitSignOut: false,
       ),
     );
     try {
@@ -347,6 +356,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
         status: AuthStatus.submitting,
         errorMessage: null,
         infoMessage: null,
+        explicitSignOut: false,
       ),
     );
     try {
@@ -397,7 +407,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     AuthSignOutRequested e,
     Emitter<AuthBlocState> emit,
   ) async {
-    await _repo.signOut();
+    final prevStatus = state.status;
+    final prevUser = state.user;
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+        explicitSignOut: false,
+      ),
+    );
+    try {
+      await _repo.signOut();
+      emit(
+        const AuthBlocState(
+          status: AuthStatus.unauthenticated,
+          explicitSignOut: true,
+        ),
+      );
+    } on Failure catch (f) {
+      emit(
+        state.copyWith(
+          status: prevStatus,
+          user: prevUser,
+          errorMessage: f.message,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: prevStatus,
+          user: prevUser,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
   }
 
   @override

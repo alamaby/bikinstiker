@@ -503,6 +503,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'You will need to sign in again to use the app on this device.';
 
   @override
+  String get continueAsGuest => 'Continue as guest';
+
+  @override
   String get yourStickers => 'Your stickers';
 
   @override

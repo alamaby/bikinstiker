@@ -37,6 +37,7 @@ import 'presentation/blocs/wallet/wallet_bloc.dart';
 import 'presentation/blocs/legal_consent/legal_consent_cubit.dart';
 import 'presentation/blocs/legal_consent/legal_consent_state.dart';
 import 'presentation/screens/auth/auth_screen.dart';
+import 'core/auth_gate_policy.dart';
 import 'presentation/screens/legal/legal_consent_error_screen.dart';
 import 'presentation/screens/legal/legal_consent_screen.dart';
 import 'presentation/screens/locale/language_selection_screen.dart';
@@ -268,6 +269,9 @@ class _AuthGateState extends State<_AuthGate> {
             case AuthStatus.unknown:
               return const _Splash();
             case AuthStatus.unauthenticated:
+              if (!shouldAutoSpawnGuest(state)) {
+                return const AuthScreen();
+              }
               if (!_anonymousRequested) {
                 _anonymousRequested = true;
                 _startingGuestSession = true;

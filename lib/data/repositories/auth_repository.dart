@@ -85,7 +85,15 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> signOut() => _client.auth.signOut();
+  Future<void> signOut() async {
+    try {
+      await _client.auth.signOut();
+    } on AuthException catch (e) {
+      throw AuthFailure(e.message);
+    } catch (e) {
+      throw UnknownFailure(e.toString());
+    }
+  }
 
   @override
   Future<void> signInAnonymously() async {

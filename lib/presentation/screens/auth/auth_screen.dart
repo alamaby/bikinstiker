@@ -326,6 +326,18 @@ class _AuthScreenState extends State<AuthScreen>
                                 : l10n.continueWithGoogle,
                           ),
                         ),
+                        if (!_isGuestWall) ...[
+                          const SizedBox(height: 12),
+                          TextButton.icon(
+                            onPressed: submitting
+                                ? null
+                                : () => context.read<AuthBloc>().add(
+                                      const AuthAnonymousRequested(),
+                                    ),
+                            icon: const Icon(Icons.person_outline),
+                            label: Text(l10n.continueAsGuest),
+                          ),
+                        ],
                         if (_isGuestWall && !submitting) ...[
                           const SizedBox(height: 16),
                           _GuestWallWarning(),

@@ -1,10 +1,10 @@
 # Project Memory - BikinStiker
 
-Last updated: 2026-09-20 11:45:00
+Last updated: 2026-09-20 12:05:00
 Format version: 1
 
 ## Current State
-- **Current work:** Surprise-me wide-eyed dominance fix — impl + deploy v11 (ACTIVE) selesai. Deno tests 24/24 (surprise-me) + 134/134 (generate-sticker). Baseline pre-deploy: 18/20 = 90% wide-eyed (MCP read). Task 7 verification read-only: tunggu traffic baru post-deploy untukukur rasio <30%.
+- **Current work:** Logout fix — impl selesai. Analyze 0; test 206/206 (termasuk 8 test baru signOut + shouldAutoSpawnGuest). Versi bumped ke 0.26.8+90. Belum deploy manual verifikasi device.
 - **Track:** BikinStiker - AI-powered WhatsApp sticker generator (Flutter).
 - **Verified:** analyze 0; test 198/198; APK 3 ABI (2026-09-15). AAB release 50.1 MB signed non-debug + merged manifest targetSdk 36 / AD_ID / StickerContentProvider / AdMob prod ID bersih dari secret `.env` (2026-09-12).
 - **Working tree:** `supabase/` (submodule) termodifikasi — `operator_alerts.ts`, `generate-sticker/index.ts` + test, `surprise-me/index.ts`, 3 migrasi baru (`20260916000001_remediate_provider_chain_rca`, `20260916065125_operator_alert_sink`, `20260916071704_deactivate_archived_cerebras_model`); memori + plan baru; belum commit.
@@ -39,6 +39,7 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-09-20 12:00:00 - logout-fix](2026-09-20/120000-logout-fix.md)
 - [2026-09-20 10:30:00 - surprise-me-wide-eyed-fix](2026-09-20/103000-surprise-me-wide-eyed-fix.md)
 - [2026-09-19 13:29:00 - supabase-token-helper](2026-09-19/132900-supabase-token-helper.md)
 - [2026-09-19 09:00:00 - surprise-me-pool-expansion](2026-09-19/090000-surprise-me-pool-expansion.md)

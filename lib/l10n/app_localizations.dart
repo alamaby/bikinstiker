@@ -1016,6 +1016,12 @@ abstract class AppLocalizations {
   /// **'You will need to sign in again to use the app on this device.'**
   String get logoutConfirmBody;
 
+  /// No description provided for @continueAsGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as guest'**
+  String get continueAsGuest;
+
   /// No description provided for @yourStickers.
   ///
   /// In en, this message translates to:

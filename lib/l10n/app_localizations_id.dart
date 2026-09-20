@@ -504,6 +504,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Anda perlu masuk lagi untuk menggunakan aplikasi di perangkat ini.';
 
   @override
+  String get continueAsGuest => 'Lanjut sebagai tamu';
+
+  @override
   String get yourStickers => 'Stiker Anda';
 
   @override

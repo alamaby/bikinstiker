@@ -29,7 +29,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userId = context.read<AuthBloc>().state.user!.id;
+    final user = context.read<AuthBloc>().state.user;
+    if (user == null) return const SizedBox.shrink();
+    final userId = user.id;
 
     return MultiBlocProvider(
       providers: [
@@ -54,9 +56,36 @@ class _ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.profile)),
-      body: BlocConsumer<ProfileCubit, ProfileState>(
+    return BlocListener<AuthBloc, AuthBlocState>(
+      listenWhen: (prev, next) =>
+          prev.status != next.status ||
+          prev.errorMessage != next.errorMessage,
+      listener: (context, authState) {
+        if (authState.status == AuthStatus.unauthenticated &&
+            authState.user == null) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else if (authState.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: context.colors.error,
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      safeErrorMessage(l10n, authState.errorMessage),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.profile)),
+        body: BlocConsumer<ProfileCubit, ProfileState>(
         listenWhen: (p, n) => n is ProfileActionSuccess || n is ProfileError,
         listener: (context, state) {
           if (state is ProfileActionSuccess) {
@@ -128,10 +157,11 @@ class _ProfileView extends StatelessWidget {
                 const SizedBox(height: 32),
               ],
             ),
-          );
-        },
-      ),
-    );
+           );
+         },
+       ),
+     ),
+   );
   }
 
   Widget _buildHeader(BuildContext context, dynamic profile) {

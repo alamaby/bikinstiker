@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../blocs/shell_tab/shell_tab_cubit.dart';
 import '../history/history_screen.dart';
 import '../home/home_screen.dart';
 import '../missions/missions_screen.dart';
@@ -38,39 +40,47 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: [
-          for (var i = 0; i < _screens.length; i++)
-            i <= _maxVisited ? _screens[i] : const SizedBox.shrink(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _select,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: l10n.navHome,
+    return BlocListener<ShellTabCubit, int>(
+      listener: (ctx, i) => _select(i),
+      child: Scaffold(
+        body: IndexedStack(
+          index: _index,
+          children: [
+            for (var i = 0; i < _screens.length; i++)
+              i <= _maxVisited ? _screens[i] : const SizedBox.shrink(),
+          ],
+        ),
+        bottomNavigationBar: BlocBuilder<ShellTabCubit, int>(
+          builder: (ctx, i) => NavigationBar(
+            selectedIndex: i,
+            onDestinationSelected: (idx) {
+              ctx.read<ShellTabCubit>().select(idx);
+              _select(idx);
+            },
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.home_outlined),
+                selectedIcon: const Icon(Icons.home_rounded),
+                label: l10n.navHome,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.emoji_events_outlined),
+                selectedIcon: const Icon(Icons.emoji_events_rounded),
+                label: l10n.navMissions,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.collections_bookmark_outlined),
+                selectedIcon: const Icon(Icons.collections_bookmark_rounded),
+                label: l10n.navPacks,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.history_outlined),
+                selectedIcon: const Icon(Icons.history_rounded),
+                label: l10n.navHistory,
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.emoji_events_outlined),
-            selectedIcon: const Icon(Icons.emoji_events_rounded),
-            label: l10n.navMissions,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.collections_bookmark_outlined),
-            selectedIcon: const Icon(Icons.collections_bookmark_rounded),
-            label: l10n.navPacks,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.history_outlined),
-            selectedIcon: const Icon(Icons.history_rounded),
-            label: l10n.navHistory,
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -12,6 +12,7 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/history/history_bloc.dart';
 import '../../blocs/home_prefill/home_prefill_cubit.dart';
 import '../../blocs/preset/preset_bloc.dart';
+import '../../blocs/shell_tab/shell_tab_cubit.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../widgets/add_to_pack_sheet.dart';
 import '../../widgets/ads_banner_widget.dart';
@@ -406,7 +407,9 @@ class _HistoryTile extends StatelessWidget {
           presetId: item.presetName,
           prompt: item.userPrompt,
         );
-    Navigator.of(context).pop();
+    // NOTE: do NOT pop here — the sheet was already popped via sheetCtx (:386).
+    // Tab-switch to Home happens through ShellTabCubit; no Navigator call.
+    context.read<ShellTabCubit>().goHome();
   }
 }
 

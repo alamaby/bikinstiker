@@ -79,7 +79,11 @@ class AuthOtpVerifyRequested extends AuthEvent {
   final String email;
   final String token;
   final bool isGuestAuthWall;
-  const AuthOtpVerifyRequested(this.email, this.token, {this.isGuestAuthWall = false});
+  const AuthOtpVerifyRequested(
+    this.email,
+    this.token, {
+    this.isGuestAuthWall = false,
+  });
   @override
   List<Object?> get props => [email, token, isGuestAuthWall];
 }
@@ -140,7 +144,14 @@ class AuthBlocState extends Equatable {
   );
 
   @override
-  List<Object?> get props => [status, user?.id, errorMessage, infoMessage, explicitSignOut, pendingOtpEmail];
+  List<Object?> get props => [
+    status,
+    user?.id,
+    errorMessage,
+    infoMessage,
+    explicitSignOut,
+    pendingOtpEmail,
+  ];
 }
 
 // ----------------- Bloc -----------------
@@ -363,12 +374,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
       final fallbackStatus = e.isGuestAuthWall
           ? AuthStatus.guest
           : AuthStatus.unauthenticated;
-      emit(
-        state.copyWith(
-          status: fallbackStatus,
-          errorMessage: f.message,
-        ),
-      );
+      emit(state.copyWith(status: fallbackStatus, errorMessage: f.message));
     }
   }
 
@@ -419,38 +425,97 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
       final fallbackStatus = e.upgradeGuest
           ? AuthStatus.guest
           : AuthStatus.unauthenticated;
+      emit(state.copyWith(status: fallbackStatus, errorMessage: f.message));
+    }
+  }
+
+  Future<void> _onOtpSend(
+    AuthOtpSendRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    final prevStatus = state.status;
+    final prevUser = state.user;
+    // OTP send success leaves status unauthenticated (no session yet). Preserve
+    // explicitSignOut so an explicit sign-out is not silently converted into an
+    // auto-spawned guest by _AuthGate while waiting for the code.
+    final prevExplicit = state.explicitSignOut;
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+        explicitSignOut: false,
+      ),
+    );
+    try {
+      await _repo.sendEmailOtp(email: e.email);
+      emit(
+        state.copyWith(
+          status: prevStatus,
+          user: prevUser,
+          pendingOtpEmail: e.email,
+          errorMessage: null,
+          infoMessage: null,
+          explicitSignOut: prevExplicit,
+        ),
+      );
+    } on Failure catch (f) {
+      final fallbackStatus = e.isGuestAuthWall
+          ? AuthStatus.guest
+          : AuthStatus.unauthenticated;
       emit(
         state.copyWith(
           status: fallbackStatus,
+          user: prevUser,
+          pendingOtpEmail: null,
           errorMessage: f.message,
+          explicitSignOut: prevExplicit,
         ),
       );
     }
   }
 
-  Future<void> _onOtpSend(AuthOtpSendRequested e, Emitter<AuthBlocState> emit) async {
-    final prevStatus = state.status;
-    final prevUser = state.user;
-    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null, explicitSignOut: false));
-    try {
-      await _repo.sendEmailOtp(email: e.email);
-      emit(state.copyWith(status: prevStatus, user: prevUser, pendingOtpEmail: e.email, errorMessage: null, infoMessage: null));
-    } on Failure catch (f) {
-      final fallbackStatus = e.isGuestAuthWall ? AuthStatus.guest : AuthStatus.unauthenticated;
-      emit(state.copyWith(status: fallbackStatus, user: prevUser, pendingOtpEmail: null, errorMessage: f.message));
-    }
-  }
-
-  Future<void> _onOtpVerify(AuthOtpVerifyRequested e, Emitter<AuthBlocState> emit) async {
-    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null, explicitSignOut: false));
+  Future<void> _onOtpVerify(
+    AuthOtpVerifyRequested e,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    final prevExplicit = state.explicitSignOut;
+    emit(
+      state.copyWith(
+        status: AuthStatus.submitting,
+        errorMessage: null,
+        infoMessage: null,
+        explicitSignOut: false,
+      ),
+    );
     try {
       await _repo.verifyEmailOtp(email: e.email, token: e.token);
       final user = _repo.currentUser;
       final status = _resolveStatus(user);
-      emit(state.copyWith(status: status, user: user, pendingOtpEmail: null, errorMessage: null, infoMessage: null));
+      emit(
+        state.copyWith(
+          status: status,
+          user: user,
+          pendingOtpEmail: null,
+          errorMessage: null,
+          infoMessage: null,
+          explicitSignOut: status == AuthStatus.authenticated
+              ? false
+              : prevExplicit,
+        ),
+      );
     } on Failure catch (f) {
-      final fallbackStatus = e.isGuestAuthWall ? AuthStatus.guest : AuthStatus.unauthenticated;
-      emit(state.copyWith(status: fallbackStatus, pendingOtpEmail: e.email, errorMessage: f.message));
+      final fallbackStatus = e.isGuestAuthWall
+          ? AuthStatus.guest
+          : AuthStatus.unauthenticated;
+      emit(
+        state.copyWith(
+          status: fallbackStatus,
+          pendingOtpEmail: e.email,
+          errorMessage: f.message,
+          explicitSignOut: prevExplicit,
+        ),
+      );
     }
   }
 

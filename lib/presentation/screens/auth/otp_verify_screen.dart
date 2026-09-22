@@ -31,6 +31,10 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
   bool _verifying = false;
   bool _resending = false;
   int _cooldown = 60;
+  // True while a resend request is in flight. The bloc re-emits the same
+  // pendingOtpEmail value on resend success, so the "code resent" snackbar
+  // cannot be keyed on state change alone — this flag marks the new send.
+  bool _resendRequested = false;
 
   bool get _busy => _verifying || _resending;
 
@@ -80,19 +84,43 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
 
   void _resend() {
     if (_busy || _cooldown > 0) return;
+    _resendRequested = true;
     setState(() => _resending = true);
     context.read<AuthBloc>().add(
-      AuthOtpSendRequested(widget.email, isGuestAuthWall: widget.isGuestAuthWall),
+      AuthOtpSendRequested(
+        widget.email,
+        isGuestAuthWall: widget.isGuestAuthWall,
+      ),
     );
+  }
+
+  void _resetBusyFlags(AuthBlocState state) {
+    // Verify completion is observable: bloc leaves `submitting`.
+    // Resend completion is signalled by a fresh pendingOtpEmail (success) or
+    // an error message (failure). Until then keep the local busy flag so the
+    // resend spinner stays visible and double-taps are blocked. The success
+    // snackbar path uses errorMessage==null + resendJustSucceeded computed in
+    // the listener; this helper only resets flags, never navigates.
+    final resendDone =
+        state.errorMessage != null ||
+        (state.pendingOtpEmail == widget.email &&
+            state.status != AuthStatus.submitting);
+    if (state.status != AuthStatus.submitting) {
+      if (_verifying) setState(() => _verifying = false);
+      if (_resending && resendDone) setState(() => _resending = false);
+    }
   }
 
   String? _validateOtp(String? value) {
     final code = value?.trim() ?? '';
-    if (code.length != _otpLength) return AppLocalizations.of(context)!.otpInvalid;
+    if (code.length != _otpLength || int.tryParse(code) == null) {
+      return AppLocalizations.of(context)!.otpInvalid;
+    }
     return null;
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -130,16 +158,17 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
               Navigator.of(context).pop();
               return;
             }
-            if (state.status == AuthStatus.submitting && !_verifying) {
-              // _verifying is managed locally; this branch only handles
-              // resend-triggered submitting when local flag is already reset.
-            }
-            if (state.errorMessage != null) {
-              _showError(safeErrorMessage(l10n, state.errorMessage));
-            }
-            if (state.pendingOtpEmail == widget.email &&
+            final resendJustSucceeded =
+                _resendRequested &&
+                state.status != AuthStatus.submitting &&
                 state.errorMessage == null &&
-                state.status != AuthStatus.submitting) {
+                state.pendingOtpEmail == widget.email &&
+                !_verifying;
+            if (state.errorMessage != null) {
+              _resendRequested = false;
+              _showError(safeErrorMessage(l10n, state.errorMessage));
+            } else if (resendJustSucceeded) {
+              _resendRequested = false;
               _startCooldown();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -159,9 +188,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                 ),
               );
             }
-            if (!_verifying) {
-              setState(() => _resending = false);
-            }
+            if (mounted) _resetBusyFlags(state);
           },
           builder: (context, state) {
             final blocSubmitting = state.status == AuthStatus.submitting;
@@ -171,7 +198,10 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
             return Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 children: [
                   const SizedBox(height: 16),
                   Center(
@@ -201,10 +231,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                   Text(
                     l10n.otpSubtitle(widget.email),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(fontSize: 14, height: 1.5),
                   ),
                   const SizedBox(height: 28),
                   TextFormField(
@@ -222,10 +249,13 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                     ],
                     style: const TextStyle(fontSize: 24, letterSpacing: 4),
                     decoration: InputDecoration(
-                      hintText: '00000000',
+                      hintText: l10n.otpHint,
                       hintStyle: TextStyle(color: context.textSecondary),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                      fillColor: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.4),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -236,9 +266,15 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 1.5,
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -257,12 +293,16 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                   ),
                   const SizedBox(height: 12),
                   TextButton.icon(
-                    onPressed: (_busy || _cooldown > 0 || blocSubmitting) ? null : _resend,
+                    onPressed: (_busy || _cooldown > 0 || blocSubmitting)
+                        ? null
+                        : _resend,
                     icon: _resending
                         ? SizedBox(
                             height: 16,
                             width: 16,
-                            child: const CircularProgressIndicator(strokeWidth: 2),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Icon(Icons.refresh, size: 16),
                     label: Text(
@@ -272,7 +312,9 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                   ),
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: _busy || blocSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: _busy || blocSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     child: Text(
                       l10n.otpChangeEmail,
                       style: const TextStyle(fontSize: 13),

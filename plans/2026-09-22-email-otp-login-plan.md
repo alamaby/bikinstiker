@@ -37,15 +37,15 @@ Tambah alternatif login via kode OTP 8-digit yang dikirim ke email, tanpa mengha
 
 ## Tasks
 
-- [ ] S1 Repository OTP
-- [ ] S4 l10n keys en/id + regen
-- [ ] S2 Bloc events/state/handlers
-- [ ] S3 Error mapping aman
-- [ ] S5 Tombol OTP di AuthScreen
-- [ ] S6 Layar OtpVerifyScreen baru
-- [ ] S7 Test baru + update test lama
-- [ ] S8 Konfigurasi Dashboard manual
-- [ ] S9 Verifikasi akhir analyze + test
+- [x] S1 Repository OTP
+- [x] S4 l10n keys en/id + regen
+- [x] S2 Bloc events/state/handlers
+- [x] S3 Error mapping aman
+- [x] S5 Tombol OTP di AuthScreen
+- [x] S6 Layar OtpVerifyScreen baru
+- [x] S7 Test baru + update test lama
+- [ ] S8 Konfigurasi Dashboard manual (owner: OTP length=8, template `{{ .Token }}`, SMTP Resend)
+- [x] S9 Verifikasi akhir analyze + test
 
 ---
 
@@ -520,6 +520,7 @@ Tambah alternatif login via kode OTP 8-digit yang dikirim ke email, tanpa mengha
 
 - 2026-09-22 12:00:00 — Implementation plan ditulis (S1-S9). Belum ada kode diubah. Menunggu eksekusi bertahap S1→S9.
 - 2026-09-22 12:30:00 — S1–S7 selesai. `flutter analyze` 0 issue. Test: 218 passed (baseline 208 + 10 baru: 6 bloc + 4 mapping). S8 (Dashboard: OTP length=8, template `{{ .Token }}`, SMTP Resend) masih menunggu owner.
+- 2026-09-23 00:30:00 — Review pasca-implementasi + perbaikan in-scope. Temuan: (1) HIGH `_onOtpSend` reset `explicitSignOut` → `_AuthGate` bisa auto-spawn guest di belakang layar OTP — preserve flag di send/verify success+failure; (2) HIGH `_verifying` tak pernah reset → tombol Verify macet spinner — `_resetBusyFlags` keyed on bloc leaving `submitting`; (3) HIGH double-push `OtpVerifyScreen` — guard `_lastPushedOtpEmail` + clear on pop; (4) MEDIUM snackbar `otpResent` berulang — flag `_resendRequested`; (5) MEDIUM validator terima non-digit — tambah `int.tryParse`; (6) LOW `otpHint` tak terpakai + hint hardcode — pakai `l10n.otpHint`; (7) LOW 6 file butuh `dart format`. Test: 9 bloc OTP + 4 mapping. `analyze` 0, `test` 221 passed, `build apk --split-per-abi --debug` sukses (warning Kotlin daemon pertama = noise lingkungan, retry sukses). S8 Dashboard tetap blocker owner.
 
 ## Notes
 

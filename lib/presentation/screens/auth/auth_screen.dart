@@ -31,6 +31,11 @@ class _AuthScreenState extends State<AuthScreen>
   bool get _isGuestWall => widget.mode == AuthScreenMode.guestAuthWall;
   bool get _isSignUp => _isGuestWall ? _tab.index == 0 : _tab.index == 1;
 
+  // Guards the OTP push below: BlocConsumer can re-fire for the same
+  // pendingOtpEmail on rebuilds, and a second send for another address must
+  // still open exactly one verify screen.
+  String? _lastPushedOtpEmail;
+
   @override
   void initState() {
     super.initState();
@@ -119,13 +124,27 @@ class _AuthScreenState extends State<AuthScreen>
             }
             if (state.pendingOtpEmail != null &&
                 state.errorMessage == null &&
-                state.status != AuthStatus.submitting) {
+                state.status != AuthStatus.submitting &&
+                state.pendingOtpEmail != _lastPushedOtpEmail) {
               final email = state.pendingOtpEmail!;
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => OtpVerifyScreen(email: email, isGuestAuthWall: _isGuestWall),
-                ),
-              );
+              _lastPushedOtpEmail = email;
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (_) => OtpVerifyScreen(
+                        email: email,
+                        isGuestAuthWall: _isGuestWall,
+                      ),
+                    ),
+                  )
+                  .then((_) {
+                    // User returned without verifying (back button or
+                    // "use a different email"). Clear the push guard so a
+                    // subsequent send re-opens the verify screen. On success
+                    // the bloc clears pendingOtpEmail itself, so this only
+                    // affects the manual-back case. No setState: field only.
+                    _lastPushedOtpEmail = null;
+                  });
             }
             if (state.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -297,9 +316,7 @@ class _AuthScreenState extends State<AuthScreen>
                                       Expanded(
                                         child: Text(
                                           l10n.sendTips,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                          ),
+                                          style: const TextStyle(fontSize: 13),
                                         ),
                                       ),
                                     ],
@@ -326,49 +343,47 @@ class _AuthScreenState extends State<AuthScreen>
                                 ? l10n.pleaseWait
                                 : _submitButtonLabel(l10n),
                           ),
-                         ),
-                         const SizedBox(height: 12),
-                         OutlinedButton.icon(
-                           onPressed: submitting ? null : _sendOtp,
-                           icon: const Icon(Icons.mark_email_unread_outlined),
-                           label: Text(l10n.otpLoginButton),
-                         ),
-                         const SizedBox(height: 16),
-                         Row(
-                           children: [
-                             const Expanded(child: Divider()),
-                             Padding(
-                               padding: const EdgeInsets.symmetric(
-                                 horizontal: 12,
-                               ),
-                               child: Text(
-                                 l10n.or,
-                                 style: TextStyle(
-                                   color: context.textSecondary,
-                                 ),
-                               ),
-                             ),
-                             const Expanded(child: Divider()),
-                           ],
-                         ),
-                         const SizedBox(height: 16),
-                         OutlinedButton.icon(
-                           onPressed: submitting ? null : _googleSignIn,
-                           icon: const Icon(Icons.g_mobiledata, size: 24),
-                           label: Text(
-                             _isGuestWall
-                                 ? l10n.continueWithGoogleKeep
-                                 : l10n.continueWithGoogle,
-                           ),
-                         ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: submitting ? null : _sendOtp,
+                          icon: const Icon(Icons.mark_email_unread_outlined),
+                          label: Text(l10n.otpLoginButton),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Text(
+                                l10n.or,
+                                style: TextStyle(color: context.textSecondary),
+                              ),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: submitting ? null : _googleSignIn,
+                          icon: const Icon(Icons.g_mobiledata, size: 24),
+                          label: Text(
+                            _isGuestWall
+                                ? l10n.continueWithGoogleKeep
+                                : l10n.continueWithGoogle,
+                          ),
+                        ),
                         if (!_isGuestWall) ...[
                           const SizedBox(height: 12),
                           TextButton.icon(
                             onPressed: submitting
                                 ? null
                                 : () => context.read<AuthBloc>().add(
-                                      const AuthAnonymousRequested(),
-                                    ),
+                                    const AuthAnonymousRequested(),
+                                  ),
                             icon: const Icon(Icons.person_outline),
                             label: Text(l10n.continueAsGuest),
                           ),
@@ -384,9 +399,7 @@ class _AuthScreenState extends State<AuthScreen>
                                 _isSignUp
                                     ? l10n.alreadyHaveAccount
                                     : l10n.newHere,
-                                style: TextStyle(
-                                  color: context.colors.primary,
-                                ),
+                                style: TextStyle(color: context.colors.primary),
                               ),
                             ),
                           ),
@@ -430,9 +443,7 @@ class _GuestAuthWallHeader extends StatelessWidget {
       children: [
         Text(
           isSignUp
-              ? (hasGuestResult
-                    ? l10n.saveYourSticker
-                    : l10n.createAccount)
+              ? (hasGuestResult ? l10n.saveYourSticker : l10n.createAccount)
               : l10n.signInExistingAccount,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
@@ -473,7 +484,10 @@ class _GuestWallWarning extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.guestWallWarning,
-              style: TextStyle(fontSize: 13, color: context.textPrimary.withValues(alpha: 0.85)),
+              style: TextStyle(
+                fontSize: 13,
+                color: context.textPrimary.withValues(alpha: 0.85),
+              ),
             ),
           ),
         ],

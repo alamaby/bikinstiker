@@ -25,6 +25,12 @@ abstract class AuthRepository {
   /// Returns true if sign-in succeeded, false if user cancelled.
   Future<bool> signInWithGoogleModal();
 
+  /// Send an 8-digit OTP code to the given email (shouldCreateUser=false).
+  Future<void> sendEmailOtp({required String email});
+
+  /// Verify an 8-digit OTP code for the given email.
+  Future<void> verifyEmailOtp({required String email, required String token});
+
   /// Create a one-time migration token for guest sticker transfer.
   /// Must be called BEFORE switching from anonymous to Google session.
   Future<String> createGuestMigrationToken();
@@ -167,6 +173,39 @@ class SupabaseAuthRepository implements AuthRepository {
       throw AuthFailure(e.message);
     } on AuthFailure {
       rethrow;
+    } catch (e) {
+      throw UnknownFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<void> sendEmailOtp({required String email}) async {
+    try {
+      await _client.auth.signInWithOtp(
+        email: email,
+        shouldCreateUser: false,
+        emailRedirectTo: 'io.supabase.bikinstiker://login-callback/',
+      );
+    } on AuthException catch (e) {
+      throw AuthFailure(e.message);
+    } catch (e) {
+      throw UnknownFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<void> verifyEmailOtp({
+    required String email,
+    required String token,
+  }) async {
+    try {
+      await _client.auth.verifyOTP(
+        email: email,
+        token: token,
+        type: OtpType.email,
+      );
+    } on AuthException catch (e) {
+      throw AuthFailure(e.message);
     } catch (e) {
       throw UnknownFailure(e.toString());
     }

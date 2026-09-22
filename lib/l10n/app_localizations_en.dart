@@ -1323,4 +1323,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeDark => 'Dark';
+
+  @override
+  String get otpLoginButton => 'Login with email code';
+
+  @override
+  String get otpTitle => 'Check your email';
+
+  @override
+  String otpSubtitle(String email) {
+    return 'Enter the 8-digit code sent to $email';
+  }
+
+  @override
+  String get otpHint => '8-digit code';
+
+  @override
+  String get otpInvalid => 'Enter the 8-digit code';
+
+  @override
+  String get otpVerify => 'Verify';
+
+  @override
+  String get otpResend => 'Resend code';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get otpResent => 'A new code has been sent';
+
+  @override
+  String get otpChangeEmail => 'Use a different email';
+
+  @override
+  String get otpEmailNotRegistered =>
+      'Email not registered. Please sign up first.';
+
+  @override
+  String get otpExpired => 'Code expired. Please request a new one.';
+
+  @override
+  String get otpSendFailed => 'Failed to send code. Try again.';
 }

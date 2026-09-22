@@ -44,6 +44,21 @@ String safeErrorMessage(
     return l10n.connectionError;
   }
 
+  // OTP email login (Supabase Auth, shouldCreateUser=false).
+  // Catatan: supabase_flutter sering hilangkan error.code, jadi deteksi via message.
+  if (lower.contains('signups not allowed for otp') || lower.contains('otp_disabled')) {
+    return l10n.otpEmailNotRegistered;
+  }
+  if (lower.contains('otp_expired') || lower.contains('token expired') || lower.contains('code expired')) {
+    return l10n.otpExpired;
+  }
+  if (lower.contains('over_email_send_rate_limit') || lower.contains('over_request_rate_limit') || lower.contains('email rate limit')) {
+    return l10n.tooManyRequests;
+  }
+  if (lower.contains('invalid otp') || lower.contains('otp_invalid') || lower.contains('token not found') || lower.contains('invalid token')) {
+    return l10n.otpInvalid;
+  }
+
   // Internal machinery (stack traces, DB/protocol details, Dart exception
   // formatting) — safe to hide behind a generic message.
   if (_containsAny(lower, const [

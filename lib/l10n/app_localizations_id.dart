@@ -1328,4 +1328,48 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get themeDark => 'Gelap';
+
+  @override
+  String get otpLoginButton => 'Masuk dengan kode email';
+
+  @override
+  String get otpTitle => 'Cek email Anda';
+
+  @override
+  String otpSubtitle(String email) {
+    return 'Masukkan kode 8 digit yang dikirim ke $email';
+  }
+
+  @override
+  String get otpHint => 'Kode 8 digit';
+
+  @override
+  String get otpInvalid => 'Masukkan kode 8 digit';
+
+  @override
+  String get otpVerify => 'Verifikasi';
+
+  @override
+  String get otpResend => 'Kirim ulang kode';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'Kirim ulang dalam $seconds dtk';
+  }
+
+  @override
+  String get otpResent => 'Kode baru telah dikirim';
+
+  @override
+  String get otpChangeEmail => 'Gunakan email lain';
+
+  @override
+  String get otpEmailNotRegistered =>
+      'Email belum terdaftar. Silakan daftar dulu.';
+
+  @override
+  String get otpExpired => 'Kode kedaluwarsa. Minta kode baru.';
+
+  @override
+  String get otpSendFailed => 'Gagal mengirim kode. Coba lagi.';
 }

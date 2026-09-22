@@ -433,5 +433,20 @@
   "themeTitle": "Theme",
   "themeSystem": "Follow system",
   "themeLight": "Light",
-  "themeDark": "Dark"
+  "themeDark": "Dark",
+  "otpLoginButton": "Login with email code",
+  "otpTitle": "Check your email",
+  "otpSubtitle": "Enter the 8-digit code sent to {email}",
+  "@otpSubtitle": { "placeholders": { "email": { "type": "String" } } },
+  "otpHint": "8-digit code",
+  "otpInvalid": "Enter the 8-digit code",
+  "otpVerify": "Verify",
+  "otpResend": "Resend code",
+  "otpResendIn": "Resend in {seconds}s",
+  "@otpResendIn": { "placeholders": { "seconds": { "type": "int" } } },
+  "otpResent": "A new code has been sent",
+  "otpChangeEmail": "Use a different email",
+  "otpEmailNotRegistered": "Email not registered. Please sign up first.",
+  "otpExpired": "Code expired. Please request a new one.",
+  "otpSendFailed": "Failed to send code. Try again."
 }

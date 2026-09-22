@@ -67,4 +67,19 @@ void main() {
       expect(safeErrorMessage(l10n, ''), l10n.errorOccurred);
     });
   });
+
+  group('otp mappings', () {
+    test('otp_disabled maps to otpEmailNotRegistered', () {
+      expect(safeErrorMessage(l10n, 'Signups not allowed for otp'), l10n.otpEmailNotRegistered);
+    });
+    test('otp_expired maps to otpExpired', () {
+      expect(safeErrorMessage(l10n, 'otp_expired'), l10n.otpExpired);
+    });
+    test('rate limit maps to tooManyRequests', () {
+      expect(safeErrorMessage(l10n, 'over_email_send_rate_limit'), l10n.tooManyRequests);
+    });
+    test('invalid otp maps to otpInvalid', () {
+      expect(safeErrorMessage(l10n, 'Token not found'), l10n.otpInvalid);
+    });
+  });
 }

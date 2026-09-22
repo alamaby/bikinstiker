@@ -67,6 +67,23 @@ class AuthGoogleSignInRequested extends AuthEvent {
   List<Object?> get props => [upgradeGuest];
 }
 
+class AuthOtpSendRequested extends AuthEvent {
+  final String email;
+  final bool isGuestAuthWall;
+  const AuthOtpSendRequested(this.email, {this.isGuestAuthWall = false});
+  @override
+  List<Object?> get props => [email, isGuestAuthWall];
+}
+
+class AuthOtpVerifyRequested extends AuthEvent {
+  final String email;
+  final String token;
+  final bool isGuestAuthWall;
+  const AuthOtpVerifyRequested(this.email, this.token, {this.isGuestAuthWall = false});
+  @override
+  List<Object?> get props => [email, token, isGuestAuthWall];
+}
+
 class _AuthUserChanged extends AuthEvent {
   final User? user;
   const _AuthUserChanged(this.user);
@@ -83,6 +100,7 @@ class AuthBlocState extends Equatable {
   final String? errorMessage;
   final String? infoMessage;
   final bool explicitSignOut;
+  final String? pendingOtpEmail;
 
   const AuthBlocState({
     this.status = AuthStatus.unknown,
@@ -90,6 +108,7 @@ class AuthBlocState extends Equatable {
     this.errorMessage,
     this.infoMessage,
     this.explicitSignOut = false,
+    this.pendingOtpEmail,
   });
 
   bool get isGuest => user?.isAnonymous == true;
@@ -104,6 +123,7 @@ class AuthBlocState extends Equatable {
     Object? errorMessage = _undefined,
     Object? infoMessage = _undefined,
     bool? explicitSignOut,
+    Object? pendingOtpEmail = _undefined,
   }) => AuthBlocState(
     status: status ?? this.status,
     user: identical(user, _undefined) ? this.user : user as User?,
@@ -114,10 +134,13 @@ class AuthBlocState extends Equatable {
         ? this.infoMessage
         : infoMessage as String?,
     explicitSignOut: explicitSignOut ?? this.explicitSignOut,
+    pendingOtpEmail: identical(pendingOtpEmail, _undefined)
+        ? this.pendingOtpEmail
+        : pendingOtpEmail as String?,
   );
 
   @override
-  List<Object?> get props => [status, user?.id, errorMessage, infoMessage, explicitSignOut];
+  List<Object?> get props => [status, user?.id, errorMessage, infoMessage, explicitSignOut, pendingOtpEmail];
 }
 
 // ----------------- Bloc -----------------
@@ -133,6 +156,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
     on<AuthAnonymousRequested>(_onAnonymous);
     on<AuthUpgradeAnonymousRequested>(_onUpgradeAnonymous);
     on<AuthGoogleSignInRequested>(_onGoogleSignIn);
+    on<AuthOtpSendRequested>(_onOtpSend);
+    on<AuthOtpVerifyRequested>(_onOtpVerify);
     on<_AuthUserChanged>(_onUserChanged);
   }
 
@@ -400,6 +425,32 @@ class AuthBloc extends Bloc<AuthEvent, AuthBlocState> {
           errorMessage: f.message,
         ),
       );
+    }
+  }
+
+  Future<void> _onOtpSend(AuthOtpSendRequested e, Emitter<AuthBlocState> emit) async {
+    final prevStatus = state.status;
+    final prevUser = state.user;
+    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null, explicitSignOut: false));
+    try {
+      await _repo.sendEmailOtp(email: e.email);
+      emit(state.copyWith(status: prevStatus, user: prevUser, pendingOtpEmail: e.email, errorMessage: null, infoMessage: null));
+    } on Failure catch (f) {
+      final fallbackStatus = e.isGuestAuthWall ? AuthStatus.guest : AuthStatus.unauthenticated;
+      emit(state.copyWith(status: fallbackStatus, user: prevUser, pendingOtpEmail: null, errorMessage: f.message));
+    }
+  }
+
+  Future<void> _onOtpVerify(AuthOtpVerifyRequested e, Emitter<AuthBlocState> emit) async {
+    emit(state.copyWith(status: AuthStatus.submitting, errorMessage: null, infoMessage: null, explicitSignOut: false));
+    try {
+      await _repo.verifyEmailOtp(email: e.email, token: e.token);
+      final user = _repo.currentUser;
+      final status = _resolveStatus(user);
+      emit(state.copyWith(status: status, user: user, pendingOtpEmail: null, errorMessage: null, infoMessage: null));
+    } on Failure catch (f) {
+      final fallbackStatus = e.isGuestAuthWall ? AuthStatus.guest : AuthStatus.unauthenticated;
+      emit(state.copyWith(status: fallbackStatus, pendingOtpEmail: e.email, errorMessage: f.message));
     }
   }
 

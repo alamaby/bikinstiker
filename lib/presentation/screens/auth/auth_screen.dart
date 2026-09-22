@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/sticker_gen/sticker_gen_bloc.dart';
+import 'otp_verify_screen.dart';
 
 enum AuthScreenMode { normal, guestAuthWall }
 
@@ -73,6 +74,22 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
+  void _sendOtp() {
+    final email = _emailCtrl.text.trim();
+    if (!email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: context.colors.error,
+          content: Text(AppLocalizations.of(context)!.emailInvalid),
+        ),
+      );
+      return;
+    }
+    context.read<AuthBloc>().add(
+      AuthOtpSendRequested(email, isGuestAuthWall: _isGuestWall),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -85,7 +102,8 @@ class _AuthScreenState extends State<AuthScreen>
           listenWhen: (p, n) =>
               p.status != n.status ||
               p.errorMessage != n.errorMessage ||
-              p.infoMessage != n.infoMessage,
+              p.infoMessage != n.infoMessage ||
+              p.pendingOtpEmail != n.pendingOtpEmail,
           listener: (context, state) {
             // Pop the guest wall ONLY on success (`authenticated`).
             // A failed wall attempt stays `guest` (anonymous session is
@@ -98,6 +116,16 @@ class _AuthScreenState extends State<AuthScreen>
                 Navigator.of(context).pop();
                 return;
               }
+            }
+            if (state.pendingOtpEmail != null &&
+                state.errorMessage == null &&
+                state.status != AuthStatus.submitting) {
+              final email = state.pendingOtpEmail!;
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => OtpVerifyScreen(email: email, isGuestAuthWall: _isGuestWall),
+                ),
+              );
             }
             if (state.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -298,35 +326,41 @@ class _AuthScreenState extends State<AuthScreen>
                                 ? l10n.pleaseWait
                                 : _submitButtonLabel(l10n),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                l10n.or,
-                                style: TextStyle(
-                                  color: context.textSecondary,
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        OutlinedButton.icon(
-                          onPressed: submitting ? null : _googleSignIn,
-                          icon: const Icon(Icons.g_mobiledata, size: 24),
-                          label: Text(
-                            _isGuestWall
-                                ? l10n.continueWithGoogleKeep
-                                : l10n.continueWithGoogle,
-                          ),
-                        ),
+                         ),
+                         const SizedBox(height: 12),
+                         OutlinedButton.icon(
+                           onPressed: submitting ? null : _sendOtp,
+                           icon: const Icon(Icons.mark_email_unread_outlined),
+                           label: Text(l10n.otpLoginButton),
+                         ),
+                         const SizedBox(height: 16),
+                         Row(
+                           children: [
+                             const Expanded(child: Divider()),
+                             Padding(
+                               padding: const EdgeInsets.symmetric(
+                                 horizontal: 12,
+                               ),
+                               child: Text(
+                                 l10n.or,
+                                 style: TextStyle(
+                                   color: context.textSecondary,
+                                 ),
+                               ),
+                             ),
+                             const Expanded(child: Divider()),
+                           ],
+                         ),
+                         const SizedBox(height: 16),
+                         OutlinedButton.icon(
+                           onPressed: submitting ? null : _googleSignIn,
+                           icon: const Icon(Icons.g_mobiledata, size: 24),
+                           label: Text(
+                             _isGuestWall
+                                 ? l10n.continueWithGoogleKeep
+                                 : l10n.continueWithGoogle,
+                           ),
+                         ),
                         if (!_isGuestWall) ...[
                           const SizedBox(height: 12),
                           TextButton.icon(

@@ -2491,6 +2491,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dark'**
   String get themeDark;
+
+  /// No description provided for @otpLoginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Login with email code'**
+  String get otpLoginButton;
+
+  /// No description provided for @otpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email'**
+  String get otpTitle;
+
+  /// No description provided for @otpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 8-digit code sent to {email}'**
+  String otpSubtitle(String email);
+
+  /// No description provided for @otpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'8-digit code'**
+  String get otpHint;
+
+  /// No description provided for @otpInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 8-digit code'**
+  String get otpInvalid;
+
+  /// No description provided for @otpVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get otpVerify;
+
+  /// No description provided for @otpResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get otpResend;
+
+  /// No description provided for @otpResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String otpResendIn(int seconds);
+
+  /// No description provided for @otpResent.
+  ///
+  /// In en, this message translates to:
+  /// **'A new code has been sent'**
+  String get otpResent;
+
+  /// No description provided for @otpChangeEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different email'**
+  String get otpChangeEmail;
+
+  /// No description provided for @otpEmailNotRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Email not registered. Please sign up first.'**
+  String get otpEmailNotRegistered;
+
+  /// No description provided for @otpExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Code expired. Please request a new one.'**
+  String get otpExpired;
+
+  /// No description provided for @otpSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send code. Try again.'**
+  String get otpSendFailed;
 }
 
 class _AppLocalizationsDelegate

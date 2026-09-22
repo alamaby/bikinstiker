@@ -433,5 +433,20 @@
   "themeTitle": "Tema",
   "themeSystem": "Ikut Sistem",
   "themeLight": "Cerah",
-  "themeDark": "Gelap"
+  "themeDark": "Gelap",
+  "otpLoginButton": "Masuk dengan kode email",
+  "otpTitle": "Cek email Anda",
+  "otpSubtitle": "Masukkan kode 8 digit yang dikirim ke {email}",
+  "@otpSubtitle": { "placeholders": { "email": { "type": "String" } } },
+  "otpHint": "Kode 8 digit",
+  "otpInvalid": "Masukkan kode 8 digit",
+  "otpVerify": "Verifikasi",
+  "otpResend": "Kirim ulang kode",
+  "otpResendIn": "Kirim ulang dalam {seconds} dtk",
+  "@otpResendIn": { "placeholders": { "seconds": { "type": "int" } } },
+  "otpResent": "Kode baru telah dikirim",
+  "otpChangeEmail": "Gunakan email lain",
+  "otpEmailNotRegistered": "Email belum terdaftar. Silakan daftar dulu.",
+  "otpExpired": "Kode kedaluwarsa. Minta kode baru.",
+  "otpSendFailed": "Gagal mengirim kode. Coba lagi."
 }

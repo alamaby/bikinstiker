@@ -133,7 +133,7 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       await _client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.supabase.bikinstiker://login-callback/',
+        redirectTo: EnvConstants.authCallbackUrl,
       );
     } on AuthException catch (e) {
       throw AuthFailure(e.message);
@@ -184,7 +184,7 @@ class SupabaseAuthRepository implements AuthRepository {
       await _client.auth.signInWithOtp(
         email: email,
         shouldCreateUser: false,
-        emailRedirectTo: 'io.supabase.bikinstiker://login-callback/',
+        emailRedirectTo: EnvConstants.authCallbackUrl,
       );
     } on AuthException catch (e) {
       throw AuthFailure(e.message);

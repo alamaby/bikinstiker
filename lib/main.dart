@@ -3,6 +3,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'app.dart';
 import 'core/di.dart';
+import 'core/services/auth_callback_handler.dart';
 import 'core/services/share_mission_service.dart';
 import 'data/datasources/supabase_client.dart';
 import 'data/models/share_token.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
 
   await configureDependencies();
   await _drainInitialShareDeepLink();
+  await getIt<AuthCallbackHandler>().init();
   runApp(const BikinStikerApp());
 }
 

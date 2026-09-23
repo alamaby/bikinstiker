@@ -1,10 +1,13 @@
 # Project Memory - BikinStiker
 
-Last updated: 2026-09-22 12:30:00
+Last updated: 2026-09-23 14:04:00
 Format version: 1
 
 ## Current State
-- **Current work:** Email OTP Login — DONE (code). 8-digit OTP via native Supabase Auth (`shouldCreateUser=false`). S8 Dashboard config still pending (owner). Version unchanged (`0.27.0+93`). analyze 0, test 218.
+- **Current work:** Auth callback redirect — DONE (kode). Ganti scheme dari
+  `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;
+  `AuthCallbackHandler` baru + wiring + test 4/4; APK 3 ABI build sukses;
+  `flutter analyze` No issues; test naik 225. Dashboard S5 masih manual (owner).
 - **Track:** BikinStiker - AI-powered WhatsApp sticker generator (Flutter).
 - **Verified:** analyze 0; test 198/198; APK 3 ABI (2026-09-15). AAB release 50.1 MB signed non-debug + merged manifest targetSdk 36 / AD_ID / StickerContentProvider / AdMob prod ID bersih dari secret `.env` (2026-09-12).
 - **Working tree:** `supabase/` (submodule) termodifikasi — `operator_alerts.ts`, `generate-sticker/index.ts` + test, `surprise-me/index.ts`, 3 migrasi baru (`20260916000001_remediate_provider_chain_rca`, `20260916065125_operator_alert_sink`, `20260916071704_deactivate_archived_cerebras_model`); memori + plan baru; belum commit.
@@ -39,6 +42,8 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-09-23 14:04:00 - auth-callback-redirect](2026-09-23/140400-auth-callback-redirect.md)
+- [2026-09-23 13:00:11 - email-otp-templates](2026-09-23/130011-email-otp-templates.md)
 - [2026-09-22 12:30:00 - email-otp-login](2026-09-22/123000-email-otp-login.md)
 - [2026-09-20 19:35:00 - app-logo-blank-icon-fix](2026-09-20/193500-app-logo-blank-icon-fix.md)
 - [2026-09-20 19:10:00 - app-logo-rollout](2026-09-20/191000-app-logo-rollout.md)

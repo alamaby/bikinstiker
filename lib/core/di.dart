@@ -21,6 +21,7 @@ import '../data/repositories/showcase_repository.dart';
 import '../data/repositories/wallet_repository.dart';
 import 'image_cache.dart';
 import 'services/ad_config_service.dart';
+import 'services/auth_callback_handler.dart';
 import 'services/share_mission_service.dart';
 
 final getIt = GetIt.instance;
@@ -72,6 +73,9 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<AdConfigService>(() => AdConfigService());
   getIt.registerLazySingleton<ShareMissionService>(() => ShareMissionService());
+  getIt.registerLazySingleton<AuthCallbackHandler>(
+    () => AuthCallbackHandler(),
+  );
   getIt.registerLazySingleton<OnboardingRepository>(
     () => SharedPrefsOnboardingRepository(prefs),
   );

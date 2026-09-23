@@ -1,6 +1,6 @@
 # Project Memory - BikinStiker
 
-Last updated: 2026-09-23 14:04:00
+Last updated: 2026-09-23 14:03:39
 Format version: 1
 
 ## Current State
@@ -8,6 +8,11 @@ Format version: 1
   `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;
   `AuthCallbackHandler` baru + wiring + test 4/4; APK 3 ABI build sukses;
   `flutter analyze` No issues; test naik 225. Dashboard S5 masih manual (owner).
+- **Current work (14:03):** Fromaddress → `noreply@updates.alamaby.com`
+  (`.env.example` + live secret via `secrets set`, sukses); deploy ulang
+  `share-redirect`, `surprise-me`, `generate-sticker` sukses. `db push`
+  TERBLOKIR migrasi yatim `20260923005310` (remote-only, 07:53 WIB) — jangan
+  repair sebelum isinya diketahui.
 - **Track:** BikinStiker - AI-powered WhatsApp sticker generator (Flutter).
 - **Verified:** analyze 0; test 198/198; APK 3 ABI (2026-09-15). AAB release 50.1 MB signed non-debug + merged manifest targetSdk 36 / AD_ID / StickerContentProvider / AdMob prod ID bersih dari secret `.env` (2026-09-12).
 - **Working tree:** `supabase/` (submodule) termodifikasi — `operator_alerts.ts`, `generate-sticker/index.ts` + test, `surprise-me/index.ts`, 3 migrasi baru (`20260916000001_remediate_provider_chain_rca`, `20260916065125_operator_alert_sink`, `20260916071704_deactivate_archived_cerebras_model`); memori + plan baru; belum commit.
@@ -25,15 +30,15 @@ Format version: 1
 ## Open Items / Blockers
 - **Smoke test end-to-end (2026-09-16):** jalankan satu generation nyata; pastikan `prompt_enhancement_logs` tidak lagi jatuh ke fallback dan `operator_alerts` terisi bila ada insiden.
 - **Cloudflare default:** masih nonaktif; aktifkan hanya setelah `base_url` (account id real) + `api_key` dipatch dalam satu UPDATE.
-- **Opsional (2026-09-16):** kanal email Resend — `from` = `updates@alamaby.com` (domain root, yang terdaftar di Resend; **bukan** subdomain app host). Record Resend (DKIM/SPF) belum ada. Butuh: verify domain `alamaby.com` di resend.com → API key → `supabase login` → set 4 secret.
-- **Redeploy diperlukan (2026-09-16):** `generate-sticker`, `surprise-me`, `share-redirect` — perubahan domain (Fase 7) belum live di produksi.
+- **Opsional (2026-09-16, update 2026-09-23):** kanal email Resend — `from` kini `noreply@updates.alamaby.com` (`.env.example` + live secret sudah di-set 2026-09-23). WAJIB konfirmasi di resend.com/domains bahwa subdomain tercakup verifikasi + test kirim (kalau tidak API 403). Sender SMTP Auth Dashboard juga perlu diset ke alamat yang sama (manual). Record Resend (DKIM/SPF) status terakhir: belum ada.
+- **Redeploy (2026-09-23):** `generate-sticker`, `surprise-me`, `share-redirect` SUDAH dideploy ulang (sukses, project epyrnsqumejnehtkddxx).
 - **Domain berpindah ke `bikinstiker.alamaby.com` (2026-09-16):** `bikinstiker.com`/`bikinstiker.app` tidak pernah terdaftar; semua referensi (edge function HTTP-Referer, `share-redirect`, `request_share_token()`, 6 override `http_referer` di DB, Android App Link, iOS entitlement, Flutter host check) diarahkan ke host baru. Custom scheme `bikinstiker://` & bundle ID `com.alamaby.bikin_stiker` (koreksi 2026-09-20; sebelumnya salah tulis `com.bikinstiker.bikin`/`com.bikinstiker.bikinStiker` di memory & pbxproj). Migrasi `20260916083003` ter-apply; edge function `share-redirect` **sudah dideploy ulang** v7 (2026-09-20).
 - **App Links fallback (2026-09-16):** tanpa `assetlinks.json` (plan landing 2026-09-14 dipertahankan; keputusan user #4) — share pakai `bikinstiker://` + tombol Play Store. Open item lama "host assetlinks di Vercel" **batal**.
 - **Utang teknis alert:** dedupe per-isolate (bisa spam setelah cold start); `prompt_enhancement_logs.sticker_generation_id` selalu `null`; `operator_alerts` belum ada retensi/purge.
 - **Jangan:** `UPDATE ... SET is_active = TRUE` massal per-provider saat patch kredensial — model known-bad ikut aktif (lihat regresi `gemma-4-31b` 2026-09-16).
 - **Rilis Play:** upload ke Closed testing (12 tester × 14 hari), lengkapi Data safety / App content / listing, deploy landing page tersinkron (privacy/terms/pricing faktual + badge Roadmap, kontak alam.aby.b@gmail.com), verifikasi share fallback di device.
 - **Landing sudah push, belum deploy (2026-09-16):** commit `89407e8` di `bikin-stiker-landing-page` ter-push ke `main`; butuh deploy Vercel (pastikan `SUPABASE_PROJECT_REF` riil ter-set) + uji live `/en|id/privacy|terms|pricing`.
-- **Backend (SH2):** `supabase db push` migrasi hardening + verifikasi.
+- **Backend (SH2):** `supabase db push` DONE 2026-09-23 (`Remote database is up to date`, history 1:1 sinkron). Migrasi yatim `20260923005310` ternyata `sticker_moderation_flag` sesi lain → di-backfill sebagai file lokal versi sama (tanpa `repair`).
 - **Legacy tersisa:** deploy MR5, SK4 (disable legacy keys), FX5 smoke, SSC5 smoke, seed pack owner, ToS v2, VALIDATE constraint surprise-me, SK5 deno-check pre-existing, SH3 audit `rls_auto_enable`.
 - **Rotasi token:** rotasi `CLOUDFLARE_API_TOKEN` bila AAB lama (yang memuat secret) sempat dibagikan.
 - **Markdown migration follow-up:** uji visual dokumen legal di device nyata belum dijalankan (baru widget test render).
@@ -42,6 +47,7 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-09-23 14:03:39 - supabase-from-deploy](2026-09-23/140339-supabase-from-deploy.md)
 - [2026-09-23 14:04:00 - auth-callback-redirect](2026-09-23/140400-auth-callback-redirect.md)
 - [2026-09-23 13:00:11 - email-otp-templates](2026-09-23/130011-email-otp-templates.md)
 - [2026-09-22 12:30:00 - email-otp-login](2026-09-22/123000-email-otp-login.md)

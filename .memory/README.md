@@ -24,8 +24,9 @@ Format version: 1
   Pixazo x3 -> Gemini p13 -> Pollinations p100). Cloudflare masih
   menunggu Account ID + token (draft SQL di memory).
 - **Privacy (10:40):** keputusan Gemini unpaid -> Privacy v2026-10-15
-  (disclosure training-use, migrasi `20261015000003` di-commit, BELUM
-  `db push`). Landing privacy disinkron, BELUM deploy.
+  (disclosure training-use; `db push` DONE 2026-10-15, registry terms+
+  privacy 2026-10-15 current). APK baru BELUM build; landing BELUM
+  deploy.
 - **Current work:** Auth callback redirect — DONE (kode). Ganti scheme dari
   `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;
   `AuthCallbackHandler` baru + wiring + test 4/4; APK 3 ABI build sukses;

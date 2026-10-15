@@ -41,7 +41,8 @@ sudah tidak faktual.
 - `flutter analyze` TIDAK diulang (perubahan docs + 1 konstanta).
 
 ## Blockers
-- Migrasi `20261015000003` BELUM `db push`; APK baru BELUM build;
+- Migrasi `20261015000003` SUDAH `db push` 2026-10-15 (registry: terms +
+  privacy 2026-10-15 current, hash match). APK baru BELUM build;
   landing BELUM deploy.
 
 ## Commit proposal

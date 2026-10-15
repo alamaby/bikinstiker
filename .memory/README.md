@@ -18,6 +18,10 @@ Format version: 1
   (terms 2026-10-15 current; 2026-07-03 retired). APK baru berisi ToS
   revisi BELUM di-build/rilis — user app lama akan diminta
   re-accept setelah update.
+- **Providers (10:30):** Gemini `gemini-2.5-flash-image` diaktifkan sebagai
+  mid-fallback (migrasi `20261015000002` + fix `negativePrompt` di-commit,
+  BELUM `db push` + BELUM redeploy `generate-sticker`). Cloudflare masih
+  menunggu Account ID + token (draft SQL di memory).
 - **Current work:** Auth callback redirect — DONE (kode). Ganti scheme dari
   `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;
   `AuthCallbackHandler` baru + wiring + test 4/4; APK 3 ABI build sukses;
@@ -61,6 +65,7 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-10-15 10:30:00 - provider-gemini-cloudflare-activation](2026-10-15/103000-provider-gemini-cloudflare-activation.md)
 - [2026-10-15 10:00:00 - terms-commercial-rights-revision](2026-10-15/100000-terms-commercial-rights-revision.md)
 - [2026-09-23 14:03:39 - supabase-from-deploy](2026-09-23/140339-supabase-from-deploy.md)
 - [2026-09-23 14:04:00 - auth-callback-redirect](2026-09-23/140400-auth-callback-redirect.md)

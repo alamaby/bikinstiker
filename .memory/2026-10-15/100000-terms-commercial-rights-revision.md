@@ -61,6 +61,9 @@ terbatas upstream + atribusi + IP clearance + disclosure AI.
 - `flutter analyze`: No issues found.
 - Full `flutter test` + `build apk` TIDAK dijalankan (perubahan docs +
   konstanta; proporsional).
+- `db push` DONE 2026-10-15 (migrasi `20261015000001` applied; registry:
+  terms 2026-07-03 retired, 2026-10-15 current en `6114d7d9…` /
+  id `66dfd136…` — hash match file).
 
 ## Commit proposal
 `docs(legal): limit sticker license to upstream provider terms`

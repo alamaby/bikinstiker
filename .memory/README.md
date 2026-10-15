@@ -14,6 +14,10 @@ Format version: 1
 - **Landing sync (10:00):** sibling `bikin-stiker-landing-page`
   `app/[locale]/terms/page.tsx` 5/6 ID+EN disinkron ke v2026-10-15
   (lint + tsc bersih); BELUM deploy Vercel.
+- **Backend:** migrasi `20261015000001` SUDAH `db push` 2026-10-15
+  (terms 2026-10-15 current; 2026-07-03 retired). APK baru berisi ToS
+  revisi BELUM di-build/rilis — user app lama akan diminta
+  re-accept setelah update.
 - **Current work:** Auth callback redirect — DONE (kode). Ganti scheme dari
   `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;
   `AuthCallbackHandler` baru + wiring + test 4/4; APK 3 ABI build sukses;

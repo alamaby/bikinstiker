@@ -37,7 +37,10 @@ ID + API token yang belum ada).
   Terms di docs Cloudflare saat aktivasi; ketentuan komersial Workers AI
   tidak eksplisit ("verify before shipping").
 - Deploy edge function `generate-sticker` WAJIB setelah merge (kode berubah)
-  + `db push` migrasi — keduanya BELUM dijalankan.
+  + `db push` migrasi — keduanya DONE 2026-10-15: migrasi
+  `20261015000002` applied, function redeployed
+  (project `epyrnsqumejnehtkddxx`), rantai live terverifikasi:
+  Pixazo x3 -> Gemini p13 -> Pollinations p100.
 
 ## Verification
 - `deno test index_test.ts`: 125 passed, 0 failed.

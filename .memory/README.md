@@ -19,8 +19,9 @@ Format version: 1
   revisi BELUM di-build/rilis — user app lama akan diminta
   re-accept setelah update.
 - **Providers (10:30):** Gemini `gemini-2.5-flash-image` diaktifkan sebagai
-  mid-fallback (migrasi `20261015000002` + fix `negativePrompt` di-commit,
-  BELUM `db push` + BELUM redeploy `generate-sticker`). Cloudflare masih
+  mid-fallback (migrasi `20261015000002` + fix `negativePrompt` di-commit;
+  `db push` + redeploy `generate-sticker` DONE 2026-10-15, rantai live:
+  Pixazo x3 -> Gemini p13 -> Pollinations p100). Cloudflare masih
   menunggu Account ID + token (draft SQL di memory).
 - **Current work:** Auth callback redirect — DONE (kode). Ganti scheme dari
   `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;

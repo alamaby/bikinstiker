@@ -54,12 +54,16 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 #### 5.1 Cara Kerja
 - Anda memilih preset gaya visual, memasukkan deskripsi teks (prompt), dan opsional menambahkan caption.
 - Aplikasi mengirimkan permintaan Anda ke server kami, yang mungkin pertama-tama meningkatkan prompt Anda melalui model reasoning berbasis teks saja (Mistral) dan kemudian menghasilkan gambar stiker menggunakan salah satu dari beberapa penyedia AI (Pixazo Flux-1-Schnell, Pixazo SDXL Base 1.0, OpenRouter, Gemini, atau Pollinations sebagai fallback).
+- Rantai generasi aktif (Oktober 2026): Pixazo Flux-1-Schnell sebagai utama, Pollinations Flux sebagai fallback. Endpoint Pixazo SDXL Base 1.0, OpenRouter, dan Gemini saat ini dinonaktifkan, dan varian model non-komersial/dev tetap dinonaktifkan. Penyedia dapat berubah tanpa pemberitahuan untuk failover atau alasan biaya.
+- Setiap hasil generasi mencatat metadata provider/model (nama provider, nama model, id konfigurasi, prompt final) untuk ketertelusuran dan pencegahan penyalahgunaan.
 - Stiker yang dihasilkan adalah gambar gaya die-cut dengan latar belakang putih, berukuran untuk kompatibilitas WhatsApp.
 - Teks caption (maksimal 10 karakter) dapat disematkan ke dalam stiker di posisi atas atau bawah.
 
 #### 5.2 Konten yang Dihasilkan AI
 - Stiker yang dihasilkan diproduksi oleh model kecerdasan buatan. Hasil dapat bervariasi dan mungkin tidak sesuai persis dengan prompt Anda.
-- Kami tidak menjamin bahwa konten yang dihasilkan akan unik, bebas dari cacat, atau bebas dari klaim pihak ketiga.
+- Kami tidak menjamin bahwa konten yang dihasilkan akan unik, orisinal, dilindungi hak cipta, bebas dari cacat, atau bebas dari klaim pihak ketiga. Beberapa pengguna dapat menerima output yang sangat mirip.
+- Model citra yang mendasari (FLUX.1-schnell, Apache-2.0) mengizinkan penggunaan komersial di lapisan lisensi model, tetapi ketentuan penyedia API berlaku di atasnya dan ketentuan yang lebih restriktif yang menang (konten Pixazo Free dimiliki penyedia; lihat 6.2).
+- Jika penyedia upstream mewajibkan atribusi (Pixazo Free), Anda wajib mempertahankannya saat mempublikasikan atau menjual stiker.
 - Anda bertanggung jawab meninjau konten yang dihasilkan sebelum menggunakannya atau membagikannya.
 - Konten yang dihasilkan mungkin sesekali mengandung artefak atau bias yang tidak disengaja yang melekat pada teknologi AI.
 
@@ -75,9 +79,11 @@ Anda harus berusia minimal 13 tahun (atau usia minimum yang diwajibkan di yurisd
 - Dengan mengirimkan prompt, Anda memberikan kami lisensi terbatas, non-eksklusif untuk memproses, menyimpan, dan menggunakannya semata-mata untuk tujuan membuat stiker dan mengoperasikan Aplikasi.
 
 #### 6.2 Stiker yang Dihasilkan
-- Anda diberikan lisensi non-eksklusif, seluruh dunia, bebas royalti untuk menggunakan, menyalin, memodifikasi, dan mendistribusikan stiker yang dihasilkan untuk tujuan pribadi dan komersial, tunduk pada hukum yang berlaku.
-- Lisensi ini tidak meluas ke model AI, deskriptor gaya, atau teknologi dasar Aplikasi.
-- Stiker yang dihasilkan diproduksi oleh AI. Anda bertanggung jawab memastikan penggunaan Anda mematuhi hukum yang berlaku, termasuk persyaratan pengungkapan konten AI.
+- Sepanjang diizinkan oleh penyedia AI dan lisensi model yang berlaku untuk setiap hasil generasi, Anda diberikan lisensi terbatas, non-eksklusif, seluruh dunia, bebas royalti, dapat dicabut, tidak dapat dialihkan, dan tidak dapat disublisensikan untuk menggunakan, menyalin, memodifikasi, dan menampilkan stiker yang dihasilkan untuk tujuan pribadi dan tujuan komersial terbatas (misalnya dipakai di chat bisnis, iklan, atau merchandise milik Anda yang memuat komposisi orisinal Anda), tunduk pada hukum yang berlaku dan kewajiban atribusi upstream.
+- Lisensi ini tidak mengalihkan kepemilikan model AI, data pelatihan, deskriptor gaya, prompt, atau teknologi dasar Aplikasi. Berdasarkan ketentuan Pixazo Free-tier, Konten Free tetap dimiliki penyedia; Anda hanya menerima lisensi terbatas sebagaimana diuraikan di atas.
+- Stiker yang dihasilkan diproduksi oleh AI dan kami tidak menjamin kepemilikan hak cipta, orisinalitas, atau eksklusivitas. Output yang murni dihasilkan AI mungkin tidak memenuhi syarat perlindungan hak cipta di yurisdiksi Anda (berdasarkan UU Hak Cipta No. 28/2014 perlindungan mensyaratkan kontribusi intelektual manusia). Anda tidak dapat melarang orang lain membuat stiker yang mirip.
+- Klirens KI adalah tanggung jawab penuh Anda sebelum penggunaan komersial apa pun: jangan meminta, mempublikasikan, atau menjual stiker yang memuat merek dagang, logo, karakter berhak cipta, kemiripan selebritas atau orang privat, atau hak pihak ketiga lainnya tanpa izin. Klirens mencakup pemeriksaan output, bukan hanya prompt.
+- Stiker yang dihasilkan diproduksi oleh AI. Anda bertanggung jawab memastikan penggunaan Anda mematuhi hukum yang berlaku, termasuk persyaratan pengungkapan konten AI (misalnya kewajiban transparansi EU AI Act dan kebijakan platform host).
 - Lisensi ini tunduk pada hukum yang berlaku di yurisdiksi Anda, termasuk persyaratan pengungkapan atau pelabelan untuk konten yang dihasilkan AI.
 
 ### 7. Paket Stiker dan Ekspor WhatsApp

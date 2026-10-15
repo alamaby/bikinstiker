@@ -1,9 +1,19 @@
 # Project Memory - BikinStiker
 
-Last updated: 2026-09-23 14:03:39
+Last updated: 2026-10-15 10:00:00
 Format version: 1
 
 ## Current State
+- **Current work (10:00):** ToS commercial-rights revision DONE (kode+dok).
+  Opsi b: `docs/terms-of-service-en|id.md` 5.1/5.2/6.2 direvisi ke lisensi
+  terbatas upstream (revocable, non-transferable, atribusi Pixazo Free, IP
+  clearance, disclosure AI); `currentTermsVersion` -> 2026-10-15 (privacy
+  tetap 2026-07-03); migrasi baru `20261015000001` BELUM di-push; APK baru
+  BELUM di-build — koordinasikan jendela rilis (mismatch hash memblokir
+  Continue). Test legal 6/6, analyze bersih.
+- **Landing sync (10:00):** sibling `bikin-stiker-landing-page`
+  `app/[locale]/terms/page.tsx` 5/6 ID+EN disinkron ke v2026-10-15
+  (lint + tsc bersih); BELUM deploy Vercel.
 - **Current work:** Auth callback redirect — DONE (kode). Ganti scheme dari
   `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;
   `AuthCallbackHandler` baru + wiring + test 4/4; APK 3 ABI build sukses;
@@ -47,6 +57,7 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-10-15 10:00:00 - terms-commercial-rights-revision](2026-10-15/100000-terms-commercial-rights-revision.md)
 - [2026-09-23 14:03:39 - supabase-from-deploy](2026-09-23/140339-supabase-from-deploy.md)
 - [2026-09-23 14:04:00 - auth-callback-redirect](2026-09-23/140400-auth-callback-redirect.md)
 - [2026-09-23 13:00:11 - email-otp-templates](2026-09-23/130011-email-otp-templates.md)

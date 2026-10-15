@@ -5,15 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Legal consent version', () {
-    test('current versions are updated to 2026-07-03', () {
-      expect(LegalConsentRepository.currentTermsVersion, '2026-07-03');
+    test('terms bumped to 2026-10-15 for upstream-limited commercial rights',
+        () {
+      expect(LegalConsentRepository.currentTermsVersion, '2026-10-15');
       expect(LegalConsentRepository.currentPrivacyVersion, '2026-07-03');
     });
 
-    test('terms and privacy versions match', () {
+    test('terms-only bump does not move privacy version', () {
       expect(
         LegalConsentRepository.currentTermsVersion,
-        LegalConsentRepository.currentPrivacyVersion,
+        isNot(LegalConsentRepository.currentPrivacyVersion),
       );
     });
   });
@@ -61,6 +62,12 @@ void main() {
       expect(content, contains('Effective Date:** 2026-07-03'));
       expect(content, contains('support@bikinstiker.example'));
       expect(content, contains('Republic of Indonesia'));
+      // 2026-10-15 commercial-rights revision (option b: upstream-limited).
+      expect(content, contains('revocable'));
+      expect(content, contains('non-transferable'));
+      expect(content, contains('Pixazo Free'));
+      expect(content, contains('FLUX.1-schnell'));
+      expect(content, contains('IP clearance'));
     });
 
     test('terms of service Indonesian markdown exists and is non-empty', () {
@@ -71,6 +78,11 @@ void main() {
       expect(content, contains('Ketentuan Layanan'));
       expect(content, contains('Jaminan'));
       expect(content, contains('[TO_BE_FILLED_BY_LEGAL]'));
+      // 2026-10-15 revisi hak komersial terbatas upstream.
+      expect(content, contains('dapat dicabut'));
+      expect(content, contains('Pixazo Free'));
+      expect(content, contains('FLUX.1-schnell'));
+      expect(content, contains('Klirens'));
     });
   });
 }

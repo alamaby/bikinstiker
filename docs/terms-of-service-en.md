@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Effective Date:** 2026-07-03 | **Last Updated:** 2026-07-03
+**Effective Date:** 2026-07-03 | **Last Updated:** 2026-10-15
 **App:** BikinStiker
 **Contact:** support@bikinstiker.example
 
@@ -62,12 +62,16 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 #### 5.1 How It Works
 - You select a visual style preset, enter a text description (prompt), and optionally add a caption.
 - The App sends your request to our server, which may first enhance your prompt via a text-only reasoning model (Mistral) and then generate a sticker image using one of several AI providers (Pixazo Flux-1-Schnell, Pixazo SDXL Base 1.0, OpenRouter, Gemini, or Pollinations as fallback).
+- Active generation chain (October 2026): Pixazo Flux-1-Schnell as primary, Pollinations Flux as fallback. Pixazo SDXL Base 1.0, OpenRouter, and Gemini endpoints are currently disabled, and non-commercial/dev model variants remain disabled. The provider may change without notice for failover or cost reasons.
+- Each generation records provider/model metadata (provider name, model name, config id, final prompt) for traceability and abuse prevention.
 - The generated sticker is a die-cut style image with a transparent background (white outline retained), sized for WhatsApp compatibility.
 - Caption text (max 10 characters) can be embedded into the sticker at top or bottom position.
 
 #### 5.2 AI-Generated Content
 - Generated stickers are produced by artificial intelligence models. Results may vary and may not exactly match your prompt.
-- We do not guarantee that generated content will be unique, free of defects, or free from third-party claims.
+- We do not guarantee that generated content will be unique, original, copyright-protected, free of defects, or free from third-party claims. Multiple users may receive substantially similar outputs.
+- The underlying image model (FLUX.1-schnell, Apache-2.0) permits commercial use at the model-license layer, but the API provider's terms apply on top and the more restrictive provision prevails (Pixazo Free content is owned by the provider; see 6.2).
+- Where the upstream provider requires attribution (Pixazo Free), you must retain it when you publish or sell the sticker.
 - You are responsible for reviewing generated content before using or sharing it.
 - Generated content may occasionally contain unintended artifacts or biases inherent to AI technology.
 
@@ -83,9 +87,11 @@ You must be at least 13 years old (or the minimum age required in your jurisdict
 - By submitting prompts, you grant us a limited, non-exclusive license to process, store, and use them solely for the purpose of generating stickers and operating the App.
 
 #### 6.2 Generated Stickers
-- You are granted a non-exclusive, worldwide, royalty-free license to use, copy, modify, and distribute generated stickers for personal and commercial purposes, subject to applicable law.
-- This license does not extend to the AI models, style descriptors, or the App's underlying technology.
-- Generated stickers are AI-produced. You are responsible for ensuring your use complies with applicable laws, including disclosure requirements for AI-generated content.
+- To the extent permitted by the upstream AI provider and model licence applicable to each generation, you are granted a limited, non-exclusive, worldwide, royalty-free, revocable, non-transferable, non-sublicensable license to use, copy, modify, and display generated stickers for personal purposes and limited commercial purposes (for example, use in your own business chat, ads, or merchandise featuring your own original composition), subject to applicable law and upstream attribution requirements.
+- This license does not transfer ownership of the AI models, training data, style descriptors, prompts, or the App's underlying technology. Under Pixazo Free-tier terms, Free Content remains owned by the provider; you receive only the limited license described above.
+- Generated stickers are AI-produced and we grant no warranty of copyright ownership, originality, or exclusivity. Purely AI-generated output may not qualify for copyright protection in your jurisdiction (under Indonesia's Copyright Law No. 28/2014 protection requires human intellectual contribution). You cannot prevent others from generating similar stickers.
+- IP clearance is your sole responsibility before any commercial use: do not prompt for, publish, or sell stickers containing third-party trademarks, logos, copyrighted characters, celebrity or private-person likeness, or other third-party rights without permission. Clearance includes checking the output, not just the prompt.
+- Generated stickers are AI-produced. You are responsible for ensuring your use complies with applicable laws, including disclosure or labelling requirements for AI-generated content (for example, EU AI Act transparency duties and host-platform policies).
 - This license is subject to applicable laws in your jurisdiction, including any disclosure or labelling requirements for AI-generated content.
 
 ### 7. Sticker Packs and WhatsApp Export

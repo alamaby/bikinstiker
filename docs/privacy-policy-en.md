@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Effective Date:** 2026-07-03 | **Last Updated:** 2026-07-03
+**Effective Date:** 2026-07-03 | **Last Updated:** 2026-10-15
 **App:** BikinStiker
 **Contact:** privacy@bikinstiker.example
 
@@ -72,12 +72,16 @@ We share your data with the following third-party service providers as necessary
 | **Google Sign-In** | OAuth authentication (when available) | https://policies.google.com/privacy |
 | **Pixazo** | Server-side sticker image generation (Flux-1-Schnell, SDXL Base 1.0; free tier, rate-limited) | https://pixazo.ai/privacy |
 | **OpenRouter** | Server-side sticker image generation (paid fallback) | https://openrouter.ai/privacy |
-| **Gemini** | Server-side sticker image generation (paid fallback) | https://ai.google.dev/privacy |
+| **Gemini** | Server-side sticker image generation (unpaid-quota fallback; Google may use prompts and outputs to provide, improve, and develop its services, including human review — see https://ai.google.dev/gemini-api/terms; do not submit sensitive or personal information) | https://ai.google.dev/privacy |
 | **Pollinations** | Server-side sticker image generation (unauthenticated fallback) | https://pollinations.ai/privacy |
 | **Mistral** | Text-only prompt enhancement before image generation (not used for image generation) | https://mistral.ai/privacy |
 | **WhatsApp (on-device)** | Importing generated sticker packs into WhatsApp | https://www.whatsapp.com/privacy |
 
 Server-side API keys for AI providers are never exposed to the App. They are stored and managed exclusively on our backend servers.
+
+#### 4.1 AI training use on unpaid tiers
+
+Some image providers run on unpaid/free quotas. In particular, Gemini unpaid quota is governed by Google's Gemini API Additional Terms: Google uses submitted prompts and generated outputs to provide, improve, and develop its products and machine learning technologies, and human reviewers may read, annotate, and process them. Do not include sensitive, confidential, or personal information in prompts or captions. Withdrawing privacy consent stops our consent-based processing but cannot retract data already sent to a provider under that provider's terms.
 
 ### 5. Data Retention
 

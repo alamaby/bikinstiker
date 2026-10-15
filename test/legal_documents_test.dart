@@ -5,16 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Legal consent version', () {
-    test('terms bumped to 2026-10-15 for upstream-limited commercial rights',
-        () {
+    test('terms and privacy are both at 2026-10-15', () {
       expect(LegalConsentRepository.currentTermsVersion, '2026-10-15');
-      expect(LegalConsentRepository.currentPrivacyVersion, '2026-07-03');
+      expect(LegalConsentRepository.currentPrivacyVersion, '2026-10-15');
     });
 
-    test('terms-only bump does not move privacy version', () {
+    test('terms and privacy versions match (bundle acceptance)', () {
       expect(
         LegalConsentRepository.currentTermsVersion,
-        isNot(LegalConsentRepository.currentPrivacyVersion),
+        LegalConsentRepository.currentPrivacyVersion,
       );
     });
   });
@@ -35,6 +34,10 @@ void main() {
       expect(content, contains('[TO_BE_FILLED_BY_LEGAL]'));
       expect(content, contains('Effective Date:** 2026-07-03'));
       expect(content, contains('privacy@bikinstiker.example'));
+      // 2026-10-15 Gemini unpaid disclosure.
+      expect(content, contains('unpaid-quota fallback'));
+      expect(content, contains('improve, and develop'));
+      expect(content, contains('do not submit sensitive'));
     });
 
     test('privacy policy Indonesian markdown exists and is non-empty', () {
@@ -45,6 +48,9 @@ void main() {
       expect(content, contains('Ringkasan'));
       expect(content, contains('Keamanan'));
       expect(content, contains('[TO_BE_FILLED_BY_LEGAL]'));
+      // 2026-10-15 pengungkapan Gemini gratis.
+      expect(content, contains('kuota gratis'));
+      expect(content, contains('peninjau manusia'));
     });
 
     test('terms of service English markdown exists and is non-empty', () {

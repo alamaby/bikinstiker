@@ -64,12 +64,16 @@ Kami membagikan data Anda dengan pihak ketiga berikut sebagaimana diperlukan unt
 | **Google Sign-In** | Autentikasi OAuth (jika tersedia) | https://policies.google.com/privacy |
 | **Pixazo** | Generasi gambar stiker di sisi server (Flux-1-Schnell, SDXL Base 1.0; tier gratis, rate-limited) | https://pixazo.ai/privacy |
 | **OpenRouter** | Generasi gambar stiker di sisi server (fallback berbayar) | https://openrouter.ai/privacy |
-| **Gemini** | Generasi gambar stiker di sisi server (fallback berbayar) | https://ai.google.dev/privacy |
+| **Gemini** | Generasi gambar stiker di sisi server (fallback kuota gratis; Google dapat memakai prompt dan output untuk menyediakan, meningkatkan, dan mengembangkan layanannya, termasuk peninjauan manusia — lihat https://ai.google.dev/gemini-api/terms; jangan kirimkan informasi sensitif atau pribadi) | https://ai.google.dev/privacy |
 | **Pollinations** | Generasi gambar stiker di sisi server (fallback tanpa autentikasi) | https://pollinations.ai/privacy |
 | **Mistral** | Peningkatan prompt berbasis teks sebelum generasi gambar (tidak digunakan untuk generasi gambar) | https://mistral.ai/privacy |
 | **WhatsApp (di perangkat)** | Mengimpor paket stiker ke WhatsApp | https://www.whatsapp.com/privacy |
 
 Kunci API penyedia AI tidak pernah ditampilkan ke Aplikasi. Kunci tersebut disimpan dan dikelola secara eksklusif di server backend kami.
+
+#### 4.1 Penggunaan data untuk pelatihan AI pada tier gratis
+
+Sebagian penyedia gambar berjalan pada kuota gratis/tidak berbayar. Khususnya kuota gratis Gemini tunduk pada Ketentuan Tambahan Gemini API Google: Google memakai prompt yang dikirim dan output yang dihasilkan untuk menyediakan, meningkatkan, dan mengembangkan produk serta teknologi machine learning-nya, dan peninjau manusia dapat membaca, menganotasi, dan memprosesnya. Jangan sertakan informasi sensitif, rahasia, atau pribadi dalam prompt atau caption. Penarikan persetujuan privasi menghentikan pemrosesan berbasis persetujuan oleh kami tetapi tidak dapat menarik kembali data yang sudah terkirim ke penyedia berdasarkan ketentuan penyedia tersebut.
 
 ### 5. Retensi Data
 

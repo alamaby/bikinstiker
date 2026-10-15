@@ -23,6 +23,9 @@ Format version: 1
   `db push` + redeploy `generate-sticker` DONE 2026-10-15, rantai live:
   Pixazo x3 -> Gemini p13 -> Pollinations p100). Cloudflare masih
   menunggu Account ID + token (draft SQL di memory).
+- **Privacy (10:40):** keputusan Gemini unpaid -> Privacy v2026-10-15
+  (disclosure training-use, migrasi `20261015000003` di-commit, BELUM
+  `db push`). Landing privacy disinkron, BELUM deploy.
 - **Current work:** Auth callback redirect — DONE (kode). Ganti scheme dari
   `io.supabase...login-callback/` ke `bikinstiker://auth/callback`;
   `AuthCallbackHandler` baru + wiring + test 4/4; APK 3 ABI build sukses;
@@ -66,6 +69,7 @@ Format version: 1
 - `PROJECT_MEMORY.md` - arsip historis lengkap (49 entri, 2026-07-04 → 2026-09-15). Read-only; jangan tambah entri baru di sana.
 
 ## Recent Entries
+- [2026-10-15 10:40:00 - privacy-gemini-unpaid-disclosure](2026-10-15/104000-privacy-gemini-unpaid-disclosure.md)
 - [2026-10-15 10:30:00 - provider-gemini-cloudflare-activation](2026-10-15/103000-provider-gemini-cloudflare-activation.md)
 - [2026-10-15 10:00:00 - terms-commercial-rights-revision](2026-10-15/100000-terms-commercial-rights-revision.md)
 - [2026-09-23 14:03:39 - supabase-from-deploy](2026-09-23/140339-supabase-from-deploy.md)

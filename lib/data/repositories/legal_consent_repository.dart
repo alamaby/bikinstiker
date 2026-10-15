@@ -49,7 +49,7 @@ class LegalConsentStorageException implements Exception {
 /// submits only current version + content-hash + app version.
 class LegalConsentRepository {
   static const String currentTermsVersion = '2026-10-15';
-  static const String currentPrivacyVersion = '2026-07-03';
+  static const String currentPrivacyVersion = '2026-10-15';
 
   final SupabaseClient _client;
 
